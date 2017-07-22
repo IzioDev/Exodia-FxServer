@@ -1,0 +1,160 @@
+*.console {
+  background-color: rgba(255,86,60,0.3);
+  width: 500px;
+  min-height: 30px;
+  color: white;
+  position: absolute;
+  top: 5px;
+  left: 200px;
+}
+
+html {
+  overflow: hidden;
+}
+
+.full-screen {
+  width: 100%;
+  height:100%;
+  align-items: center;
+}
+
+.header {
+  width: 1000px;
+  height: 50px;
+  background-color: #ff5950;
+
+}
+
+h1 {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 28px;
+  color: #000000;
+  text-transform: uppercase;
+  margin: auto;
+  text-align: center;
+  padding-top: 3px;
+}
+
+h2 {
+  font-family: 'Open Sans', sans-serif;
+  color: #ff5950;
+  margin-top: 50px;
+  margin-bottom: -10px
+}
+
+.conteneur {
+  width: 1000px;
+  height: 820px;
+  border: 1px solid #000000;
+  margin-left: auto;
+  margin-right: auto;
+  overflow: hidden;
+  z-index: 9999999;
+  font-size: 14px;
+}
+
+.titre {
+	color: #9e8285;
+}
+
+.left {
+	height: 800px;
+	width: 200px;
+	background-color: #f3f3f3;
+	float: left;
+	padding-top: 10px;
+	color: #000000;
+	text-align: center;
+	font-family: Verdana;
+}
+
+.job1 {
+	float: left;
+	font-family: Verdana;
+	font-size: 11px;
+	width: 800px;
+	height: 150px;
+}
+
+.job1:hover {
+	background-color: #f3f3f3;
+}
+
+.right {
+	height: 760px;
+	width: 800px;
+	float: right;
+	background-color: #ffffff;
+	overflow: hidden;
+	overflow-y: scroll;
+	padding-top: 10px;
+}
+
+.img_job {
+	width: 200px;
+	height: 150px;
+	margin-left: 20px;
+}
+
+p.text {
+	color: #000000;
+	padding-top: 20px;
+	padding-left: 0px;
+	margin-left: 250px;
+	margin-top: -140px
+}
+
+p.warning {
+	padding-top: 5px;
+	color: red;
+	text-shadow: 0 1px 1px #000000;
+	border: 1px dashed #FF0000;
+	text-transform: uppercase;
+	height: 180px;
+	width: 180px;
+	margin-left: 8px;
+	background: rgba(250,0,0,.4);
+	font-size: 14px;
+}
+p.siteweb {
+	position: absolute;
+	margin-left: 25px;
+	text-transform: uppercase;
+	bottom: 60;
+	color: #ff5950;
+}
+
+input[type="submit"]{
+	height: 30px;
+	margin-left: 600px;
+	margin-top: -15px;
+	border: 1px solid #000000;
+	border-radius: 15px 50px;
+	background-color: #ff5950;
+	width: 175px;
+}
+input[type="submit"]:active{
+	box-shadow: 0 5px #666;
+	transform: translateY(4px);
+}
+
+.logo {
+	width: 100px;
+	height: 75px;
+	margin-top: -40px;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+    color: #ff5950;
+}
+ 
+::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); 
+    border-radius: 10px;
+}
+ 
+::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5); 
+}

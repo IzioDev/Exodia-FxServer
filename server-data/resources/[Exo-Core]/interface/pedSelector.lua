@@ -1,0 +1,161 @@
+-- EI = exports.interface
+
+-- -- EXEMPLE FONCTIONNEL DE L UI LES DATAS SONT GERER COMME TU ME LA DONNé
+-- -- SetTimeout(2100, function()
+
+
+-- --   TriggerEvent("es:choicePicker", {
+-- --     {
+-- --       firstName = "Ryan",
+-- --       lastName = "Keen",
+-- --       name = "Ryan Keen",
+-- --       job = "Cop",
+-- --       age = "22",
+-- --       bankMoney = "3600",
+-- --       money = "100",
+-- --       lastSeen = "09/02/1999"
+-- --     },
+-- --     {
+-- --       firstName = "Tom",
+-- --       lastName = "Smith",
+-- --       name = "Tom Smith",
+-- --       job = "sss",
+-- --       age = "22",
+-- --       bankMoney = "3600",
+-- --       money = "100",
+-- --       lastSeen = "09/02/1999"
+-- --     },
+-- --   }, 2,5)
+-- -- --   registerPedForm()
+-- -- end)
+
+-- --
+-- ActualUI = {}
+-- characters = nil
+-- maxNumbChars = nil
+-- numberCharacters = nil
+-- --
+
+-- function registerPedForm()
+--   parent = EI:CreateComponent("parent", "body", "<div class='GUI-dark'><center><h2>Right Click Entertainment<h2></center><center><h3 style='margin-bottom: 5px'>Select your character</h3></center></div>")
+--   charactere = EI:CreateComponent(parent.jS, "<div class='charactere'></div>")
+--   maincenter = EI:CreateComponent(charactere.jS, "<center><h2 class='slotind'>Create your charactere</h2></center>")
+--   row1 = EI:CreateComponent(maincenter.jS, "<div class='rowinfo-register'></div>")
+--   info1 = EI:CreateComponent(row1.jS,  "<a style='float:left'>First Name:</a>")
+--   info2 = EI:CreateComponent(row1.jS,  "<a style='float:right'></a>")
+--   input1 = EI:CreateComponent(info2.jS, "<input type='text' placeholder='needed'></input>")
+--   row2 = EI:CreateComponent(maincenter.jS, "<div class='rowinfo-register'></div>")
+--   info3 = EI:CreateComponent(row2.jS,  "<a style='float:left'>Last Name:</a>")
+--   info4 = EI:CreateComponent(row2.jS,  "<a style='float:right'></a>")
+--   input2 = EI:CreateComponent(info4.jS, "<input type='text' placeholder='needed'></input>")
+--   row3 = EI:CreateComponent(maincenter.jS, "<div class='rowinfo-register'></div>")
+--   info5 = EI:CreateComponent(row3.jS,  "<a style='float:left'>Age:</a>")
+--   info6 = EI:CreateComponent(row3.jS,  "<a style='float:right'></a>")
+--   input3 = EI:CreateComponent(info6.jS, "<input type='number' min='18' max='99' placeholder='needed'></input>")
+--   createbtn = EI:CreateComponent("gobtn", maincenter.jS, "<button class='btn-fully'>Enter the universe</button>")
+--   backbtn = EI:CreateComponent("backbtn", maincenter.jS, "<button class='btn-fully'>Go back to the selection</button>")
+
+--   createbtn.setAttribute( "clickCB", function()
+--     firstname = GetComponentById(input1.id).value
+--     lastname = GetComponentById(input2.id).value
+--     age = GetComponentById(input3.id).value
+--     Citizen.Trace(" click => user entered: " .. firstname .. " " .. lastname .. " " .. tostring(age))
+--     TriggerEvent("es:LoadChar", firstname, lastname, age, true) --
+-- -- --     -- oublie aps qu'il faut fermer la gui si le mec a rentrer les bons truc avec
+-- -- --     -- la fonction HidePedSelector(ActualUI)
+--   end)
+-- -- --
+-- --
+--    SetComponentAttribute(backbtn.id, "clickCB", function()
+--      EI:hideComponent(ActualUI, {false, false})
+--      ActualUI = selectPedForm()
+--      EI:showComponent(ActualUI, {true, true})
+--    end)
+-- --
+--   myui = {parent , charactere, maincenter, row1, info1, info2, input1, row2, info3, info4, input2, row3, info5, info6, input3,createbtn, backbtn}
+--   return myui
+-- end
+
+
+-- --
+-- function selectPedForm()
+--   choicePickerUI = {}
+--   print("okped")
+--   count = maxNumbChars
+--   parent = EI:CreateComponent("parent", "body", "<div class='GUI-dark'><center><h2>Right Click Entertainment<h2></center><center><h3 style='margin-bottom: 5px'>Select your character</h3></center></div>")
+--   choicePickerUI = {parent}
+--   for i = 1, #characters do
+
+--     if characters[i].name == nil then
+--       if characters[i].firstName == nil or characters[i].lastName == nil then
+--         Citizen.Trace("Data are not seend like i want :(")
+--       else
+--         characters[i].name = characters[i].firstName .. " " .. characters[i].lastName
+--       end
+--     end
+--     count  = count - 1
+--     charactere = EI:CreateComponent(parent.jS, "<div class='charactere'></div>")
+--     slotind = EI:CreateComponent(charactere.jS, "<center><h2 class='slotind'>Slot " .. tostring(i) .."</h2></center>")
+--     slot1Info = EI:CreateComponent(charactere.jS, "<div class='rowinfo'></div>")
+--     slot1Info1 =  EI:CreateComponent(slot1Info.jS,"<a style='float: left'>Name: " .. characters[i].name .. "</a>")
+--     slot1Info2 = EI:CreateComponent(slot1Info.jS, "<a style='float: right'>Job: " .. characters[i].job .. "</a>")
+
+--     slot2Info = EI:CreateComponent(charactere.jS, "<div class='rowinfo'></div>")
+--     slot2Info1 =  EI:CreateComponent(slot2Info.jS,"<a style='float: left'>Age: " .. characters[i].age .. " years old</a>")
+--     slot2Info2 = EI:CreateComponent(slot2Info.jS, "<a style='float: right'>Bank: " .. characters[i].bankMoney .. "$</a>")
+
+--     slot3Info = EI:CreateComponent(charactere.jS, "<div class='rowinfo'></div>")
+--     slot3Info1 =  EI:CreateComponent(slot3Info.jS,"<a style='float: left'>Last seen: " .. characters[i].lastSeen .. "</a>")
+--     slot3Info2 = EI:CreateComponent(slot3Info.jS, "<a style='float: right'>Money: " .. characters[i].money .. "$</a>")
+
+
+--     grpbtn = EI:CreateComponent(charactere.jS, "<center></center>")
+--     gobtn = EI:CreateComponent(grpbtn.jS, "<button class='gobtn'>Enter the universe</button>")
+--     gobtn.setAttribute("clickCB", function()
+--       TriggerEvent("es:LoadChar", characters[i].firstName, characters[i].lastName, characters[i].age, false)
+--       print(" click => user selected: " .. characters[i].firstName)
+--     end)
+--     --rembtn = EI:CreateComponent("button", grpbtn.jS, "delbtn", "Remove", "")
+--     CharComponentList = {charactere, slotind, slot1Info, slot1Info1, slot1Info2, slot2Info, slot2Info1, slot2Info2, slot3Info, slot3Info1, slot3Info2, grpbtn, gobtn}
+--     for i = 1, #CharComponentList do
+--       table.insert(choicePickerUI, CharComponentList[i])
+--     end
+--   end
+--   emptySlotComponent = {}
+--   if tonumber(maxNumbChars) - tonumber(numberCharacters) > 0 then
+--     emptySlot = EI:CreateComponent(parent.jS, "<div class='charactere'> <div/>")
+--     slotind = EI:CreateComponent(emptySlot.jS, "<center><h2 class='slotind'>Slot " .. tostring(numberCharacters + 1) .."</h2></center>")
+--     createbtn = EI:CreateComponent(emptySlot.jS, "<button class='btn-fully'>Create a new one</button>")
+--     createbtn.setAttribute("clickCB", function()
+--       HidePedSelector(ActualUI, {true, true})
+--       ActualUI = registerPedForm()
+--       EI:showComponent(ActualUI, {true, true})
+--     end)
+--     emptySlotComponent = {emptySlot, slotind, createbtn}
+--   end
+
+--   for i = 1, #emptySlotComponent do
+--     table.insert(choicePickerUI, emptySlotComponent[i])
+--   end
+--   return choicePickerUI
+
+-- end
+-- --
+-- -- EVENT  HANDLER
+-- RegisterNetEvent("es:choicePicker")
+-- AddEventHandler("es:choicePicker", function(_characters, _numberCharacters, _maxNumbChars)
+--   print("ok1")
+--   characters = _characters
+--   maxNumbChars = _maxNumbChars
+--   numberCharacters = _numberCharacters
+--   print("ok2")
+--   EI:hideComponent(ActualUI, {false, false})
+--   ActualUI = selectPedForm()
+--   print("ok3")
+--   EI:showComponent(ActualUI, {true, true})
+-- end)
+
+-- function HidePedSelector(groupeComponent)-- ActualUI should close the actuel ui
+--   EI:hideComponent(groupeComponent, {false, false})
+--   groupeComponent = {}
+-- end

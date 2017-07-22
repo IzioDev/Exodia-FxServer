@@ -1,0 +1,212 @@
+<head>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:light,regular,medium,thin,italic,mediumitalic,bold" title="roboto">
+	<script src="nui://game/ui/jquery.js" type="text/javascript"></script>
+	<style>
+
+		@font-face {
+			font-family: bankgothic;
+			src: url('bankgothic.ttf');
+		}
+		
+		@font-face {
+			font-family: aaargh;
+			src: url('aaargh.ttf');
+		}
+
+		@font-face {
+			font-family: pcdown;
+			src: url('pdown.ttf');
+		}
+
+		body {
+			display : block;
+		}
+
+		#menu {
+            font-family     : bankgothic;  
+		    width           : 350px;
+		    color           : #fff;
+		    position        : absolute;
+		    left            : 40;
+		    top             : 40;
+		    display         : none;
+		}
+
+		#menu .head {
+		text-align  : center;
+	    height      : 40px;
+	    line-height : 40px;
+        margin-bottom: 10px;
+        background-color: #0a0a09;
+		}
+
+		#menu .line {
+			text-align: center;
+            
+		}
+
+		#menu .line {
+		    height          : 40px;
+		    display         : block;
+		    background-color: #0a0a09;
+		    height          : 32px;
+		    line-height     : 32px;
+		    color           : #fff;
+            margin-bottom: 2px;
+            opacity: 0.9;
+		}
+
+		#menu .selected {
+			background-color: #fff;
+            color: #000000;
+		}
+
+		#menu .counter {
+			font-weight: bold;
+		}
+        
+        #menu .controls {
+            text-align: center;
+            margin-top: 10px;
+            background-color: #246de7;
+            color: #fff;
+        }
+        #new {
+        	color: #cc2c57;
+        }
+
+	</style>
+</head>
+
+<body>
+
+	<div id="menu">
+		<div class="head">Outfits</div>
+		<div class="line new">Sexe &lt; <span class="counter" id="sex">0</span> &gt;</div>
+		<div class="line new">Face &lt; <span class="counter" id="face">0</span> &gt;</div>
+		<div class="line new">Skin Color &lt; <span class="counter" id="skin">0</span> &gt;</div>
+		<div class="line">Beard type &lt; <span class="counter" id="beard_1">0</span> &gt;</div>
+		<div class="line">Beard height &lt; <span class="counter" id="beard_2">0</span> &gt;</div>
+		<div class="line">Beard color 1 &lt; <span class="counter" id="beard_3">0</span> &gt;</div>
+		<div class="line">Beard color 2 &lt; <span class="counter" id="beard_4">0</span> &gt;</div>
+		<div class="line selected">Hair 1 &lt; <span class="counter" id="hair_1">0</span> &gt;</div>
+		<div class="line">Hair 2  &lt; <span class="counter" id="hair_2">0</span> &gt;</div>
+		<div class="line">Hair color 1 &lt; <span class="counter" id="hair_color_1">0</span> &gt;</div>
+		<div class="line">Hair color 2 &lt; <span class="counter" id="hair_color_2">0</span> &gt;</div>
+		<div class="line">T-Shirt &lt; <span class="counter" id="tshirt_1">0</span> &gt;</div>
+		<div class="line">T-Shirt color &lt; <span class="counter" id="tshirt_2" data-textureof="tshirt_1">0</span> &gt;</div>
+		<div class="line">Jacket &lt; <span class="counter" id="torso_1">0</span> &gt;</div>
+		<div class="line">Jacket color &lt; <span class="counter" id="torso_2" data-textureof="torso_1">0</span> &gt;</div>
+		<div class="line">Layer 1 &lt; <span class="counter" id="decals_1">0</span> &gt;</div>
+		<div class="line">Layer 2 &lt; <span class="counter" id="decals_2" data-textureof="decals_1">0</span> &gt;</div>
+		<div class="line new">Arms &lt; <span class="counter" id="arms">0</span> &gt;</div>
+		<div class="line">Trouser &lt; <span class="counter" id="pants_1">0</span> &gt;</div>
+		<div class="line">Trousers color &lt; <span class="counter" id="pants_2" data-textureof="pants_1">0</span> &gt;</div>
+		<div class="line">Shoes &lt; <span class="counter" id="shoes">0</span> &gt;</div>
+        <div class="line">Shoes color &lt; <span class="counter" id="shoes_2"  data-textureof="shoes">0</span> &gt;</div>
+		<div class="line">Hat &lt; <span class="counter" id="helmet_1">0</span> &gt;</div>
+		<div class="line">Hat color &lt; <span class="counter" id="helmet_2" data-textureof="helmet_1">0</span> &gt;</div>
+		<div class="line">Glasses &lt; <span class="counter" id="glasses_1">0</span> &gt;</div>
+		<div class="line">Glasses color &lt; <span class="counter" id="glasses_2"  data-textureof="glasses_1">0</span> &gt;</div>
+        <div class="controls"><span> Press [ENTER] to end (free the first time) &crarr;</span></div>
+	</div>
+
+	<script>
+		function countNumber(New){
+			if (New == true){
+				let elemCount = $('#menu .line').length;
+				console.log(elemCount)
+			}
+			else {
+				let elemCount = $('#menu .line:not(.new)').length;
+			}
+		}
+
+		window.onload = function(e){
+			
+			let current   = 0;
+			let elemCount = $('#menu .line').length;
+
+			// NUI Callback
+			window.addEventListener('message', function(event){
+
+				let data = event.data;
+
+				if (data.new != null) { 
+					countNumber(data.new)
+				}
+			
+				if(data.maxVals)
+					for(let k in data.maxVals)
+						$('#' + k).data('max', data.maxVals[k])
+
+				if(data.setDisplay === true){
+
+					for(let k in data.vals)
+						$('#' + k).text(data.vals[k])
+
+					$('#menu').show();
+
+					if(data.new == false){
+						$( ".new" ).each(function() {
+							$(this).remove();
+							let newPlayer = false;
+						});
+					}
+					else{
+						let newPlayer = true;
+					}
+				}
+
+				if(data.setDisplay === false)
+					$('#menu').hide();
+
+				if(data.move){
+
+					let elem = $($('#menu .line .counter')[current]);
+
+					if(data.move == 'LEFT'){
+
+						let val = parseInt(elem.text());
+
+						if(val > 0)
+							elem.text(val - 1)
+
+						$('[data-textureof=' + elem.attr('id') + ']').text(0);
+					}
+
+					if(data.move == 'RIGHT'){
+
+						let val    = parseInt(elem.text());
+						let maxVal = parseInt(elem.data('max'));
+						
+						if(val < maxVal)
+							elem.text(val + 1)
+
+						$('[data-textureof=' + elem.attr('id') + ']').text(0);
+					}
+
+					if(data.move == 'UP' && current > 0)
+						current--;
+
+					if(data.move == 'DOWN' && current < elemCount - 1)
+						current++;
+
+					elem = $($('#menu .line .counter')[current]);
+					$('#menu .line').removeClass('selected');
+					$($('#menu .line')[current]).addClass('selected');
+
+					$.post('http://iSkin/test', JSON.stringify({
+						target: elem.attr('id'),
+						value : parseInt(elem.text())
+					}));
+
+				}
+
+			});
+
+		}
+
+	</script>
+
+</body>

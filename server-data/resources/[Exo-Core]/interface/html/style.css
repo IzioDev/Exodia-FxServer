@@ -1,0 +1,94 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+h3, h2 {
+  color: #3498db;
+  font-family: sans-serif;
+  font-weight: normal;
+}
+.GUI-dark {
+  padding-top: 10px;
+  display: block;
+  height: 100%;
+  width: 100%;
+  background-color: transparent;
+}
+
+.slotind {
+  margin-bottom: 15px;
+  border-radius: 2px;
+  width: 100%;
+  background: rgb(41, 128, 185);
+  color: rgba(0,0,0,0.6);
+}
+.charactere {
+  padding: 7 14;
+  background: rgba(0,0,0,0.6);
+  width: 600px;
+  display: block;
+  margin: 0 auto;
+  border-radius: 4px;
+  margin-bottom: 7px;
+}
+.rowinfo {
+    display: block;
+    padding-bottom: 30px;
+    padding-left: 7px;
+    padding-right: 7px;
+}
+.rowinfo-register {
+  height: 20px;
+  display: block;
+  padding-bottom: 30px;
+  padding-left: 7px;
+  padding-right: 7px;
+  width: 300px;
+}
+.rowinfo-register a{
+  line-height: 35px;
+}
+.rowinfo-register input{
+  background: black;
+  border: 1px solid #2c3e50;
+  border-radius: 4px;
+  padding-left: 5px;
+  line-height: 25px;
+  color: rgb(236, 240, 241);
+}
+.charactere a{
+  font-family: monospace;
+  line-height: 25px;
+  color: rgb(236, 240, 241);
+}
+.charactere button  {
+  font-family: sans-serif;
+  line-height: 25px;
+  border-radius: 3px;
+  color: rgba(0,0,0,0.6);
+  font-size: 16px;
+  border: none;
+  margin-bottom: 15px;
+}
+.charactere button:hover{
+  color: #fff;
+  transition: all 0.5s;
+}
+.charactere .gobtn {
+  background-color: rgb(41, 128, 185);
+  margin-top: 15px;
+  width: 80%;
+  margin-right: 5px;
+}
+.charactere .btn-fully {
+  background-color: rgba(41, 128, 185, 0.9);
+  display: block;
+  margin: 0 auto;
+  width: 240px;
+  margin-bottom: 15px;
+}
+.charactere .delbtn {
+  width: 10%;
+  line-height: 25px;
+  background-color: rgb(192, 57, 43);
+}
