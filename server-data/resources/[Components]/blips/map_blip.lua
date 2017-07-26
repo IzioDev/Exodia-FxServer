@@ -49,7 +49,6 @@ local principal = {
     {parent=blipConfig.store, id=52, x=28.463, y=-1353.033, z=29.340},
     {parent=blipConfig.store, id=52, x=-54.937, y=-1759.108, z=29.005},
     {parent=blipConfig.store, id=52, x=375.858, y=320.097, z=103.433},
-    {parent=blipConfig.store, id=52, x=1143.813, y=-980.601, z=46.205},
     {parent=blipConfig.store, id=52, x=1695.284, y=4932.052, z=42.078},
     {parent=blipConfig.store, id=52, x=2686.051, y=3281.089, z=55.241},
     {parent=blipConfig.store, id=52, x=1967.648, y=3735.871, z=32.221},

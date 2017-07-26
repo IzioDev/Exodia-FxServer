@@ -200,6 +200,7 @@ end)
 local heading = 0
 
 Citizen.CreateThread(function()
+	local multiplicator = 0.25
 	while true do
 		Citizen.Wait(0)
 		if(noclip)then
@@ -220,17 +221,17 @@ Citizen.CreateThread(function()
 				SetEntityHeading(GetPlayerPed(-1),  heading)
 			end
 			if(IsControlPressed(1,  8))then
-				noclip_pos = GetOffsetFromEntityInWorldCoords(GetPlayerPed(-1), 0.0, 1.0, 0.0)
+				noclip_pos = GetOffsetFromEntityInWorldCoords(GetPlayerPed(-1), 0.0, 1.0 * multiplicator, 0.0)
 			end
 			if(IsControlPressed(1,  32))then
-				noclip_pos = GetOffsetFromEntityInWorldCoords(GetPlayerPed(-1), 0.0, -1.0, 0.0)
+				noclip_pos = GetOffsetFromEntityInWorldCoords(GetPlayerPed(-1), 0.0, -1.0 * multiplicator, 0.0)
 			end
 
 			if(IsControlPressed(1,  27))then
-				noclip_pos = GetOffsetFromEntityInWorldCoords(GetPlayerPed(-1), 0.0, 0.0, 1.0)
+				noclip_pos = GetOffsetFromEntityInWorldCoords(GetPlayerPed(-1), 0.0, 0.0, 1.0 * multiplicator)
 			end
 			if(IsControlPressed(1,  173))then
-				noclip_pos = GetOffsetFromEntityInWorldCoords(GetPlayerPed(-1), 0.0, 0.0, -1.0)
+				noclip_pos = GetOffsetFromEntityInWorldCoords(GetPlayerPed(-1), 0.0, 0.0, -1.0 * multiplicator)
 			end
 		end
 	end

@@ -173,6 +173,19 @@ function CreateUser(source, Issential)
 			end
 		end
 	end
+	
+	rTable.removeQuantityArray = function(item, quantity)
+		for i=1, #item do
+			for j=1, #self.inventory do
+				if self.inventory[j].id == tonumber(item[i]) then
+					self.inventory[j].quantity = self.inventory[j].quantity - tonumber(quantity[i])
+					if self.inventory[j].quantity < 1 then
+						self.inventory[j].quantity = 0
+					end
+				end
+			end
+		end
+	end
 
 	rTable.removeQuantity = function(itemid, quantity)
 		local thisItemId = tonumber(itemid)
