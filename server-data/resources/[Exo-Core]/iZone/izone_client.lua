@@ -153,6 +153,23 @@ AddEventHandler("izone:getResultFromPlayerInAnyJobZone", function(job, cb)
 	cb(nil)
 end)
 
+AddEventHandler("izone:isPlayerInIllZone", function(cb)
+	local plyCoords = GetEntityCoords(GetPlayerPed(-1), true)
+	local x1, y1, z1 = table.unpack(plyCoords) -- on prend les coords du joueur
+	for i = 1, #allZoneByCat["illegal"] do
+		if GetDistanceBetweenCoords(x1, y1, z1, tonumber(allZoneByCat["illegal"][i].gravityCenter.x), tonumber(allZoneByCat["illegal"][i].gravityCenter.y), 1.01, false) < tonumber(allZoneByCat["illegal"][i].longestDistance) then
+			-- alors il y est peut etre : 
+			local n = windPnPoly(allZoneByCat["illegal"][i].coords, plyCoords)
+			if n ~= 0 then -- alors il y est
+				allZoneByCat["illegal"][i].instructions.nom = allZoneByCat["illegal"][i].nom
+				cb(allZoneByCat["illegal"][i].instructions) -- on retourne le résultat !
+				return
+			end
+		end
+	end
+	cb(nil)
+end)
+
 AddEventHandler("izone:isPlayerInZoneReturnInstructions", function(zoneName, cb)
 	found = FindZone(zoneName)
 	if not found then
@@ -163,7 +180,7 @@ AddEventHandler("izone:isPlayerInZoneReturnInstructions", function(zoneName, cb)
 		if GetDistanceBetweenCoords(x1, y1, z1, tonumber(allZone[found].gravityCenter.x), tonumber(allZone[found].gravityCenter.y), 1.01, false) < tonumber(allZone[found].longestDistance) then
 			local n = windPnPoly(allZone[found].coords, plyCoords)
 			if n ~= 0 then
-				if allZone[found].instructions then
+				if allZone[found].instructions then--
 					cb(allZone[found].instructions)
 				end
 			else

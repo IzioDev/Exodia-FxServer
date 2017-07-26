@@ -7,6 +7,7 @@ minTimePay = timePay/2
 enablePay = false
 addjobautomatic = false
 debugg = true
+local usableTreatItem = {48}-- TO CHANGE
 
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -24,15 +25,14 @@ AddEventHandler("iJob:startLoading", function()
 	if addjobautomatic == true then
 		
 		tableTest = {
-			rank = {{name = "Apprenti", salary = 300}, {name = "testName2", salary = 100} },
+			rank = { {name = "Capitaine", salary = 500}, {name="Cadet", salary = 100} },
 			blacklist = {{p = "steamTest", dhm = "14 6 5"} },
 			lost = { {p = "steamTest2", a = 10, re = "essence", dmh = "14 6 5"}, {p = "steamTest3", a = 10, re = "essence", dmh = "14 6 5"} },
 			benefit = { {p = "steamTest2", a = 10, re = "venteTest", dmh = "14 6 5"}, {p = "steamTest3", a = 10, re = "venteTest", dmh = "14 6 5"} },
 			capital = 100000,
-			name = "depanneur",
+			name = "LSSD",
 			pay = 0,
-			employe = { {pl = "employe", rank = "defaultRank", fullname = "fullName"} },
-			id = 2
+			employe = { {pl = "employe", rank = "defaultRank", fullname = "fullName"} }
 		}
 
 		local encodedRank = json.encode(tableTest.rank)
@@ -93,9 +93,7 @@ AddEventHandler("iJob:startLoading", function()
 			end
 			if v == 0 then -- to prevent the job without zone assigned (which is not supposed to happend)
 				LoadJob(results[i], nil)
-				print("v = 0")
 			else
-				print(tostring(allZoneJob[1].nom))
 				LoadJob(results[i], allZoneJob)
 				allZoneJob = {} 
 			end
@@ -229,6 +227,69 @@ function AddHarvestCapacity()
 end
 AddHarvestCapacity()
 
+RegisterServerEvent("iJob:harvestillegal")
+AddEventHandler("iJob:harvestillegal", function(result)
+	local source = source -- Thanks FXS
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+
+		local item = {}
+		local quantity = {}
+		local lucky = false
+		local randomHarvest = math.random(1, 100)
+
+		if randomHarvest < 20 then -- 20% de change d'avoir deux item normaux
+			item = result.receive.normal
+			lucky = true
+		else -- et 80% de chance d'avoir jsute un item normal
+			item = result.receive.normal
+		end
+	
+		for i=1, #item do
+			if lucky then
+				quantity[i] = 2
+			else
+				quantity[i] = 1
+			end
+		end
+
+		local resultFromHarvest = allJob["illegal"].harvest(result.displayMessageInZone, quantity, false)
+		if resultFromHarvest then
+			ProcessHarvest(source, result, item, quantity)
+		else
+			TriggerClientEvent("ijob:stopHarvest", source)
+			user.notify("Tu ne peux pas récolter, la zone de récolte est vide. Attends un peu", "error", "centerLeft", true, 5000)
+			TriggerClientEvent("anim:Play", source, "stopAll")
+		end
+	end)
+end)
+
+RegisterServerEvent("iJob:otherIllegal")
+AddEventHandler("iJob:otherIllegal", function(result)
+	local source = source -- Thanks FXS
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		local item = {}
+		local quantity = {}
+		local lucky = false
+		local randomReceive = math.random(1, 100)
+
+		if randomReceive < 20 then -- 20% de chance d'avoir un item rare
+			item = result.receive.normal
+			lucky = true
+		elseif randomReceive < 100 then -- 80% de change d'avoir deux item normaux
+			item = result.receive.normal
+		end
+	
+		for i=1, #item do
+			if lucky then
+				quantity[i] = 2
+			else
+				quantity[i] = 1
+			end
+		end
+		ProcessOther(source, result, item, quantity)
+	end)
+end)
+
 RegisterServerEvent("iJob:checkHarvest")
 AddEventHandler("iJob:checkHarvest", function(result)
 	local source = source -- Thanks FXS
@@ -276,6 +337,36 @@ AddEventHandler("iJob:checkHarvest", function(result)
 
 end)
 
+RegisterServerEvent("ijob:process")
+AddEventHandler("ijob:process", function(result)
+	local source = source -- Thanks FXS
+	local job
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		local item = {}
+		local quantity = {}
+		local lucky = false
+		local randomReceive = math.random(1, 100)
+
+		if randomReceive < 2 then -- 2% de chance d'avoir un item rare
+			item = result.receive.rare
+		elseif randomReceive < 17 then -- 15% de change d'avoir deux item normaux
+			item = result.receive.normal
+			lucky = true
+		else -- et 83% de chance d'avoir jsute un item normal
+			item = result.receive.normal
+		end
+	
+		for i=1, #item do
+			if lucky then
+				quantity[i] = 2
+			else
+				quantity[i] = 1
+			end
+		end
+		ProcessOther(source, result, item, quantity)
+	end)
+end)
+
 function IsHarvestJob(job)
 	if string.lower(job) == string.lower("Fermier") or string.lower(job) == string.lower("Bucheron") or string.lower(job) == string.lower("Pompiste") then
 		return true
@@ -284,7 +375,7 @@ function IsHarvestJob(job)
 	end
 end
 
-function ProcessHarvest(source, result, item, quantity)
+function ProcessHarvest(source, result, item, quantity) -- create = true / false
 	TriggerEvent("es:getPlayerFromId", source, function(user)
 
 		local bool = user.isAbleToReceiveItems(item , quantity) -- deux array
@@ -294,6 +385,7 @@ function ProcessHarvest(source, result, item, quantity)
 			local test = GetMessage(item, quantity, itemInfos)
 			user.notify("Tu viens de récolter" .. test .. ".", "success", "centerLeft", true, 5000)
 			allJob[user.get('job')].harvest(result.displayMessageInZone, {100}, true)
+			TriggerClientEvent("inventory:change", source, json.decode(user.sendDatas()))
 		else
 			user.notify("Tu n'as pas assez de place dans ton inventaire", "error", "centerLeft", true, 5000)
 			TriggerClientEvent("anim:Play", source, "stopAll")
@@ -302,9 +394,32 @@ function ProcessHarvest(source, result, item, quantity)
 	end)
 end
 
+function ProcessOther(source, result, item, quantity)
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		local quantityToRemove = {}
+			user.addQuantityArray(item, quantity)
+			for i = 1, #result.need do
+				table.insert(quantityToRemove, 1)
+			end
+			for i=1, #result.need do
+				for j=1, #usableTreatItem do
+					if result.need[i] == usableTreatItem[j] then
+						table.remove(result.need, i)
+					end
+				end
+			end
+			user.removeQuantityArray(result.need, quantityToRemove)
+			local itemInfos = user.get('item')
+			local test = GetMessage(item, quantity, itemInfos)
+			user.notify("Tu viens de recevoir" .. test .. ".", "success", "centerLeft", true, 5000)
+			TriggerClientEvent("inventory:change", source, json.decode(user.sendDatas()))
+	end)
+end
+
 function GetMessage(item, quantity, itemInfos)
 	local message = ""
 	for i=1, #item do
+		-- name est nill visiblement
 		message = message .. " " .. quantity[i] .. " " .. itemInfos[item[i]].name
 		if i ~= 1 and i ~= #item then
 			message = message .. " et "
@@ -330,6 +445,7 @@ AddEventHandler('ijob:changeJobPoleEmplois', function(job)
 				user.notify("Tu as déjà le métier de <span style='color:yellow' > "..job.. "</span>, tu ne peux pas faire cette action.", success, "topCenter", true, 5000)
 			else
 				user.notify("Bienvenue chez les <span style='color:yellow' > "..job.. "</span> contact ton patron, il te donnera les infos dont tu as besoin.", success, "topCenter", true, 5000)
+				TriggerClientEvent("ijob:updateJob", user.get('source'), user.get('job'), user.get('rank'))
 				TriggerClientEvent("ijob:addBlip", user.get('source'), allJob[user.get('job')].getBlip(), true)
 			end
 		end

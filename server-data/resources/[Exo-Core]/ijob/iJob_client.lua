@@ -1,6 +1,8 @@
 allJob = {}
-local launched = false
-local proked
+local launchedlegit = false
+local launchedillegal = false 
+local prokedillegal
+local prokedlegit
 local userJob = nil
 local userRank = nil
 local harvestJob = {"Fermier", "Bucheron", "Pompiste"}
@@ -32,7 +34,7 @@ AddEventHandler("ijob:updateJob", function(jobName, rank)
 	print(tostring(IsHarvestJob(userJob)))
 	if IsHarvestJob(userJob) then
 		print("it's ok ok")
-		RunHarvestThread()
+		RunHarvestThread(true)
 	end
 end)
 
@@ -91,7 +93,7 @@ Citizen.CreateThread(function()
 	DisableControlAction(1, 38, false)
 	while true do
 		Wait(10)
-		TriggerEvent("izone:isPlayerInZone", "poleemploi", function(isInZone)
+		TriggerEvent("izone:isPlayerInZone", "poleemploi", function(isInZone) ----------------- POLE EMPLOIS
 			if isInZone ~= nil and isInZone and not(guiOpened) then
 			 	DisplayHelpText("Press ~INPUT_CONTEXT~ to choose a ~b~job~w~.")
 			end
@@ -113,8 +115,82 @@ Citizen.CreateThread(function()
 
 		end)
 
-	end
+		if launchedillegal == nil then
+			local oldTime = GetGameTimer()
+			local newTime = 4500
+			while launchedillegal == nil and (GetGameTimer() - oldTime) < newTime do
+				Wait(0)
+				displayedMessage = "."
+				for i=1, 3 do -- 3 tours boucle
+					DisplayHelpText("Veuillez attendre 5 secondes avant de relancer"..displayedMessage)
+					Wait(500)
+					displayedMessage = displayedMessage .. "."
+				end
+			end---
+			launchedillegal = false
+		end
 
+		TriggerEvent("izone:isPlayerInIllZone", function(result) --------------------- Illegal
+			if result ~= nil then -- si on est dans une zone illégale
+				DisplayHelpText("Appuyer sur ~INPUT_CONTEXT~ pour commencer "..result.displayMessageInZone)
+				if IsControlJustPressed(1, 38) then
+					if result.tool then
+						if not(IsGottingItem(result.tool)) then
+							TriggerEvent("pNotify:notifyFromServer", "Vous devez avoir un outil pour faire cette action", "error", "centerLeft", true, 5000)
+							return
+						else
+							TriggerEvent("ProcessIllHarvest", result)
+							return
+						end
+					end
+					if result.need then
+						if not(IsGottingItems(result.need)) then
+							TriggerEvent("pNotify:notifyFromServer", "Vous devez avoir un ou des matériaux pour faire cette action", "error", "centerLeft", true, 5000)
+							return
+						else
+							TriggerEvent("ProcessIllOther", result) --
+						end
+					end
+				end
+			elseif result == nil and launchedillegal then
+				prokedlegit = true
+				launchedillegal = nil
+			end
+		end)
+	end
+end)
+
+Citizen.CreateThread(function()
+	while true do
+		Wait(0)
+		TriggerEvent("izone:isPlayerInZoneReturnInstructions", "magasinoutillage", function(isInZone)
+			if isInZone and not(IsPedInAnyVehicle(GetPlayerPed(-1), false)) then
+				Menu.renderGUI()
+				if Menu.hidden then 
+					DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour regarder les objets à la vente")
+				end
+				if IsControlJustPressed(1, 38) then
+					Menu.hidden = not Menu.hidden
+					ClearMenu()
+					GetResultItemInfos(isInZone.items)
+				end
+			end
+		end)
+
+		TriggerEvent("izone:isPlayerInZoneReturnInstructions", "buraliste", function(isInZone)
+			if isInZone and not(IsPedInAnyVehicle(GetPlayerPed(-1), false)) then
+				Menu.renderGUI()
+				if Menu.hidden then 
+					DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour regarder les objets à la vente")
+				end
+				if IsControlJustPressed(1, 38) then
+					Menu.hidden = not Menu.hidden
+					ClearMenu()
+					GetResultItemInfos(isInZone.items)
+				end
+			end
+		end)
+	end
 end)
 
 RegisterNUICallback('close', function(data, cb)
@@ -133,37 +209,29 @@ RegisterNUICallback('selectedJob', function(data, cb)
   guiOpened = false
 end)
 
-
-RegisterNetEvent("iJob:notifFailed")
-AddEventHandler("iJob:notifFailed", function(message)
-	-- Todo afficher une belle notification
-end)
-
-RegisterNetEvent("iJob:notifSuccessed")
-AddEventHandler("iJob:notifSuccessed", function(message, item, amount)
-	-- Todo afficher une belle notification
-end)
-
-
 function RunHarvestThread(bool)
 	if bool then
-		RunToolShop(bool)
 		Citizen.CreateThread(function()
 			local waitingCheckProcess = nil
 			while true do
 				Wait(10)
-				if launched == nil then
+				if launchedlegit == nil then
 					local oldTime = GetGameTimer()
 					local newTime = 5000
-					while launched == nil and (GetGameTimer() - oldTime) < newTime do
+					while launchedlegit == nil and (GetGameTimer() - oldTime) < newTime do
 						Wait(0)
-						DisplayHelpText("Veuillez attendre 5 secondes avant de relancer.")
-					end
-					launched = false
+						displayedMessage = "."
+						for i=1, 3 do
+							DisplayHelpText("Veuillez attendre 5 secondes avant de relancer"..displayedMessage)
+							Wait(500)
+							displayedMessage = displayedMessage .. "."
+						end
+					end---
+					launchedlegit = false
 				end
 				TriggerEvent("izone:getResultFromPlayerInAnyJobZone", userJob, function(result)
 					-- result.nom = zoneName
-					if result ~= nil and not(launched) then -- on est soit dans une zone de récolte/traitement/vente de notre job.
+					if result ~= nil and not(launchedlegit) then -- on est soit dans une zone de récolte/traitement/vente de notre job.
 						DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour commencer ".. result.displayMessageInZone)
 						if IsControlJustPressed(1, 38) then
 							if (result.tool) then
@@ -174,43 +242,28 @@ function RunHarvestThread(bool)
 									TriggerEvent("pNotify:notifyFromServer", "Vous devez avoir votre outil pour faire cette action", "error", "centerLeft", true, 5000)
 								end
 							else
-								-- CheckProcessOperation(result)
+								trust = 0
+								for i = 1, #result.need do
+									if IsGottingItem(result.need[i]) then
+										print("ok")
+										trust = trust + 1
+									end
+								end
+								if trust == #result.need then
+									TriggerEvent("CheckProcessOperation", result)
+								else
+									TriggerEvent("pNotify:notifyFromServer", "Vous devez avoir des matériaux pour cette cette action", "error", "centerLeft", true, 5000)
+								end
 							end
 						end
-					elseif result == nil and launched then
-						launched = nil
-					end
-				end)
-				-- Ajouter Traitement et Vente en un seul TriggerResult ;)
-			end
-		else
-			RunToolShop(bool)
-			return
-		end
-	end)
-end
-
-function RunToolShop(bool)
-	if bool then
-		Citizen.CreateThread(function()
-			while true do
-				Wait(0)
-				TriggerEvent("izone:isPlayerInZoneReturnInstructions", "magasinoutillage", function(isInZone)
-					if isInZone and not(IsPedInAnyVehicle(GetPlayerPed(-1), false)) then
-						Menu.renderGUI()
-						if Menu.hidden then 
-							DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour regarder les objets à la vente")
-						end
-						if IsControlJustPressed(1, 38) then
-							Menu.hidden = not Menu.hidden
-							ClearMenu()
-							GetResultItemInfos(isInZone.items)
-						end
+					elseif result == nil and launchedlegit then
+						launchedlegit = nil
 					end
 				end)
 			end
 		end)
 	else
+		RunToolShop(bool)
 		return
 	end
 end
@@ -219,36 +272,125 @@ function CheckHarvestProcessOperation(result) -- for harvest
 	TriggerServerEvent("iJob:checkHarvest" , result)
 end
 
-function MenuThread()
-
-end
-
-function CheckProcessOperation(result) -- for treatment / sell
-
-end
-
-function ProcessOperation(result)
-
-end
-
-AddEventHandler("ijob:checkClientHarvest", function(result) -- on a check s'il avait le métier server side
-	launched = true
-	proked = false
+AddEventHandler("CheckProcessOperation", function(result)
+	launchedlegit = true
+	prokedlegit = false
 	local inWaiting = false
-	while launched do
+	while launchedlegit do
 		Wait(0)
 		DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour stopper ")
 		if IsControlJustPressed(1, 38) then
-			launched = nil
+			launchedlegit = nil
 			break
 			CancelEvent()
 			return
 		end
-		if not(inWaiting) and launched then
+		if not(inWaiting) and launchedlegit then 
 			inWaiting = true
 			TriggerEvent("anim:Play", "player:pickup_01")
 			SetTimeout(result.time ,function()
-				if not(proked) then
+				if not(prokedlegit) then
+					trust = 0
+					for i = 1, #result.need do
+						if IsGottingItem(result.need[i]) then
+							trust = trust + 1
+						end
+					end
+					if trust == #result.need then
+						TriggerServerEvent("ijob:process", result)
+					else
+						launchedlegit = nil
+						prokedlegit = true
+					end
+				end
+				inWaiting = false
+			end)
+		end
+	end
+end)
+
+AddEventHandler("ProcessIllHarvest" , function(result)
+	launchedillegal = true
+	prokedillegal = false
+	local inWaiting = false
+	while launchedillegal do
+		Wait(0)
+		DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour stopper ")
+		if IsControlJustPressed(1, 38) then
+			launchedillegal = nil
+			break
+			CancelEvent()
+			return
+		end
+		if not(inWaiting) and launchedillegal then
+			inWaiting = true
+			TriggerEvent("anim:Play", "player:pickup_01")
+			SetTimeout(result.time ,function()
+				if not(prokedillegal) then
+					TriggerServerEvent("iJob:harvestillegal", result)
+				end
+				inWaiting = false
+			end)
+		end
+	end
+end)
+
+AddEventHandler("ProcessIllOther", function(result)
+	launchedillegal = true
+	prokedillegal = false
+	local inWaiting = false
+	while launchedillegal do
+		Wait(0)
+		DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour stopper ")
+		if IsControlJustPressed(1, 38) then
+			launchedillegal = nil
+			break
+			CancelEvent()
+			return
+		end
+		if not(inWaiting) and launchedillegal then
+			if IsGottingItems(result.need) then
+				inWaiting = true
+				TriggerEvent("anim:Play", "player:pickup_01")
+				SetTimeout(result.time ,function()
+					if IsGottingItems(result.need) then
+						if not(prokedillegal) then
+							TriggerServerEvent("iJob:otherIllegal", result)
+						end
+						inWaiting = false
+					else
+						launchedillegal = nil
+						TriggerEvent("pNotify:notifyFromServer", "Vous devez avoir un ou des matériaux pour faire cette action", "error", "centerLeft", true, 5000)
+						return
+					end
+				end)
+			else
+				launchedillegal = nil
+				TriggerEvent("pNotify:notifyFromServer", "Vous devez avoir un ou des matériaux pour faire cette action", "error", "centerLeft", true, 5000)
+				return
+			end
+		end
+	end
+end)
+
+AddEventHandler("ijob:checkClientHarvest", function(result) -- on a check s'il avait le métier server side
+	launchedlegit = true
+	prokedlegit = false
+	local inWaiting = false
+	while launchedlegit do
+		Wait(0)
+		DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour stopper ")
+		if IsControlJustPressed(1, 38) then
+			launchedlegit = nil
+			break
+			CancelEvent()
+			return
+		end
+		if not(inWaiting) and launchedlegit then
+			inWaiting = true
+			TriggerEvent("anim:Play", "player:pickup_01")
+			SetTimeout(result.time ,function()
+				if not(prokedlegit) then
 					TriggerServerEvent("iJob:checkHarvest", result)
 				end
 				inWaiting = false
@@ -259,8 +401,8 @@ end)
 
 RegisterNetEvent("ijob:stopHarvest")
 AddEventHandler("ijob:stopHarvest", function()
-	launched = nil
-	proked = true
+	launchedlegit = nil
+	prokedlegit = true
 end)
 
 function IsRecoltZone(zoneName)
@@ -277,6 +419,22 @@ function IsGottingItem(item)
 	TriggerEvent("inv:gotThisItemById", tonumber(item), function(bool)
     	myBool = bool
 	end)
+	if type(myBool) == "string" then
+		print("ERROR STEAM ID INVENTORY")
+		return
+	end
+	return myBool
+end
+
+function IsGottingItems(items)
+	local myBool
+	TriggerEvent("inv:gotThisItemsById", items, function(bool)
+    	myBool = bool
+	end)
+	if type(myBool) == "string" then
+		print("ERROR STEAM ID INVENTORY")
+		return
+	end
 	return myBool
 end
 
