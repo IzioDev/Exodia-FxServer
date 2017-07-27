@@ -6,13 +6,13 @@ maxCapacity = 200
 -- Meta table pour job, mets ta table, ta maman sera contente ;)
 
 
-function CreateJob(capital, benefit, lost, name, pay, rank, employe, zone, blacklist)
+function CreateJob(capital, benefit, lost, name, default, rank, employe, zone, blacklist)
 	local self = {}
 	self.capital = tonumber(capital) -- int (8)
 	self.benefit = benefit           -- {p = pl, a = m, re = r, dm = tostring(temp.day) .. " " .. tostring(temp.month)}
 	self.lost = lost                 -- {p = pl, a = m, re = r, dmh = tostring(temp.day) .. " " .. tostring(temp.month) .. " " .. tostring(temp.hour)}
 	self.name = name                 -- string testname
-	self.pay = pay                   -- int (0)
+	self.default = default                   -- int (0)
 	self.rank = rank                 -- {name = string, salary = sting/int}
 	self.employe = employe           -- { {pl = employe, rank = defaultRank},  {pl = employe2, rank = rankOsef} }
 	self.zone = zone                 -- zone contain { zone1 = { }, zone2 = { }, zone3 = { } } OR CAN BE NIL
@@ -39,44 +39,54 @@ function CreateJob(capital, benefit, lost, name, pay, rank, employe, zone, black
 	end
 	
 	rTable.addEmployeWithRefresh = function(user) -- On ajoute l'employe SteamID64 au Job
-		for i=1, #self.employe do
+		if user.get('job') == "chomeur" then
+			for i=1, #self.employe do
+				if self.employe[i].pl == user.get('identifier') then
+					return "already"
+				end
+			end
+			table.insert(self.employe, {pl = user.get('identifier'), fullname = user.get('dislayName'), rank = defaultRank})
+			user.set('job', self.name)
+			user.set('rank', self.default.rank)
+	
+			TriggerClientEvent("ijob:updateJob", user.get('source'), self.name, user.get('rank'))
+		
+			self.haveChanged = true
+			return "Employe ajoute"
+		else
+			return "hireFirst"
+		end
+	end
+	
+	-- rTable.addEmploye = function(employe, nameFull) -- A utiliser si le joueur est offline (pour trouver son fullname, pas le choix, requete SQL)
+	-- 	table.insert(self.employe, {pl = employe, fullname =  nameFull, rank = defaultRank})
+	
+	-- 	TriggerEvent("es:getPlayerFromIdentifier", employe, function(user)
+	-- 		user:setJob(self.name)
+	-- 		user:setRank(defaultRank)
+	-- 	end)
+	
+	-- 	self.haveChanged = true
+	-- 	return "Employe ajoute"
+	-- end
+	rTable.isEmploye = function(user)
+		for i = 1, #self.employe do
 			if self.employe[i].pl == user.get('identifier') then
-				return "already"
+				return self.employe[i].rank
 			end
 		end
-		table.insert(self.employe, {pl = user.get('identifier'), fullname = user.get('dislayName'), rank = defaultRank})
-		user.set('job', self.name)
-		user.set('rank', defaultRank)
-
-		TriggerClientEvent("ijob:updateJob", user.get('source'), self.name, defaultRank, user.get('dislayName'))
-	
-		self.haveChanged = true
-		return "Employe ajoute"
+		return false
 	end
 	
-	rTable.addEmploye = function(employe, nameFull) -- A utiliser si le joueur est offline (pour trouver son fullname, pas le choix, requete SQL)
-		table.insert(self.employe, {pl = employe, fullname =  nameFull, rank = defaultRank})
-	
-		TriggerEvent("es:getPlayerFromIdentifier", employe, function(user)
-			user:setJob(self.name)
-			user:setRank(defaultRank)
-		end)
-	
-		self.haveChanged = true
-		return "Employe ajoute"
-	end
-	
-	rTable.removeEmploye = function(employe) -- On retire l'employe SteamID64 du Job
+	rTable.removeEmploye = function(employe) -- l'objet utilisateur
 		for i=1, #self.employe do
-			if self.employe[i].pl == employe then
+			if self.employe[i].pl == employe.get('identifier') then
 				table.remove(self.employe, i)
-	
-				TriggerEvent("es:getPlayerFromIdentifier", employe, function(user)
-					user:setJob("chomeur")
-					user:setRank(defaultRank)
-				end)
-	
+				employe.set('job',"chomeur")
+				employe.set('rank', " ")
+				addBlackList(self, employe.get('identifier'))
 				self.haveChanged = true
+				TriggerClientEvent("ijob:updateJob", employe.get('source'), employe.get('job'), employe.get('rank'))
 				-- TriggerEvent("ijob:fireEmploye", employe, self.name) A voir si on le retire direct BDD ou attendre un save (60 sec)
 				return "Employe vire"
 			end
@@ -136,8 +146,8 @@ function CreateJob(capital, benefit, lost, name, pay, rank, employe, zone, black
 						self.employe[j] = {pl = player, rank = rankName}
 	
 						TriggerEvent("es:getPlayerFromIdentifier", employe, function(user)
-							user:setRank(rankName)
-							TriggerClientEvent("ijob:updateJob", source, self.name, rankName, user.fullname)
+							user.set("rank", rankName)
+							TriggerClientEvent("ijob:updateJob", source, self.name, rankName)
 						end)
 	
 						self.haveChanged = true
@@ -225,7 +235,7 @@ function CreateJob(capital, benefit, lost, name, pay, rank, employe, zone, black
 		return "lost ajoute"
 	end
 	
-	rTable.addBlacklist = function(pla) -- On ajoute un joueur à la blacklist
+	rTable.addBlacklist = function(pl) -- On ajoute un joueur à la blacklist
 		local temp = os.date("*t", os.time())
 		table.insert(self.blacklist, {p = pl, dhm = tostring(temp.day) .. " " .. tostring(temp.hour) .. " " .. tostring(temp.min)})
 		self.haveChanged = true
@@ -383,4 +393,15 @@ function CreateJob(capital, benefit, lost, name, pay, rank, employe, zone, black
 	end
 
 	return rTable
+end
+
+function addBlackList(job, steam64)
+	local temp = os.date("*t", os.time())
+	table.insert(job.blacklist, {p = pl, dhm = tostring(temp.day) .. " " .. tostring(temp.hour) .. " " .. tostring(temp.min)})
+	print("blacklisted player")
+	job.haveChanged = true
+end
+
+function SetChange(job)
+	job.haveChanged = true
 end

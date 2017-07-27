@@ -426,7 +426,6 @@ AddEventHandler('skinchanger:modelLoaded', function()
 		SetPedPropIndex(playerPed, 1, Character['glasses_1'], Character['glasses_2'], 2)          -- Glasses
 
 		LoadClothes = nil
-
 	end
 
 end)
