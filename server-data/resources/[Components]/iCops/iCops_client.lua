@@ -7,11 +7,11 @@ local userRank = nil
 local userJob = nil
 local isInService = true
 local isDragged = false
-local isDragging = false
 local isHandCuffed = false
 local currentMenu = nil
 local active = false
 local gaveWeapons = false
+local officerDrag = nil
 local subButtonList = { 
 	["annimations"] = {
 		title = "Annimations",
@@ -31,12 +31,12 @@ local subButtonList = {
 			{name = "Carte d'identité", targetFunction = "ShowId", targetArrayParam = {} },
 			{name = "Fouiller", targetFunction = "Search", targetArrayParam = {} },
 			{name = "(Dé)Menotter", targetFunction = "Cuff", targetArrayParam = {} },
-			{name = "Confisquer les armes", targetFunction = "TakeWeapon", targetArrayParam = {} },
+			{name = "Confisquer les armes [WIP]", targetFunction = "TakeWeapon", targetArrayParam = {} },
 			{name = "Mettre dans le véhicule", targetFunction = "PutIntoVeh", targetArrayParam = {} },
 			{name = "Faire sortir du véhicule", targetFunction = "UnputFromVeh", targetArrayParam = {} },
 			{name = "Escorter le joueur", targetFunction = "EscortPlayer", targetArrayParam = {} },
 			{name = "Amendes", targetFunction = "Fines", targetArrayParam = {} },
-			{name = "Mettre en prison", targetFunction = "Jail", targetArrayParam = {} }
+			{name = "Mettre en prison [WIP]", targetFunction = "Jail", targetArrayParam = {} }
 		}
 	},
 	["vehicle"] = {
@@ -225,13 +225,13 @@ Citizen.CreateThread(function() -- Thread Civil
 			TaskPlayAnim(myPed, 'mp_arresting', animation, 8.0, -8, -1, flags, 0, 0, 0, 0)
 		end
 	end
-	-- if drag then
-	-- 	local ped = GetPlayerPed(GetPlayerFromServerId(officerDrag))
-	-- 	local myped = GetPlayerPed(-1)
-	-- 	AttachEntityToEntity(myped, ped, 4103, 11816, 0.48, 0.00, 0.0, 0.0, 0.0, 0.0, false, false, false, false, 2, true)
-	-- else
-	-- 	DetachEntity(GetPlayerPed(-1), true, false)		
-	-- end
+	if (isDragged) then
+		local ped = GetPlayerPed(GetPlayerFromServerId(officerDrag))
+		local myPed = GetPlayerPed(-1)
+		AttachEntityToEntity(myPed, ped, 4103, 11816, 0.48, 0.00, 0.0, 0.0, 0.0, 0.0, false, false, false, false, 2, true)
+	else
+		DetachEntity(GetPlayerPed(-1), true, false)		
+	end
 end)
 
 function DisplayHelpText(str)
@@ -315,24 +315,63 @@ function Cuff()
 	end
 end
 
-function TakeWeapon()
+-- function TakeWeapon() -- TO SEE
 
-end
+-- end
 
 function PutIntoVeh()
-
+	local t, distance = GetClosestPlayer()
+	if(distance ~= -1 and distance < 3) then
+		TriggerServerEvent("police:setPlayerIntoVeh", GetPlayerServerId(t))
+	else
+		TriggerEvent("pNotify:notifyFromServer", "Il n'y a personne à proximité. Tu ne peux pas faire cette action.", "error", "topCenter", true, 5000)
+	end
 end
 
 function UnputFromVeh()
-
+	local t, distance = GetClosestPlayer()
+	if(distance ~= -1 and distance < 3) then
+		TriggerServerEvent("police:unSetPlayerIntoVeh", GetPlayerServerId(t))
+	else
+		TriggerEvent("pNotify:notifyFromServer", "Il n'y a personne à proximité. Tu ne peux pas faire cette action.", "error", "topCenter", true, 5000)
+	end
 end
 
 function EscortPlayer()
-
+	local t, distance = GetClosestPlayer()
+	if(distance ~= -1 and distance < 3) then
+		TriggerServerEvent("police:dragRequest", GetPlayerServerId(t), isDragged)
+	else
+		TriggerEvent("pNotify:notifyFromServer", "Il n'y a personne à proximité. Tu ne peux pas faire cette action.", "error", "topCenter", true, 5000)
+	end
 end
 
 function Fines()
-
+	local t, distance = GetClosestPlayer()
+	if(distance ~= -1 and distance < 3) then
+		local editing = true
+		local resultat = nil
+		DisplayOnscreenKeyboard(true, "FMMC_KEY_TIP8", "", "", "amount", "", "", 120)
+		while editing do
+			Wait(0)
+			if UpdateOnscreenKeyboard() == 2 then 
+				editing = false
+			end
+			if UpdateOnscreenKeyboard() == 1 then
+				editing = false
+				resultat = GetOnscreenKeyboardResult()
+			end
+		end
+		if resultat == nil then
+			TriggerEvent("pNotify:notifyFromServer", "Tu viens d'annuler l'amande.", "error", "topCenter", true, 5000)
+		else
+			resultat = tonumber(resultat)
+			TriggerServerEvent("police:setFineToPlayer", GetPlayerServerId(t), resultat)
+		end
+		-- TriggerServerEvent("police:unSetPlayerIntoVeh", GetPlayerServerId(t))
+	else
+		TriggerEvent("pNotify:notifyFromServer", "Il n'y a personne à proximité. Tu ne peux pas faire cette action.", "error", "topCenter", true, 5000)
+	end
 end
 
 function Jail()
@@ -340,7 +379,27 @@ function Jail()
 end
 
 function ForceVeh()
+	Citizen.CreateThread(function()
+		local pos = GetEntityCoords(GetPlayerPed(-1))
+		local entityWorld = GetOffsetFromEntityInWorldCoords(GetPlayerPed(-1), 0.0, 20.0, 0.0)
 
+		local rayHandle = CastRayPointToPoint(pos.x, pos.y, pos.z, entityWorld.x, entityWorld.y, entityWorld.z, 10, GetPlayerPed(-1), 0)
+		local _, _, _, _, vehicleHandle = GetRaycastResult(rayHandle)
+		if(DoesEntityExist(vehicleHandle)) then
+			local prevObj = GetClosestObjectOfType(pos.x, pos.y, pos.z, 10.0, GetHashKey("prop_weld_torch"), false, true, true)
+			if(IsEntityAnObject(prevObj)) then
+				SetEntityAsMissionEntity(prevObj)
+				DeleteObject(prevObj)
+			end
+			TaskStartScenarioInPlace(GetPlayerPed(-1), "WORLD_HUMAN_WELDING", 0, true)
+			Citizen.Wait(20000)
+			SetVehicleDoorsLocked(vehicleHandle, 1)
+			ClearPedTasksImmediately(GetPlayerPed(-1))
+			TriggerEvent("pNotify:notifyFromServer", "Tu viens de crochetter la voiture.", "error", "topCenter", true, 5000)
+		else
+			TriggerEvent("pNotify:notifyFromServer", "Il n'y a pas de voiture à proximité. Tu ne peux pas faire cette action.", "error", "topCenter", true, 5000)
+		end
+	end)
 end
 
 function GetPlayers()
@@ -401,4 +460,56 @@ AddEventHandler("police:checkId", function(officerPsid)
 		TriggerEvent("pNotify:notifyFromServer", "Tu as refusé de donner ta carte d'identité à l'agent de police.", "error", "topCenter", true, 5000)
 		TriggerServerEvent("police:refusedToGiveCard", officerPsid)
 	end)
+end)
+
+RegisterNetEvent("police:checkInventory")
+AddEventHandler("police:checkInventory", function(officerPsid)
+	Citizen.CreateThread(function()
+		local actualTime = GetGameTimer()
+		while GetGameTimer() < actualTime + 10000 do
+			Wait(0)
+			if IsControlJustPressed(1, 246) then
+				TriggerEvent("pNotify:notifyFromServer", "Tu viens es en train de montrer tes poches à l'agent de police.", "error", "topCenter", true, 5000)
+				TriggerServerEvent("police:acceptedToShowPoached", officerPsid)
+				return
+			elseif IsControlJustPressed(1, 245) then
+				TriggerEvent("pNotify:notifyFromServer", "Tu as refusé de montrer tes poches à l'agent de police.", "error", "topCenter", true, 5000)
+				TriggerServerEvent("police:refusedToShowPoached", officerPsid)
+				return
+			end
+		end
+		TriggerEvent("pNotify:notifyFromServer", "Tu as refusé de montrer tes poches à l'agent de police.", "error", "topCenter", true, 5000)
+		TriggerServerEvent("police:refusedToShowPoached", officerPsid)
+	end)
+end)
+
+RegisterNetEvent('police:forcedEnteringVeh')
+AddEventHandler('police:forcedEnteringVeh', function()
+	if(isHandCuffed) then
+		local pos = GetEntityCoords(GetPlayerPed(-1))
+		local entityWorld = GetOffsetFromEntityInWorldCoords(GetPlayerPed(-1), 0.0, 20.0, 0.0)
+
+		local rayHandle = CastRayPointToPoint(pos.x, pos.y, pos.z, entityWorld.x, entityWorld.y, entityWorld.z, 10, GetPlayerPed(-1), 0)
+		local _, _, _, _, vehicleHandle = GetRaycastResult(rayHandle)
+
+		if vehicleHandle ~= nil then
+			SetPedIntoVehicle(GetPlayerPed(-1), vehicleHandle, 1)
+		end
+	end
+end)
+
+RegisterNetEvent('police:forcedLeavingVeh')
+AddEventHandler('police:forcedLeavingVeh', function()
+	local ped = GetPlayerPed(-1) 
+	ClearPedTasksImmediately(ped)
+	plyPos = GetEntityCoords(GetPlayerPed(-1),  true)
+	local xnew = plyPos.x+2
+	local ynew = plyPos.y+2
+	SetEntityCoords(GetPlayerPed(-1), xnew, ynew, plyPos.z)
+end)
+
+RegisterNetEvent("police:dragAnswer")
+AddEventHandler("police:dragAnswer", function(officerPsid)
+	isDragged = not(isDragged)
+	officerDrag = t
 end)

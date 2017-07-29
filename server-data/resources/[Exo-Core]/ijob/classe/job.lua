@@ -209,6 +209,7 @@ function CreateJob(capital, benefit, lost, name, default, rank, employe, zone, b
 		local newCap = self.capital + math.abs(tonumber(m))
 	
 		self.capital = newCap
+		SetChange(self)
 		return "New (add) capital for " .. self.name .. " new= " .. tostring(self.capital) .. " prev = " ..tostring(prevCap)
 	end
 	

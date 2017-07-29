@@ -90,16 +90,16 @@ AddEventHandler("police:retrieveArmurerieToServer", function()
 end)
 
 -- Fonctions du menu policier :
+
+-- Partie checkID
 RegisterServerEvent("police:checkId")
 AddEventHandler("police:checkId", function(psid, confirmed)
 	local source = source
 	TriggerEvent("es:getPlayerFromId", source, function(user)
 		TriggerEvent("es:getPlayerFromId", psid, function(targetUser)
 			if targetUser~=nil then
-				print(targetUser.getSessionVar("cuffed"))
 				if targetUser.getSessionVar("cuffed") == true or confirmed then
 					targetUser.notify("Un agent de police est en train de regarder ton identitié, tu ne peux pas réagir, tu es menotté.", "error", "topCenter", true, 5000)
-					print("test1")
 					user.notify("Tu es en train de regarder la carte d'identité d'une personne. </br> <ul> <li><strong>Nom: </strong>".. targetUser.get('lastName') ..".</li> <li> <strong>Prénom: </strong>".. targetUser.get('firstName') .." </li> <li><strong>Age: </strong>".. targetUser.get('age') .. " </li> <li><strong>Matricule: </strong>".. "TODO" .." </li> </ul>", "success", "topCenter", true, 10000)
 				else
 					user.notify("Le citoyen n'est pas menotté, tu viens de lui demandé de te montrer sa carte d'identité", "error", "topCenter", true, 10000)
@@ -116,12 +116,8 @@ end)
 RegisterServerEvent("police:accptedToGiveCard")
 AddEventHandler("police:accptedToGiveCard", function(officerPsid)
 	local source = source
-	print("test1")
-	print(tostring(officerPsid))
 	TriggerEvent("es:getPlayerFromId", officerPsid, function(officerUser)
-		print("test2")
 		TriggerEvent("es:getPlayerFromId", source, function(user)
-			print("test3")
 			officerUser.notify("Tu es en train de regarder la carte d'identité d'une personne. </br> <ul> <li><strong>Nom: </strong>".. user.get('lastName') ..".</li> <li> <strong>Prénom: </strong>".. user.get('firstName') .." </li> <li><strong>Age: </strong>".. user.get('age') .. " </li> <li><strong>Matricule: </strong>".. "TODO" .." </li> </ul>", "success", "topCenter", true, 10000)
 		end)
 	end)
@@ -131,20 +127,25 @@ RegisterServerEvent("police:refusedToGiveCard")
 AddEventHandler("police:refusedToGiveCard", function(officerPsid)
 	local source = source
 	TriggerEvent("es:getPlayerFromId", officerPsid, function(officerUser)
-		officerUser.notify("Le citoyen vient de refuser de te montrer sa carte d'identité", "error", "topCenter", true, 10000)
+		officerUser.notify("Le citoyen vient de refuser de te montrer sa carte d'identité.", "error", "topCenter", true, 10000)
 	end)
 end)
 
+-- Partie Check Inv
 RegisterServerEvent("police:targetCheckInventory")
 AddEventHandler("police:targetCheckInventory", function(psid, confirmed)
-	local source = source
+	local source = source -- FxServer
 	TriggerEvent("es:getPlayerFromId", source, function(user)
 		TriggerEvent("es:getPlayerFromId", psid, function(targetUser) --
 			if targetUser~=nil then
 				if targetUser.getSessionVar("cuffed") == true or confirmed then
-
+					targetUser.notify("Un agent de police est en train de regarder ton inventaire, tu ne peux pas réagir, tu es menotté.", "error", "topCenter", true, 5000)
+					local message = GetInventoryMessage(targetUser)
+					user.notify("Tu es en train de regarder l'inventaire d'une personne. </br>" .. message, "success", "topCenter", true, 15000)
 				else
-
+					user.notify("Le citoyen n'est pas menotté, tu viens de lui demandé de te montrer ses poches.", "error", "topCenter", true, 10000)
+					targetUser.notify("Un agent de police vient de te demander de fouiller tes poches. </br> Aide: Appuies sur Y pour lui donner.  </br>Appuies sur T pour refuser de lui donner.", "success", "topCenter", true, 5000)
+					TriggerClientEvent("police:checkInventory", psid, source)
 				end
 			else
 				user.notify("Contacter Izio iCops_server can't retreive PSID", "error", "topCenter", true, 5000)
@@ -153,6 +154,36 @@ AddEventHandler("police:targetCheckInventory", function(psid, confirmed)
 	end)
 end)
 
+RegisterServerEvent("police:refusedToShowPoached")
+AddEventHandler("police:refusedToShowPoached", function(officerPsid)
+	local source = source
+	TriggerEvent("es:getPlayerFromId", officerPsid, function(officerUser)
+		officerUser.notify("Le citoyen vient de refuser de te montrer ses poches.", "error", "topCenter", true, 10000)
+	end)
+end)
+
+RegisterServerEvent("police:acceptedToShowPoached")
+AddEventHandler("police:acceptedToShowPoached", function(officerPsid)
+	local source = source
+	TriggerEvent("es:getPlayerFromId", officerPsid, function(officerUser)
+		TriggerEvent("es:getPlayerFromId", source, function(user)
+			local message = GetInventoryMessage(targetUser)
+			officerUser.notify("Tu es en train de regarder l'inventaire d'une personne. </br>" .. message, "success", "topCenter", true, 15000)
+		end)
+	end)
+end)
+
+function GetInventoryMessage(user)
+	local allItem = user.get('item')
+	local userInventory = user.get('inventory')
+	local message = "<ul>"
+	for i=1, #userInventory do
+		message = message .. "<li><strong> " .. userInventory[i].quantity .. " " .. allItem[userInventory[i].id] .. "</strong></li>" 
+	end
+	return message .. "</ul>"
+end
+
+-- Partie cuff
 RegisterServerEvent("police:cuffPlayer")
 AddEventHandler("police:cuffPlayer", function(psid)
 	local source = source
@@ -172,6 +203,72 @@ AddEventHandler("police:cuffPlayer", function(psid)
 				end
 			else
 				user.notify("Contacter Izio iCops_server can't retreive PSID", "error", "topCenter", true, 5000)
+			end
+		end)
+	end)
+end)
+
+-- Partie Getout / put into veh:
+RegisterServerEvent("police:setPlayerIntoVeh") -- TODO, vérifier que le véhicule soit un véhicule de police (plate : PO)
+AddEventHandler("police:setPlayerIntoVeh", function(psid)
+	local source = source
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		TriggerEvent("es:getPlayerFromId", psid, function(targetUser)
+			user.notify("Tu as forcé le citoyen à rentrer dans ton véhicule", "success", "topCenter", true, 5000)
+			targetUser.notify("Un agent de police vient de vous forcer à rentrer dans le véhicule", "success", "topCenter", true, 5000)
+			TriggerClientEvent("police:forcedEnteringVeh", psid)
+		end)
+	end)
+end)
+
+RegisterServerEvent("police:unSetPlayerIntoVeh") -- TODO, vérifier que le véhicule soit un véhicule de police (plate : PO)
+AddEventHandler("police:unSetPlayerIntoVeh", function(psid)
+	local source = source
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		TriggerEvent("es:getPlayerFromId", psid, function(targetUser)
+			user.notify("Tu as forcé le citoyen à sortir de ton véhicule", "success", "topCenter", true, 5000)
+			targetUser.notify("Un agent de police vient de vous forcer à sortir du le véhicule", "success", "topCenter", true, 5000)
+			TriggerClientEvent("police:forcedLeavingVeh", psid)
+		end)
+	end)
+end)
+
+--Partie Fines : 
+RegisterServerEvent("police:setFineToPlayer")
+AddEventHandler("police:setFineToPlayer", function(psid, amount)
+	local amount = math.abs(amount)
+	local source = source
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		TriggerEvent("es:getPlayerFromId", psid, function(targetUser)
+			user.notify("Tu viens de mettre un amande à un citoyen d'un montant de " .. amount .. '$.', "success", "topCenter", true, 5000)
+			targetUser.notify("Un agent de police vient de vous mettre une amande d'un montant de ".. amount .. '$.', "success", "topCenter", true, 5000)
+			targetUser.removeBank(amount)
+			TriggerEvent("ijob:getJobFromName", user.get('job'),function(police)
+				police.addCapital(amount)
+			end)
+		end)
+	end)
+end)
+
+-- Partie DragPlayer:
+RegisterServerEvent("police:dragRequest")
+AddEventHandler("police:dragRequest", function(psid, isDragged)
+	local source = source
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		TriggerEvent("es:getPlayerFromId", psid, function(targetUser)
+			if targetUser.getSessionVar("cuffed") == true then
+				if not(isDragged) then
+					user.notify("Tu escortes le citoyen.", "success", "topCenter", true, 5000)
+					targetUser.notify("Un agent de police est en train de t'escorter.", "success", "topCenter", true, 5000)
+					TriggerClientEvent("police:dragAnswer", psid, source)
+				else
+					user.notify("Tu laches le citoyen.", "success", "topCenter", true, 5000)
+					targetUser.notify("Un agent de police vient de vous lacher.", "success", "topCenter", true, 5000)
+					TriggerClientEvent("police:dragAnswer", psid, source)
+				end
+			else
+				user.notify("Le citoyen concerné n'est pas menotté.", "success", "topCenter", true, 5000)
+				targetUser.notify("Un agent de police à essayé de t'escorter, mais tu n'étais pas menotté.", "success", "topCenter", true, 5000)
 			end
 		end)
 	end)
