@@ -1,3 +1,8 @@
+-- Copyright (C) Izio, Inc - All Rights Reserved
+-- Unauthorized copying of this file, via any medium is strictly prohibited
+-- Proprietary and confidential
+-- Written by Romain Billot <romainbillot3009@gmail.com>, Jully 2017
+
 Users = {}
 StoppingManager = {
 	["tShop"] = {"onVehRestart", "car:retrieveItemRestart"},
@@ -5,7 +10,8 @@ StoppingManager = {
 	["inventory"] = {"inventory:retrieveItemRestart"},
 	["iskin"] = {"iSkin:giveSkinToPlayerRestart"},
 	["iZone"] = {"onRestartZone"},
-	["ijob"] = {"iJob:loadingAfterRestart"}
+	["ijob"] = {"iJob:loadingAfterRestart"},
+	["dbank"] = {"resart:dBank"}
 }
 tickRateEventManager = 40
 treating = false
@@ -24,7 +30,7 @@ settings.defaultSettings = {
 	['commandDelimeter'] = '/',
 	['manageCharacter'] = true,
 	['maxChars'] = 5,
-	['unEmployed'] = "unEmployed", -- default job
+	['unEmployed'] = "chomeur", -- default job
 	['whiteList'] = false,
 	['defaultMessageOnNotWhiteList'] = "Go on http://www.myWebsite.com to create your character. Have a nice day ;)"
 }

@@ -149,7 +149,8 @@ AddEventHandler("pNotify:SetQueueMax", function(queue, max)
 end)
 
 RegisterNetEvent("pNotify:notifyFromServer")
-AddEventHandler("pNotify:notifyFromServer", function(ntext, ntype, nlayout, nprogress, ntimeout)
+AddEventHandler("pNotify:notifyFromServer", function(ntext, ntype, nlayout, nprogress, ntimeout) -- 
+    print("WTF ? ")
     TriggerEvent("pNotify:SendNotification", {text = ntext,
         layout = nlayout,
         timeout = ntimeout,

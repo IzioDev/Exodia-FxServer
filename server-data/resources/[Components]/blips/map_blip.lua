@@ -4,7 +4,7 @@ local blipConfig = {
     store = { caption = "Superette", color=2 },
     clothing = { caption = "Magasin de vêtement", color=11 },
     --ammunation = { caption = "Magasin d'arme", color=75 },
-    gang = { caption = "Zone dangereuse", color=76, enable = true },
+    gang = { caption = "Zone dangereuse", color=76, enable = false },
     gasStation = { caption = "Station d'essence ", color=49 },
     stationPolice = { caption = "LSPD", color=38 },
     prison = { caption = "Prison", color=38 },

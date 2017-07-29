@@ -326,6 +326,38 @@ function stringsplit(inputstr, sep)
 
     return t
 end
+---- Commandes :
+TriggerEvent('es:addGroupCommand', 'additem', "mod", function(source, args, user)
+  if #args~=4 or args[2] == "help" then
+    user.notify("Usage : /additem [PSID] [ID] [QUANTITY]", "error", "topCenter", true, 5000)
+  else
+    TriggerEvent("es:getPlayerFromId", tonumber(args[2]), function(targetUser)
+      if targetUser == nil then
+        user.notify("Le joueur n'est pas en ligne", "error", "topCenter", true, 5000)
+      else
+        if allItem[tonumber(args[3])] then
+          if tonumber(args[4]) >= 100 then
+            user.notify("Calme toi sur la quantité mon bruh", "error", "topCenter", true, 5000)
+          else
+            local isAbleToReceive = targetUser.isAbleToReceive(tonumber(args[3]), tonumber(args[4]))
+            if not(isAbleToReceive) then
+              user.notify("Le joueur n'a pas assez de palce dans ton inventaire", "error", "topCenter", true, 5000)
+            else
+              targetUser.addQuantity(tonumber(args[3]), tonumber(args[4]))
+              targetUser.notify("Un administrateur vient de vous ajouter " .. args[4] .. " " .. allItem[tonumber(args[3])].name .. ".", "success", "topCenter", true, 5000)
+              targetUser.refreshInventory()
+              user.notify("Vous avez ajouté " .. tonumber(args[4]) .. " " .. allItem[tonumber(args[3])].name .. " à " .. targetUser.get("displayName") .. ".", "success", "topCenter", true, 5000)
+            end
+          end
+        else
+          user.notify("L'item est innexistant..", "error", "topCenter", true, 5000)
+        end
+      end
+    end)
+  end
+end, function(source, args, user)
+  user.notify("Tu ne peux pas faire ça mon coco :p", "error", "topCenter", true, 5000)
+end)
 
 ---- iJob : 
 

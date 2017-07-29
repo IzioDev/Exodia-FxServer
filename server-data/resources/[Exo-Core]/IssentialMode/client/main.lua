@@ -1,3 +1,8 @@
+-- Copyright (C) Izio, Inc - All Rights Reserved
+-- Unauthorized copying of this file, via any medium is strictly prohibited
+-- Proprietary and confidential
+-- Written by Romain Billot <romainbillot3009@gmail.com>, Jully 2017
+
 Citizen.CreateThread(function()
 	while true do
 		Citizen.Wait(0)
@@ -184,16 +189,35 @@ AddEventHandler("is:updateJob", function(userJob, userRank)
   })
 end)
 
-RegisterNetEvent('es:addedBank')
-AddEventHandler('es:addedBank', function(m)
-	Citizen.InvokeNative(0x170F541E1CADD1DE, true)
-	Citizen.InvokeNative(0x0772DF77852C2E30, 0, math.ceil(m))
+-- Send NUI message to update bank balance
+RegisterNetEvent('banking:updateBalance')
+AddEventHandler('banking:updateBalance', function(balance)
+  local id = PlayerId()
+  local playerName = GetPlayerName(id)
+  SendNUIMessage({
+    updateBalance = true,
+    balance = balance,
+    player = playerName
+  })
 end)
 
-RegisterNetEvent('es:removedBank')
-AddEventHandler('es:removedBank', function(m)
-	Citizen.InvokeNative(0x170F541E1CADD1DE, true)
-	Citizen.InvokeNative(0x0772DF77852C2E30, 0, -math.ceil(m))
+-- Send NUI Message to display add balance popup
+RegisterNetEvent("banking:addBalance")
+AddEventHandler("banking:addBalance", function(amount)
+  SendNUIMessage({
+    addBalance = true,
+    amount = amount
+  })
+
+end)
+
+-- Send NUI Message to display remove balance popup
+RegisterNetEvent("banking:removeBalance")
+AddEventHandler("banking:removeBalance", function(amount)
+  SendNUIMessage({
+    removeBalance = true,
+    amount = amount
+  })
 end)
 
 RegisterNetEvent("es:setMoneyDisplay")

@@ -1,3 +1,8 @@
+-- Copyright (C) Izio, Inc - All Rights Reserved
+-- Unauthorized copying of this file, via any medium is strictly prohibited
+-- Proprietary and confidential
+-- Written by Romain Billot <romainbillot3009@gmail.com>, Jully 2017
+
 maxSalary = 2000
 blacklistedTime = 86400 -- A VOIR
 defaultRank = "Apprenti"
@@ -51,7 +56,7 @@ function CreateJob(capital, benefit, lost, name, default, rank, employe, zone, b
 	
 			TriggerClientEvent("ijob:updateJob", user.get('source'), self.name, user.get('rank'))
 		
-			self.haveChanged = true
+			SetChange(self)
 			return "Employe ajoute"
 		else
 			return "hireFirst"

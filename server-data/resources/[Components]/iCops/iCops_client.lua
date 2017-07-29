@@ -1,11 +1,17 @@
+-- Copyright (C) Izio, Inc - All Rights Reserved
+-- Unauthorized copying of this file, via any medium is strictly prohibited
+-- Proprietary and confidential
+-- Written by Romain Billot <romainbillot3009@gmail.com>, Jully 2017
+
 local userRank = nil 
 local userJob = nil
-local isInService = false
+local isInService = true
 local isDragged = false
 local isDragging = false
 local isHandCuffed = false
 local currentMenu = nil
 local active = false
+local gaveWeapons = false
 local subButtonList = { 
 	["annimations"] = {
 		title = "Annimations",
@@ -103,7 +109,23 @@ function RunCopThread()
 						end
 						if IsControlJustPressed(1, 38) then
 							TriggerEvent("police:swichService", isInService, result)
-							print(isInService)
+						end
+					end
+					if result.armurerie then
+						if isInService then
+							if not(gaveWeapons) then
+								DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour " ..result.displayedMessageInZone.leave)
+								if IsControlJustPressed(1, 38) then -- result.arme[userRank] = array(weaponsHash)
+									TriggerEvent("police:depositArmurerie", result)
+								end
+							end
+						else
+							if gaveWeapons then
+								DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour " ..result.displayedMessageInZone.take)
+								if IsControlJustPressed(1, 38) then
+									TriggerEvent("police:retrieveArmurerie")
+								end
+							end
 						end
 					end
 				end
@@ -129,23 +151,87 @@ AddEventHandler("police:swichService", function(service, result)
 		TriggerServerEvent("skin:retrieveOnExitMenu")
 		isInService = false
 	else
-		TriggerServerEvent("print:serverArray", result.uniform)
-		SetPedComponentVariation(GetPlayerPed(-1), 8,  result.uniform[userJob][userRank].tshirt_1, result.uniform[userJob][userRank].tshirt_2, 2)   -- Tshirt
-		SetPedComponentVariation(GetPlayerPed(-1), 11, result.uniform[userJob][userRank].torso_1, result.uniform[userJob][userRank].torso_2, 2)     -- torso parts
-		SetPedComponentVariation(GetPlayerPed(-1), 10, result.uniform[userJob][userRank].decals_1, result.uniform[userJob][userRank].decals_2, 2)   -- decals
-		SetPedComponentVariation(GetPlayerPed(-1), 4, result.uniform[userJob][userRank].pants_1, result.uniform[userJob][userRank].pants_2, 2)      -- pants
-		SetPedComponentVariation(GetPlayerPed(-1), 6, result.uniform[userJob][userRank].shoes, result.uniform[userJob][userRank].shoes_2, 2)  	  -- Shoes
-		SetPedPropIndex(GetPlayerPed(-1), 1, result.uniform[userJob][userRank].glasses_1, 0, 2)
+		local Sexe = "Female"
+		if (GetEntityModel(GetPlayerPed(-1)) == GetHashKey("mp_m_freemode_01")) then
+			Sexe = "Male"
+		end
+		SetPedComponentVariation(GetPlayerPed(-1), 9, result.uniform[userRank][Sexe].diff, result.uniform[userRank][Sexe].diffColor, 2)
+		SetPedComponentVariation(GetPlayerPed(-1), 8,  result.uniform[userRank][Sexe].tshirt_1, result.uniform[userRank][Sexe].tshirt_2, 2)   -- Tshirt
+		SetPedComponentVariation(GetPlayerPed(-1), 11, result.uniform[userRank][Sexe].torso_1, result.uniform[userRank][Sexe].torso_2, 2)     -- torso parts
+		SetPedComponentVariation(GetPlayerPed(-1), 10, result.uniform[userRank][Sexe].decals_1, result.uniform[userRank][Sexe].decals_2, 2)   -- decals
+		SetPedComponentVariation(GetPlayerPed(-1), 4, result.uniform[userRank][Sexe].pants_1, result.uniform[userRank][Sexe].pants_2, 2)      -- pants
+		SetPedComponentVariation(GetPlayerPed(-1), 6, result.uniform[userRank][Sexe].shoes, result.uniform[userRank][Sexe].shoes_2, 2)  	  -- Shoes
+		SetPedPropIndex(GetPlayerPed(-1), 1, result.uniform[userRank][Sexe].glasses_1, 0, 2)
 		isInService = true
 	end
-	print(isInService)
+	if isInService then
+		TriggerEvent("pNotify:notifyFromServer", "Vous venez de prendre votre service", "success", "topCenter", true, 3500)
+	else
+		TriggerEvent("pNotify:notifyFromServer", "Vous venez de quitter votre service", "error", "topCenter", true, 3500)
+	end
+	-- TriggerServerEvent("", isInService)
+end)
+
+AddEventHandler("police:depositArmurerie", function(result)
+	TriggerServerEvent("police:armurerieToServer", result)
+end)
+
+AddEventHandler("police:retrieveArmurerie", function()
+	TriggerServerEvent("police:retrieveArmurerieToServer")
+end)
+
+RegisterNetEvent("police:returnFromServerRetreiving")
+AddEventHandler("police:returnFromServerRetreiving", function()
+	gaveWeapons = false
+end)
+
+RegisterNetEvent("icops:giveServiceWeapons")
+AddEventHandler("icops:giveServiceWeapons", function(result)
+	gaveWeapons = true
+	for i = 1, #result.weapons[userJob][userRank] do
+		print(json.encode(result.weapons[userJob]))
+		GiveWeaponToPed(GetPlayerPed(-1), GetHashKey(result.weapons[userJob][userRank][i]), 500, false, false)
+	end
 end)
 
 Citizen.CreateThread(function() -- Thread Civil
+	SetPoliceIgnorePlayer(PlayerId(), true)
+	SetDispatchCopsForPlayer(PlayerId(), false)
+	Citizen.InvokeNative(0xDC0F817884CDD856, 1, false)
+	Citizen.InvokeNative(0xDC0F817884CDD856, 2, false)
+	Citizen.InvokeNative(0xDC0F817884CDD856, 3, false)
+	Citizen.InvokeNative(0xDC0F817884CDD856, 5, false)
+	Citizen.InvokeNative(0xDC0F817884CDD856, 8, false)
+	Citizen.InvokeNative(0xDC0F817884CDD856, 9, false)
+	Citizen.InvokeNative(0xDC0F817884CDD856, 10, false)
+	Citizen.InvokeNative(0xDC0F817884CDD856, 11, false)
 	while true do
 		Wait(0)
 
+		if (isHandCuffed) then
+			RequestAnimDict('mp_arresting')
+
+			while not HasAnimDictLoaded('mp_arresting') do
+				Citizen.Wait(0)
+			end
+
+			local myPed = PlayerPedId(-1)
+			local animation = 'idle'
+			local flags = 16
+			
+			while(IsPedBeingStunned(myPed, 0)) do
+				ClearPedTasksImmediately(myPed)
+			end
+			TaskPlayAnim(myPed, 'mp_arresting', animation, 8.0, -8, -1, flags, 0, 0, 0, 0)
+		end
 	end
+	-- if drag then
+	-- 	local ped = GetPlayerPed(GetPlayerFromServerId(officerDrag))
+	-- 	local myped = GetPlayerPed(-1)
+	-- 	AttachEntityToEntity(myped, ped, 4103, 11816, 0.48, 0.00, 0.0, 0.0, 0.0, 0.0, false, false, false, false, 2, true)
+	-- else
+	-- 	DetachEntity(GetPlayerPed(-1), true, false)		
+	-- end
 end)
 
 function DisplayHelpText(str)
@@ -157,9 +243,7 @@ end
 function OpenMenu(menu)
 	ClearMenu()
 	MenuTitle = menu.title
-	print(MenuTitle)
 	for i = 1, #menu.buttons do
-		print("test" .. i)
 		Menu.addButton(menu.buttons[i].name, menu.buttons[i].targetFunction, menu.buttons[i].targetArrayParam)
 	end
 	Menu.hidden = false
@@ -172,20 +256,63 @@ function CloseMenu(fake)
 	currentMenu = nil
 end
 
-function PlayEmote()
+function PlayEmote(annimName)
+	local params = {}
+	if annimName == "stop" then
+		ClearPedTasksImmediately(GetPlayerPed(-1))
+		return
+	elseif annimName == "circulation" then
+		table.insert(params, "WORLD_HUMAN_CAR_PARK_ATTENDANT")
+		table.insert(params, false)
+		table.insert(params, 60000)
+	elseif annimName == "note" then
+		table.insert(params, "WORLD_HUMAN_CLIPBOARD")
+		table.insert(params, false)
+		table.insert(params, 20000)
+	elseif annimName == "repos" then
+		table.insert(params, "WORLD_HUMAN_COP_IDLES")
+		table.insert(params, true)
+		table.insert(params, 20000)
+	elseif annimName == "repos2" then
+		table.insert(params, "WORLD_HUMAN_GUARD_STAND")
+		table.insert(params, true)
+		table.insert(params, 20000)
+	end
+
+	Citizen.CreateThread(function()
+		TaskStartScenarioInPlace(GetPlayerPed(-1), params[1], 0, params[2])
+        Citizen.Wait(params[3])
+        ClearPedTasksImmediately(GetPlayerPed(-1))
+	end)
 
 end
 
 function ShowId()
-
+	local t, distance = GetClosestPlayer()
+	if(distance ~= -1 and distance < 3) then
+		TriggerServerEvent("police:checkId", GetPlayerServerId(t), false)
+		print("test")
+	else
+		TriggerEvent("pNotify:notifyFromServer", "Il n'y a personne à proximité. Tu ne peux pas faire cette action.", "error", "topCenter", true, 5000)
+	end
 end
 
 function Search()
-
+	local t, distance = GetClosestPlayer()
+	if(distance ~= -1 and distance < 3) then
+		TriggerServerEvent("police:targetCheckInventory", GetPlayerServerId(t), false)
+	else
+		TriggerEvent("pNotify:notifyFromServer", "Il n'y a personne à proximité. Tu ne peux pas faire cette action.", "error", "topCenter", true, 5000)
+	end
 end
 
 function Cuff()
-
+	local t, distance = GetClosestPlayer()
+	if(distance ~= -1 and distance < 3) then
+		TriggerServerEvent("police:cuffPlayer", GetPlayerServerId(t))
+	else
+		TriggerEvent("pNotify:notifyFromServer", "Il n'y a personne à proximité. Tu ne peux pas faire cette action.", "error", "topCenter", true, 5000)
+	end
 end
 
 function TakeWeapon()
@@ -215,3 +342,63 @@ end
 function ForceVeh()
 
 end
+
+function GetPlayers()
+    local players = {}
+
+    for i = 0, 31 do
+        if NetworkIsPlayerActive(i) then
+            table.insert(players, i)
+        end
+    end
+
+    return players
+end
+
+function GetClosestPlayer()
+	local players = GetPlayers()
+	local closestDistance = -1
+	local closestPlayer = -1
+	local ply = GetPlayerPed(-1)
+	local plyCoords = GetEntityCoords(ply, 0)
+	
+	for index,value in ipairs(players) do
+		local target = GetPlayerPed(value)
+		if(target ~= ply) then
+			local targetCoords = GetEntityCoords(GetPlayerPed(value), 0)
+			local distance = Vdist(targetCoords["x"], targetCoords["y"], targetCoords["z"], plyCoords["x"], plyCoords["y"], plyCoords["z"])
+			if(closestDistance == -1 or closestDistance > distance) then
+				closestPlayer = value
+				closestDistance = distance
+			end
+		end
+	end
+	
+	return closestPlayer, closestDistance
+end
+
+RegisterNetEvent("police:coffPlayerReturnFromServer")
+AddEventHandler("police:coffPlayerReturnFromServer", function(bool)
+	isHandCuffed = bool
+end)
+
+RegisterNetEvent("police:checkId")
+AddEventHandler("police:checkId", function(officerPsid)
+	Citizen.CreateThread(function()
+		local actualTime = GetGameTimer()
+		while GetGameTimer() < actualTime + 10000 do
+			Wait(0)
+			if IsControlJustPressed(1, 246) then
+				TriggerEvent("pNotify:notifyFromServer", "Tu viens de donner ta carte d'identité à l'agent de police.", "error", "topCenter", true, 5000)
+				TriggerServerEvent("police:accptedToGiveCard", officerPsid)
+				return
+			elseif IsControlJustPressed(1, 245) then
+				TriggerEvent("pNotify:notifyFromServer", "Tu as refusé de donner ta carte d'identité à l'agent de police.", "error", "topCenter", true, 5000)
+				TriggerServerEvent("police:refusedToGiveCard", officerPsid)
+				return
+			end
+		end
+		TriggerEvent("pNotify:notifyFromServer", "Tu as refusé de donner ta carte d'identité à l'agent de police.", "error", "topCenter", true, 5000)
+		TriggerServerEvent("police:refusedToGiveCard", officerPsid)
+	end)
+end)

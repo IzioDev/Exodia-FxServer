@@ -1,15 +1,22 @@
+-- Copyright (C) Izio, Inc - All Rights Reserved
+-- Unauthorized copying of this file, via any medium is strictly prohibited
+-- Proprietary and confidential
+-- Written by Romain Billot <romainbillot3009@gmail.com>, Jully 2017
+
 HasLoadedModel       = false
 local Skin           = nil
-local displayHelpText = 'Press ~INPUT_CONTEXT~ to customize your ~b~ outfits.'
+local new            = false
+local displayHelpText = 'Appuyez sur ~INPUT_CONTEXT~ pour acheter des ~b~ vetements.'
 
 AddEventHandler('skinchanger:change', function(skin)
 	Skin = skin
 end)
 
 RegisterNetEvent('esx_skin:responsePlayerSkinInfos')
-AddEventHandler('esx_skin:responsePlayerSkinInfos', function(skin, new)
+AddEventHandler('esx_skin:responsePlayerSkinInfos', function(skin, newer)
 	Skin = json.decode(skin)
-	if(new)then
+	new = newer
+	if(newer)then
 		TriggerEvent('skinchanger:openMenu')
 	else
 		TriggerEvent('skinchanger:loadSkin', Skin)
@@ -617,6 +624,8 @@ Citizen.CreateThread(function()
 
     	TriggerEvent('skinchanger:onSubmit', Character)
 
+    	if new then new = false end
+
 	  	GUI.Time = GetGameTimer()
     end
 
@@ -640,7 +649,7 @@ Citizen.CreateThread(function()
 	    end
 
 	else 
-		if GUI.MenuIsShowed then
+		if GUI.MenuIsShowed and not(new) then
 
 			TriggerEvent('skinchanger:closeMenu')
 			TriggerServerEvent("skin:retrieveOnExitMenu")

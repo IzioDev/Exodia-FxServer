@@ -1,3 +1,8 @@
+-- Copyright (C) Izio, Inc - All Rights Reserved
+-- Unauthorized copying of this file, via any medium is strictly prohibited
+-- Proprietary and confidential
+-- Written by Romain Billot <romainbillot3009@gmail.com>, Jully 2017
+
 local defaultSkin = {
 	face = 30,
 	pants_2 = 1,
@@ -41,6 +46,9 @@ function LoadUser(identifier, source, new)
 	--PlayerLoaded
 	TriggerEvent("es:playerLoaded", Users[source].get('source'))
 
+	--Pvp :
+	TriggerClientEvent("es:enablePvp", Users[source].get('source'))
+
 	-- We put the UI Money & Dirty Money stuff
 	TriggerClientEvent('es:activateMoney', source, Users[source].get('money'))
 	TriggerClientEvent('es:activateDirtyMoney', source, Users[source].get('dirtyMoney'))
@@ -80,6 +88,8 @@ function LoadUserFromPicking(firstname, lastname, age, new, source, new2)
 
 		--PlayerLoaded
 		TriggerEvent("es:playerLoaded", Users[source].get('source'))
+		--Pvp :
+		TriggerClientEvent("es:enablePvp", Users[source].get('source'))
 
 		--Unfreeeze UnInvicible the player + change location
 		TriggerClientEvent("es:afterSelection", Users[source].get('source'), Users[source].get('lastpos'))
@@ -105,14 +115,14 @@ function RegisterANewChar(identifier, source, firstname, lastname, age, ok)
 	MySQL.Sync.execute("INSERT INTO users (`identifier`, `permission_level`, `money`, `group`, `rank`, `job`, `inventory`, `identity`, `skin`, `bank`, `lastpos`) VALUES (@username, @permission_level, @money, 'user', @rank, @job, @inventory, @identity, @skin, @bank, @lastpos)", {
 	    ['@username'] = identifier,
 	    ['@permission_level'] = 0,
-	    ['@money'] = 850,
+	    ['@money'] = 500,
 	    ['@rank'] = " ",
 	    ['@job'] = settings.defaultSettings.unEmployed,
 	    ['@inventory'] = json.encode({}),
 	    ['@identity'] = json.encode({firstName = firstname, lastName = lastname, age = age, phoneNumber = "NOOBI", playTime = "0", accountNumber = "0", lastSeen = lastSeen}),
 	    ['@skin'] = json.encode(defaultSkin),
 	    ['@lastpos'] = json.encode({x = -1038.99, y = -2740.23, z = 13.86}),
-	    ['@bank'] = 0
+	    ['@bank'] = 250
 	})
  	LoadUserFromPicking(firstname, lastname, age, false, source, ok)
 end
@@ -153,14 +163,14 @@ function registerUser(identifier, source)
 		MySQL.Sync.execute("INSERT INTO users (`identifier`, `permission_level`, `money`, `group`, `rank`, `job`, `inventory`, `identity`, `skin`, `bank`, `lastpos`) VALUES (@username, @permission_level, @money, 'user', @rank, @job, @inventory, @identity, @skin, @bank, @lastpos)", {
 		    ['@username'] = identifier,
 		    ['@permission_level'] = 0,
-		    ['@money'] = 850,
+		    ['@money'] = 500,
 		    ['@rank'] = " ",
 		    ['@job'] = "Chomeur",
 		    ['@inventory'] = json.encode({}),
 		    ['@identity'] = json.encode({firstName = "Ana", lastName = "Nass", age = "20", phoneNumber = "NOOBI", playTime = "0", accountNumber = "0", lastSeen = lastSeen}),
 		    ['@skin'] = json.encode(defaultSkin),
 		    ['@lastpos'] = json.encode({x = -1038.99, y = -2740.23, z = 13.86}),
-		    ['@bank'] = 0
+		    ['@bank'] = 250
 		}, function (rowsUpdate)
 		    print('\nUn nouveau joeur vient de s enregistrer\n')
 		end)

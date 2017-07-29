@@ -1,3 +1,8 @@
+-- Copyright (C) Izio, Inc - All Rights Reserved
+-- Unauthorized copying of this file, via any medium is strictly prohibited
+-- Proprietary and confidential
+-- Written by Romain Billot <romainbillot3009@gmail.com>, Jully 2017
+
 allJob = {}
 allZoneJob = {}
 addCapactity = 10
@@ -213,6 +218,12 @@ function saveJob()
 	print("Job changed saved to the DB.")
 
 end
+------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------NewPlayer--------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+AddEventHandler("es:newPlayerLoaded", function(userSource, user)
+	allJob["chomeur"].addEmployeWithRefresh(user)
+end)
 ------------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------Harvest---------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
@@ -473,7 +484,7 @@ TriggerEvent('es:addGroupCommand', 'addjob', "mod", function(source, args, user)
 						end)
 					elseif result == "hireFirst" then
 						allJob[args[3]].removeEmploye(targetUser)
-						targetUser.notify("Tu es <span style='color:red'>retiré</span> du métier de " .. targetUser.get('job') .. ".", "success", true, 5000)
+						targetUser.notify("Tu es <span style='color:red'>retiré</span> du métier de " .. targetUser.get('job') .. ".", "success", "centerTop", true, 5000)
 						allJob[args[3]].addEmploye(employe, targetUser.get('fullname'))
 						TriggerClientEvent("ijob:updateJob", targetUser.get('source'), targetUser.get('job'), targetUser.get('rank'))
 						TriggerClientEvent("ijob:addBlip", targetUser.get('source'), allJob[targetUser.get('job')].getBlip(), true)
@@ -481,7 +492,7 @@ TriggerEvent('es:addGroupCommand', 'addjob', "mod", function(source, args, user)
 					else
 						TriggerClientEvent("ijob:updateJob", targetUser.get('source'), targetUser.get('job'), targetUser.get('rank'))
 						TriggerClientEvent("ijob:addBlip", targetUser.get('source'), allJob[targetUser.get('job')].getBlip(), true)
-						targetUser.notify("Tu es <span style='color:green'>ajouté</span> au métier de " .. targetUser.get('job') .. ".", "success", true, 5000)
+						targetUser.notify("Tu es <span style='color:green'>ajouté</span> au métier de " .. targetUser.get('job') .. ".", "success", "centerTop", true, 5000)
 					end
 				end
 			else

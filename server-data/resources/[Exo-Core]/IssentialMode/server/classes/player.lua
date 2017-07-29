@@ -1,8 +1,20 @@
+-- Copyright (C) Izio, Inc - All Rights Reserved
+-- Unauthorized copying of this file, via any medium is strictly prohibited
+-- Proprietary and confidential
+-- Written by Romain Billot <romainbillot3009@gmail.com>, Jully 2017
+
 allItem = nil -- init allItem datas
 defaultInvWeight = 3
 AddEventHandler('onMySQLReady', function ()
 	local result = MySQL.Sync.fetchAll("SELECT * FROM item")
 	allItem = result
+	local treatWeapons = {}
+	for i = 1, #allItem do--
+		if allItem[i].hash then
+			table.insert(treatWeapons, allItem[i])
+		end
+	end
+	allItem.weapons = treatWeapons
 	TriggerEvent("item:getAllItems", allItem)
 end)
 
@@ -20,7 +32,7 @@ function CreateUser(source, Issential)
 	self.inventory = json.decode(Issential.inventory)
 	self.job = Issential.job
 	self.rank = Issential.rank
-	self.dislayName = DecodedIdentity.firstName .. " " .. DecodedIdentity.lastName
+	self.displayName = DecodedIdentity.firstName .. " " .. DecodedIdentity.lastName
 	self.firstName = DecodedIdentity.firstName
 	self.lastName = DecodedIdentity.lastName
 	self.age = DecodedIdentity.age
@@ -33,6 +45,11 @@ function CreateUser(source, Issential)
 	self.identifier = Issential.identifier
 	self.item = allItem -- on stock ici tous les items avec leur caractéristique
 	self.group = Issential.group
+	if Issential.waitingWeapons == nil then
+		self.weapons = nil
+	else
+		self.weapons = json.decode(Issential.waitingWeapons)
+	end
 	self.lastpos = json.decode(Issential.lastpos)
 	self.coords = json.decode(Issential.lastpos)
 	self.session = {}
@@ -116,7 +133,7 @@ function CreateUser(source, Issential)
 		local newBank = self.bank + math.abs(tonumber(m))
 		self.bank = newBank
 
-		TriggerClientEvent("es:addedBank", self.source, math.abs(tonumber(m)))
+		TriggerClientEvent("banking:addBalance", self.source, math.abs(tonumber(m)))
 		SetChange(self)
 	end
 	
@@ -124,7 +141,7 @@ function CreateUser(source, Issential)
 		local newBank = self.bank - math.abs(tonumber(m))
 		self.bank = newBank
 
-		TriggerClientEvent("es:removedBank", self.source, -math.abs(tonumber(m)))
+		TriggerClientEvent("banking:removeBalance", self.source, -math.abs(tonumber(m)))
 		SetChange(self)
 	end
 
@@ -133,7 +150,7 @@ function CreateUser(source, Issential)
 	end
 	
 	rTable.displayBank = function(m)
-		TriggerClientEvent("es:addedBank", self.source, m)
+		TriggerClientEvent("banking:addBalance", self.source, m)
 	end
 	-- Inv stuff (To repair)
 	rTable.addQuantity = function(itemid, quantity)
@@ -209,6 +226,16 @@ function CreateUser(source, Issential)
 		return json.encode(datasArray)
 	end
 
+	rTable.refreshInventory = function()
+		local datasArray = {
+		weight = defaultInvWeight,
+		id = self.identifier,
+		invType = "personal_inventory",
+		items = self.inventory
+		}
+		TriggerClientEvent("inventory:change", source, datasArray)
+	end
+
 	rTable.isAbleToGive = function(itemId, quantity)
 		for i = 1, #self.inventory do
 			if tonumber(self.inventory[i].id) == tonumber(itemId) then
@@ -239,8 +266,21 @@ function CreateUser(source, Issential)
 			return false
 		end
 	end
+	-- Weapons Stuff : 
+	rTable.returnWeaponInfos = function(weaponHash)
+		print(json.encode(self.item.weapons))
+		print(weaponHash)
+		for i = 1, #self.item.weapons do
+			if self.item.weapons[i].hash == weaponHash then
+				return self.item.weapons[i]
+			end
+		end
+		return 'not found'
+	end
+
 	-- Notify Stuff
 	rTable.notify = function(ntext, ntype, nlayout, nprogress, ntimeout)
+	print("notified")
 		TriggerClientEvent("pNotify:notifyFromServer", self.source , ntext, ntype, nlayout, nprogress, ntimeout)
 		-- ntext : string | ntype = alert, success, error, warning, info | 
 		-- nlayout = top, topLeft, topCenter, topRight, center, centerLeft, centerRight, bottom, bottomLeft, bottomCenter, bottomRight.
