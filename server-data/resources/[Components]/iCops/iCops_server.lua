@@ -89,6 +89,54 @@ AddEventHandler("police:retrieveArmurerieToServer", function()
 	end)
 end)
 
+AddEventHandler("es:playerLoaded", function(source)
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		if user.get('waitingWeapons') ~= nil then
+			local weapons = user.get('waitingWeapons') 
+			for i = 1, #weapons do
+				user.addQuantity(weapons[i].id, weapons[i].quantity)
+			end
+			MySQL.Async.execute("UPDATE users SET `waitingWeapons`=@weapons WHERE `identifier`=@identifier AND `id`=@id", {
+				['@identifier'] = user.get('identifier'),
+				['@id'] = user.get('id'),
+				['@weapons'] = nil
+			})
+		end
+	end)
+end)
+-- Garage : 
+RegisterServerEvent("police:spawnVehGarage")
+AddEventHandler("police:spawnVehGarage", function(carPrice)
+	local source = source
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		TriggerEvent("ijob:getJobFromName", user.get('job'), function(policeJob)
+			if not(user.getSessionVar('caution', carPrice)) then
+				print(carPrice)
+				policeJob.removeCapital(carPrice)
+				user.setSessionVar('caution', carPrice)
+				user.notify("La police te prete un véhicule. Si tu ne le ramène pas, ils te demandront de payer la moitié du prix de la voiture. Prends en soin!", "error", "topCenter", true, 5000)
+			end
+		end)
+	end)
+end)
+
+RegisterServerEvent("police:retreiveCaution")
+AddEventHandler("police:retreiveCaution", function(carPrice)
+	local source = source
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		TriggerEvent("ijob:getJobFromName", user.get('job'), function(policeJob)
+			policeJob.addCapital(user.getSessionVar('caution'))
+			user.setSessionVar("caution", nil)
+			user.notify("Tu viens de ramener le véhicule au garage.", "success", "topCenter", true, 5000)
+		end)
+	end)
+end)
+
+AddEventHandler("is:playerDropped", function(user)
+	if user.getSessionVar("caution") ~= nil then
+		user.removeBank(user.getSessionVar("caution")/2)
+	end
+end)
 -- Fonctions du menu policier :
 
 -- Partie checkID

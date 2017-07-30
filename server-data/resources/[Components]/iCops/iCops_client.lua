@@ -135,16 +135,19 @@ function RunCopThread()
 								if timeVeh == nil then
 									DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour " ..result.displayedMessageInZone.noCurrentVeh)
 									if IsControlJustPressed(1, 38) then
+										print("first spawn")
 										OpenGarage(result, currentVeh)
 									end
 								else
+									DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour " ..result.displayedMessageInZone.noCurrentVeh)
 									if GetGameTimer() >= timeVeh + 1800000 then -- 30 minutes
 										if IsControlJustPressed(1, 38) then
 											OpenGarage(result, currentVeh)
 										end
 									else
 										if IsControlJustPressed(1, 38) then
-											TriggerEvent("pNotify:notifyFromServer", "Tu as sorti un véhicule il y a: " .. (math.ceil(GetGameTimer()-timeVeh)/60000) .. "minutes. </br> <center>Attends un peu.</center>")
+											local time = (GetGameTimer()-timeVeh)/60000
+											TriggerEvent("pNotify:notifyFromServer", "Tu as sorti un véhicule il y a: " .. math.ceil(time*10)/10 .. " minutes. </br> <center>Attends un peu.</center>", "error", "topCenter", true, 5000)
 										end
 									end
 								end
@@ -284,45 +287,34 @@ function CloseMenu(fake)
 	currentMenu = nil
 end
 
-function OpenGarage(result, currentVeh)
-	if currentVeh == nil then
+function OpenGarage(result, currentVehi)
+	if currentVehi == nil then
 		ClearMenu()
 		MenuTitle = "Garage " .. userRank
 		this = result.carInfos[userRank]
 		for i = 1, #this do
-			Menu.addButton(menu.buttons[i].name, "SpawnVeh", {point = result.spawnPoints, car = this[i].carHash, price = this[i].price})
+			Menu.addButton(this[i].name .. ":" .. this[i].price .. "$", "SpawnVeh", {point = result.spawnPoints, car = this[i].carHash, price = this[i].price})
 		end
 		Menu.hidden = false
 		currentMenu = "main"
 	else
-		if DoesEntityExist(currentVeh) then
+		if DoesEntityExist(currentVehi) then
 			local x,y,z = table.unpack(GetEntityCoords(currentVeh, true))
 			TriggerEvent("izone:isPointInZone", x, y,"garageLspd", function(isVehInZone)
 				if isVehInZone then
 					Citizen.InvokeNative(0xEA386986E786A54F, Citizen.PointerValueIntInitialized(currentVeh))
+					TriggerServerEvent("police:retreiveCaution")
 					currentVeh = nil
 					ClearMenu()
-					MenuTitle = "Garage " .. userRank
-					this = result.carInfos[userRank]
-					for i = 1, #this do
-						Menu.addButton(menu.buttons[i].name, "SpawnVeh", {point = result.spawnPoints, car = this[i].carHash, price = this[i].price})
-					end
-					Menu.hidden = false
-					currentMenu = "main"
 				else
+					print("ton veh n'est pas dans le garage")
 					TriggerEvent("pNotify:notifyFromServer", "Ton véhicule n'est pas dans le garage, merci de le rentrer.", "error", "topCenter", true, 5000)
 				end
 			end)
 		else
+			TriggerEvent("pNotify:notifyFromServer", "Contacter Izio iCops_client.lua Entity doesn't exist.", "error", "topCenter", true, 5000)
 			currentVeh = nil
 			ClearMenu()
-			MenuTitle = "Garage " .. userRank
-			this = result.carInfos[userRank]
-			for i = 1, #this do
-				Menu.addButton(menu.buttons[i].name, "SpawnVeh", {point = result.spawnPoints, car = this[i].carHash, price = this[i].price})
-			end
-			Menu.hidden = false
-			currentMenu = "main"
 		end
 	end
 end
@@ -332,14 +324,28 @@ function SpawnVeh(args)
 	local carHash = args.car
 	local carPrice = args.price
 
-	local car = GetHashKey(args.car)
+	local car = tonumber(args.car)
 	local playerPed = GetPlayerPed(-1)
 	RequestModel(car)
 	while not HasModelLoaded(car) do
 			Citizen.Wait(0)
 	end
 	local playerCoords = GetEntityCoords(playerPed)
-	policevehicle = CreateVehicle(car, playerCoords, 90.0, true, false)
+	local playerHeading = GetEntityHeading(playerPed)
+	local closestVeh = nil
+	local coords = playerCoords
+	local policevehicle = nil
+	for i = 1, #args.point do
+		RequestCollisionAtCoord(args.point[i].x, args.point[i].y, args.point[i].z)
+		closestVeh = GetClosestVehicle(x, y, z, 2.0, 0, 70)
+		if closestVeh ~= nil then
+			policevehicle = CreateVehicle(car, args.point[i].x, args.point[i].y, args.point[i].z, args.point[i].heading, true, false)
+			break
+		end
+	end
+	if policevehicle == nil then
+		policevehicle = CreateVehicle(car, playerCoords, 90.0, true, false)
+	end
 	SetVehicleMod(policevehicle, 11, 2)
 	SetVehicleMod(policevehicle, 12, 2)
 	SetVehicleMod(policevehicle, 13, 2)
@@ -348,14 +354,17 @@ function SpawnVeh(args)
 	SetVehicleHasBeenOwnedByPlayer(policevehicle,true)
 	local netid = NetworkGetNetworkIdFromEntity(policevehicle)
 	SetNetworkIdCanMigrate(netid, true)
-	NetworkRegisterEntityAsNetworked(VehToNet(policevehicle))
+	-- NetworkRegisterEntityAsNetworked(VehToNet(policevehicle))
 	TaskWarpPedIntoVehicle(playerPed, policevehicle, -1)
 	SetEntityInvincible(policevehicle, false)
 	SetEntityAsMissionEntity(policevehicle, true, true)
 
+	Menu.hidden = true
+	TriggerServerEvent("police:spawnVehGarage", carPrice)
 	-- Il faut envoyer un event au serveur qui enleve au capitale le price, qui cautionne le joueur (virtuellement) et qui check connexion, déco..
 	-- Dans le meme genre de TODO, il faut faire la vérif waitingWeapons (si c'est pas nil, on lui donne, puis on vide.)
 	currentVeh = policevehicle
+	timeVeh = GetGameTimer()
 end
 
 function PlayEmote(annimName)

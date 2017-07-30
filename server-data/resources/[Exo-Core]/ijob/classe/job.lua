@@ -403,7 +403,7 @@ end
 
 function addBlackList(job, steam64)
 	local temp = os.date("*t", os.time())
-	table.insert(job.blacklist, {p = pl, dhm = tostring(temp.day) .. " " .. tostring(temp.hour) .. " " .. tostring(temp.min)})
+	table.insert(job.blacklist, {p = steam64, dhm = tostring(temp.day) .. " " .. tostring(temp.hour) .. " " .. tostring(temp.min)})
 	print("blacklisted player")
 	job.haveChanged = true
 end

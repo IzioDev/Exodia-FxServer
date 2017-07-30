@@ -39,6 +39,7 @@ settings.sessionSettings = {}
 AddEventHandler('playerDropped', function()
 	local src = tonumber(source)
 	if(Users[src]) or Users[src] ~= nil then
+		TriggerEvent("is:playerDropped", Users[src])
 		temp = os.date("*t", os.time())
 		local minutsLenght = string.len(tostring(temp.min))
 		if minutsLenght == 1 then
