@@ -1,3 +1,8 @@
+-- Copyright (C) Izio, Inc - All Rights Reserved
+-- Unauthorized copying of this file, via any medium is strictly prohibited
+-- Proprietary and confidential
+-- Written by Romain Billot <romainbillot3009@gmail.com>, Jully 2017
+
 Users = {}
 StoppingManager = {
 	["tShop"] = {"onVehRestart", "car:retrieveItemRestart"},
@@ -5,7 +10,8 @@ StoppingManager = {
 	["inventory"] = {"inventory:retrieveItemRestart"},
 	["iskin"] = {"iSkin:giveSkinToPlayerRestart"},
 	["iZone"] = {"onRestartZone"},
-	["ijob"] = {"iJob:loadingAfterRestart"}
+	["ijob"] = {"iJob:loadingAfterRestart"},
+	["dbank"] = {"resart:dBank"}
 }
 tickRateEventManager = 40
 treating = false
@@ -24,7 +30,7 @@ settings.defaultSettings = {
 	['commandDelimeter'] = '/',
 	['manageCharacter'] = true,
 	['maxChars'] = 5,
-	['unEmployed'] = "unEmployed", -- default job
+	['unEmployed'] = "chomeur", -- default job
 	['whiteList'] = false,
 	['defaultMessageOnNotWhiteList'] = "Go on http://www.myWebsite.com to create your character. Have a nice day ;)"
 }
@@ -33,6 +39,7 @@ settings.sessionSettings = {}
 AddEventHandler('playerDropped', function()
 	local src = tonumber(source)
 	if(Users[src]) or Users[src] ~= nil then
+		TriggerEvent("is:playerDropped", Users[src])
 		temp = os.date("*t", os.time())
 		local minutsLenght = string.len(tostring(temp.min))
 		if minutsLenght == 1 then

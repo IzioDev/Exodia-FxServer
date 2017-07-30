@@ -1,3 +1,8 @@
+-- Copyright (C) Izio, Inc - All Rights Reserved
+-- Unauthorized copying of this file, via any medium is strictly prohibited
+-- Proprietary and confidential
+-- Written by Romain Billot <romainbillot3009@gmail.com>, Jully 2017
+
 AddEventHandler('iSkin:giveSkinToPlayerRestart', function()
 	SetTimeout(5000, function()
 		TriggerEvent("es:getPlayers", function(Users)
@@ -48,8 +53,6 @@ end)
 
 AddEventHandler('es:newPlayerLoaded', function(newServerId, newUser)
 	newUser.setGlobal('freeSkin', true)
-	print("set Global")
-	print(newUser.get('freeSkin'))
 end)
 
 RegisterServerEvent('esx_skin:savePlayerSkinInfos')
@@ -74,13 +77,24 @@ AddEventHandler('esx_skin:savePlayerSkinInfos', function(skin)
 			user.notify(msg, "error", "centerLeft", true, 5000)
 		end
 	end)
-
 end)
 
 TriggerEvent('es:addGroupCommand', 'skin', "owner", function(source, args, user)
-	TriggerClientEvent("esx_skin:openSkinMenu", source)
+	if #args~=2 then
+		user.notify("Utilisation : /skin [PID]", "error", "topCenter", true, 5000)
+	else
+		TriggerEvent("es:getPlayerFromId", tonumber(args[2]), function(targetUser)
+			if targetUser ~= nil then
+				targetUser.setGlobal('freeSkin', true)
+				targetUser.notify("Un admin vous a donné un acces gratuit au changement de skin", "success", "topCenter", true, 5000)
+				TriggerClientEvent('esx_skin:responsePlayerSkinInfos', targetUser.get('source'), json.encode(user.get('skin')), true)
+			else
+				user.notify("Le joueur n'est pas en ligne", "error", "topCenter", true, 5000)
+			end
+		end)
+	end
 end, function(source, args, user)
-	TriggerClientEvent('chatMessage', source, "SYSTEM", {255, 0, 0}, "Insufficient Permissions.")
+	user.notify("Tu n'es pas admin mon coco :p", "error", "topCenter", true, 5000)
 end)
 
 TriggerEvent('es:addGroupCommand', 'saveskin', "owner", function(source, args, user)

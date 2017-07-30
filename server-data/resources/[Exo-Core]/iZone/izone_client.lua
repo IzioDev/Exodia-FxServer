@@ -1,3 +1,8 @@
+-- Copyright (C) Izio, Inc - All Rights Reserved
+-- Unauthorized copying of this file, via any medium is strictly prohibited
+-- Proprietary and confidential
+-- Written by Romain Billot <romainbillot3009@gmail.com>, Jully 2017
+
 local Keys = {
 	["ESC"] = 322, ["F1"] = 288, ["F2"] = 289, ["F3"] = 170, ["F5"] = 166, ["F6"] = 167, ["F7"] = 168, ["F8"] = 169, ["F9"] = 56, ["F10"] = 57,
 	["~"] = 243, ["1"] = 157, ["2"] = 158, ["3"] = 160, ["4"] = 164, ["5"] = 165, ["6"] = 159, ["7"] = 161, ["8"] = 162, ["9"] = 163, ["-"] = 84, ["="] = 83, ["BACKSPACE"] = 177,
@@ -153,6 +158,23 @@ AddEventHandler("izone:getResultFromPlayerInAnyJobZone", function(job, cb)
 	cb(nil)
 end)
 
+AddEventHandler("izone:isPlayerInIllZone", function(cb)
+	local plyCoords = GetEntityCoords(GetPlayerPed(-1), true)
+	local x1, y1, z1 = table.unpack(plyCoords) -- on prend les coords du joueur
+	for i = 1, #allZoneByCat["illegal"] do
+		if GetDistanceBetweenCoords(x1, y1, z1, tonumber(allZoneByCat["illegal"][i].gravityCenter.x), tonumber(allZoneByCat["illegal"][i].gravityCenter.y), 1.01, false) < tonumber(allZoneByCat["illegal"][i].longestDistance) then
+			-- alors il y est peut etre : 
+			local n = windPnPoly(allZoneByCat["illegal"][i].coords, plyCoords)
+			if n ~= 0 then -- alors il y est
+				allZoneByCat["illegal"][i].instructions.nom = allZoneByCat["illegal"][i].nom
+				cb(allZoneByCat["illegal"][i].instructions) -- on retourne le résultat !
+				return
+			end
+		end
+	end
+	cb(nil)
+end)
+
 AddEventHandler("izone:isPlayerInZoneReturnInstructions", function(zoneName, cb)
 	found = FindZone(zoneName)
 	if not found then
@@ -163,7 +185,7 @@ AddEventHandler("izone:isPlayerInZoneReturnInstructions", function(zoneName, cb)
 		if GetDistanceBetweenCoords(x1, y1, z1, tonumber(allZone[found].gravityCenter.x), tonumber(allZone[found].gravityCenter.y), 1.01, false) < tonumber(allZone[found].longestDistance) then
 			local n = windPnPoly(allZone[found].coords, plyCoords)
 			if n ~= 0 then
-				if allZone[found].instructions then
+				if allZone[found].instructions then--
 					cb(allZone[found].instructions)
 				end
 			else
@@ -201,7 +223,7 @@ AddEventHandler("izone:isPointInZone", function(xr, yr, zone, cb)
 	if not found then
 		cb(nil)
 	else
-		local flag = { x = xr, y = yr}
+		local flag = { x = tonumber(xr), y = tonumber(yr)}
 		if GetDistanceBetweenCoords(xr, yr, 1.01, tonumber(allZone[found].gravityCenter.x), tonumber(allZone[found].gravityCenter.y), 1.01, false) < tonumber(allZone[found].longestDistance) then
 			local n = windPnPoly(allZone[found].coords, flag)
 			if n ~= 0 then

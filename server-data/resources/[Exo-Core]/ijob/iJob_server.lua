@@ -1,3 +1,8 @@
+-- Copyright (C) Izio, Inc - All Rights Reserved
+-- Unauthorized copying of this file, via any medium is strictly prohibited
+-- Proprietary and confidential
+-- Written by Romain Billot <romainbillot3009@gmail.com>, Jully 2017
+
 allJob = {}
 allZoneJob = {}
 addCapactity = 10
@@ -7,6 +12,7 @@ minTimePay = timePay/2
 enablePay = false
 addjobautomatic = false
 debugg = true
+local usableTreatItem = {48}-- TO CHANGE
 
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -24,15 +30,14 @@ AddEventHandler("iJob:startLoading", function()
 	if addjobautomatic == true then
 		
 		tableTest = {
-			rank = {{name = "Apprenti", salary = 300}, {name = "testName2", salary = 100} },
+			rank = { {name = "Capitaine", salary = 500}, {name="Cadet", salary = 100} },
 			blacklist = {{p = "steamTest", dhm = "14 6 5"} },
 			lost = { {p = "steamTest2", a = 10, re = "essence", dmh = "14 6 5"}, {p = "steamTest3", a = 10, re = "essence", dmh = "14 6 5"} },
 			benefit = { {p = "steamTest2", a = 10, re = "venteTest", dmh = "14 6 5"}, {p = "steamTest3", a = 10, re = "venteTest", dmh = "14 6 5"} },
 			capital = 100000,
-			name = "depanneur",
-			pay = 0,
+			name = "chomeur",
 			employe = { {pl = "employe", rank = "defaultRank", fullname = "fullName"} },
-			id = 2
+			default = {rank = ""}
 		}
 
 		local encodedRank = json.encode(tableTest.rank)
@@ -41,13 +46,13 @@ AddEventHandler("iJob:startLoading", function()
 		local encodedBenefit = json.encode(tableTest.benefit) 
 		local encodedEmploye = json.encode(tableTest.employe)
 		local capital = tostring(tableTest.capital)
-		local pay = tostring(tableTest.pay)
+		local default = json.encode(tableTest.default)
 
-		MySQL.Sync.execute("INSERT INTO job (`capital`, `benefit`, `lost`, `pay`, `rank`, `employe`, `blacklist`, `name`) VALUES (@capital, @benefit, @lost, @pay, @rank, @employe, @blacklist, @name)", {
+		MySQL.Sync.execute("INSERT INTO job (`capital`, `benefit`, `lost`, `default`, `rank`, `employe`, `blacklist`, `name`) VALUES (@capital, @benefit, @lost, @default, @rank, @employe, @blacklist, @name)", {
 			['@capital'] = capital, 
 			['@benefit'] = encodedBenefit, 
 			['@lost'] = encodedLost, 
-			['@pay'] = pay, 
+			['@default'] = default, 
 			['@rank'] = encodedRank, 
 			['@employe'] = encodedEmploye, 
 			['@blacklist'] = encodedBlacklist, 
@@ -93,9 +98,7 @@ AddEventHandler("iJob:startLoading", function()
 			end
 			if v == 0 then -- to prevent the job without zone assigned (which is not supposed to happend)
 				LoadJob(results[i], nil)
-				print("v = 0")
 			else
-				print(tostring(allZoneJob[1].nom))
 				LoadJob(results[i], allZoneJob)
 				allZoneJob = {} 
 			end
@@ -108,10 +111,10 @@ end)
 
 function LoadJob(test, test2)
 	if test2 ~= nil then
-		allJob[test.name] = CreateJob(test.capital, json.decode(test.benefit), json.decode(test.lost), test.name, test.pay, json.decode(test.rank), json.decode(test.employe), test2, json.decode(test.blacklist)) -- zone contain { zone1 = { }, zone2 = { }, zone3 = { } }
+		allJob[test.name] = CreateJob(test.capital, json.decode(test.benefit), json.decode(test.lost), test.name, json.decode(test.default), json.decode(test.rank), json.decode(test.employe), test2, json.decode(test.blacklist)) -- zone contain { zone1 = { }, zone2 = { }, zone3 = { } }
 	else -- the job got a zone assigned by the categorie name
 
-		allJob[test.name] = CreateJob(test.capital, json.decode(test.benefit), json.decode(test.lost), test.name, test.pay, json.decode(test.rank), json.decode(test.employe), nil, json.decode(test.blacklist))
+		allJob[test.name] = CreateJob(test.capital, json.decode(test.benefit), json.decode(test.lost), test.name, json.decode(test.default), json.decode(test.rank), json.decode(test.employe), nil, json.decode(test.blacklist))
 
 	end
 
@@ -122,6 +125,7 @@ function UpdateJob()
 		TriggerEvent("es:getPlayers", function(Users)
 			for k,v in pairs(Users) do
 				if v ~= nil then
+					print(v.get('source') .. " " .. v.get('job') .. " " .. v.get('rank'))
 					TriggerClientEvent("ijob:updateJob", v.get('source'), v.get('job'), v.get('rank'))
 					TriggerClientEvent("ijob:addBlip", v.get('source'), allJob[v.get('job')].getBlip(), true)
 				end
@@ -171,13 +175,12 @@ function saveJobIfChanged()
 	SetTimeout(60000, function()
 
 			for k,v in pairs(allJob)do
-
+				print("Job changed ? : ".. tostring(v.get('haveChanged')))
 				if v.get('haveChanged') then -- only if changed	
-					MySQL.Sync.execute("UPDATE job SET `capital`=@vcapital, `benefit`=@vbenefit, `lost`=@vlost, `pay`=@vpay, `rank`=@vrank, `employe`=@vemploye, `blacklist`=@vblacklist, `name`=@vname WHERE name = @vname",{
+					MySQL.Sync.execute("UPDATE job SET `capital`=@vcapital, `benefit`=@vbenefit, `lost`=@vlost, `rank`=@vrank, `employe`=@vemploye, `blacklist`=@vblacklist, `name`=@vname WHERE name = @vname",{
 						['@vcapital'] = tostring(v.get('capital')), 
 						['@vbenefit'] = json.encode(v.get('benefit')),
 						['@vlost'] = json.encode(v.get('lost')), 
-						['@vpay'] = tostring(v.get('pay')),
 						['@vrank'] = json.encode(v.get('rank')), 
 						['@vemploye'] = json.encode(v.get('employe')),
 						['@vblacklist'] = json.encode(v.get('blacklist')), 
@@ -199,11 +202,10 @@ function saveJob()
 
 	for k,v in pairs(allJob)do
 
-		MySQL.Sync.execute("UPDATE job SET `capital`=@vcapital, `benefit`=@vbenefit, `lost`=@vlost, `pay`=@vpay, `rank`=@vrank, `employe`=@vemploye, `blacklist`=@vblacklist, `name`=@vname WHERE name = @vname",{
+		MySQL.Sync.execute("UPDATE job SET `capital`=@vcapital, `benefit`=@vbenefit, `lost`=@vlost,`rank`=@vrank, `employe`=@vemploye, `blacklist`=@vblacklist, `name`=@vname WHERE name = @vname",{
 			['@vcapital'] = tostring(v.get('capital')), 
 			['@vbenefit'] = json.encode(v.get('benefit')),
 			['@vlost'] = json.encode(v.get('lost')), 
-			['@vpay'] = tostring(v.get('pay')),
 			['@vrank'] = json.encode(v.get('rank')), 
 			['@vemploye'] = json.encode(v.get('employe')),
 			['@vblacklist'] = json.encode(v.get('blacklist')), 
@@ -217,6 +219,12 @@ function saveJob()
 
 end
 ------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------NewPlayer--------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+AddEventHandler("es:newPlayerLoaded", function(userSource, user)
+	allJob["chomeur"].addEmployeWithRefresh(user)
+end)
+------------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------Harvest---------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
 function AddHarvestCapacity()
@@ -228,6 +236,57 @@ function AddHarvestCapacity()
 	end)
 end
 AddHarvestCapacity()
+
+RegisterServerEvent("iJob:harvestillegal")
+AddEventHandler("iJob:harvestillegal", function(result)
+	local source = source -- Thanks FXS
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+
+		local item = {}
+		local quantity = {}
+		local lucky = false
+		local randomHarvest = math.random(1, 100)
+
+		if randomHarvest < 20 then -- 20% de change d'avoir deux item normaux
+			item = result.receive.normal
+			lucky = true
+		else -- et 80% de chance d'avoir jsute un item normal
+			item = result.receive.normal
+		end
+	
+		for i=1, #item do
+			if lucky then
+				quantity[i] = 2
+			else
+				quantity[i] = 1
+			end
+		end
+
+		local resultFromHarvest = allJob["illegal"].harvest(result.displayMessageInZone, quantity, false)
+		if resultFromHarvest then
+			ProcessHarvest(source, result, item, quantity)
+		else
+			TriggerClientEvent("ijob:stopHarvest", source)
+			user.notify("Tu ne peux pas récolter, la zone de récolte est vide. Attends un peu", "error", "centerLeft", true, 5000)
+			TriggerClientEvent("anim:Play", source, "stopAll")
+		end
+	end)
+end)
+
+RegisterServerEvent("iJob:otherIllegal")
+AddEventHandler("iJob:otherIllegal", function(result)
+	local source = source -- Thanks FXS
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		local item = result.receive.normal
+		local quantity = {}
+
+		for i=1, #item do
+			quantity[i] = 1
+		end
+		
+		ProcessOther(source, result, item, quantity)
+	end)
+end)
 
 RegisterServerEvent("iJob:checkHarvest")
 AddEventHandler("iJob:checkHarvest", function(result)
@@ -276,6 +335,36 @@ AddEventHandler("iJob:checkHarvest", function(result)
 
 end)
 
+RegisterServerEvent("ijob:process")
+AddEventHandler("ijob:process", function(result)
+	local source = source -- Thanks FXS
+	local job
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		local item = {}
+		local quantity = {}
+		local lucky = false
+		local randomReceive = math.random(1, 100)
+
+		if randomReceive < 2 then -- 2% de chance d'avoir un item rare
+			item = result.receive.rare
+		elseif randomReceive < 17 then -- 15% de change d'avoir deux item normaux
+			item = result.receive.normal
+			lucky = true
+		else -- et 83% de chance d'avoir jsute un item normal
+			item = result.receive.normal
+		end
+	
+		for i=1, #item do
+			if lucky then
+				quantity[i] = 2
+			else
+				quantity[i] = 1
+			end
+		end
+		ProcessOther(source, result, item, quantity)
+	end)
+end)
+
 function IsHarvestJob(job)
 	if string.lower(job) == string.lower("Fermier") or string.lower(job) == string.lower("Bucheron") or string.lower(job) == string.lower("Pompiste") then
 		return true
@@ -284,7 +373,7 @@ function IsHarvestJob(job)
 	end
 end
 
-function ProcessHarvest(source, result, item, quantity)
+function ProcessHarvest(source, result, item, quantity) -- create = true / false
 	TriggerEvent("es:getPlayerFromId", source, function(user)
 
 		local bool = user.isAbleToReceiveItems(item , quantity) -- deux array
@@ -294,6 +383,7 @@ function ProcessHarvest(source, result, item, quantity)
 			local test = GetMessage(item, quantity, itemInfos)
 			user.notify("Tu viens de récolter" .. test .. ".", "success", "centerLeft", true, 5000)
 			allJob[user.get('job')].harvest(result.displayMessageInZone, {100}, true)
+			TriggerClientEvent("inventory:change", source, json.decode(user.sendDatas()))
 		else
 			user.notify("Tu n'as pas assez de place dans ton inventaire", "error", "centerLeft", true, 5000)
 			TriggerClientEvent("anim:Play", source, "stopAll")
@@ -302,9 +392,32 @@ function ProcessHarvest(source, result, item, quantity)
 	end)
 end
 
+function ProcessOther(source, result, item, quantity)
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		local quantityToRemove = {}
+			user.addQuantityArray(item, quantity)
+			for i = 1, #result.need do
+				table.insert(quantityToRemove, 1)
+			end
+			for i=1, #result.need do
+				for j=1, #usableTreatItem do
+					if result.need[i] == usableTreatItem[j] then
+						table.remove(result.need, i)
+					end
+				end
+			end
+			user.removeQuantityArray(result.need, quantityToRemove)
+			local itemInfos = user.get('item')
+			local test = GetMessage(item, quantity, itemInfos)
+			user.notify("Tu viens de recevoir" .. test .. ".", "success", "centerLeft", true, 5000)
+			TriggerClientEvent("inventory:change", source, json.decode(user.sendDatas()))
+	end)
+end
+
 function GetMessage(item, quantity, itemInfos)
 	local message = ""
 	for i=1, #item do
+		-- name est nill visiblement
 		message = message .. " " .. quantity[i] .. " " .. itemInfos[item[i]].name
 		if i ~= 1 and i ~= #item then
 			message = message .. " et "
@@ -313,54 +426,126 @@ function GetMessage(item, quantity, itemInfos)
 	return message
 end
 ------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------PARTIE API-------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+AddEventHandler("ijob:getJobFromName", function(name, cb)
+	if allJob[name] ~= nil then
+		cb(allJob[name])
+	else
+		cb(nil)
+	end
+end)
+------------------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------EVENT JOB--------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
-
-
 RegisterServerEvent('ijob:changeJobPoleEmplois') -- Le joueur est nécéssairement Online
 AddEventHandler('ijob:changeJobPoleEmplois', function(job)
 	local job = string.lower(job)
 	--RconPrint("Job Changed to " .. tostring(job))
 	TriggerEvent("es:getPlayerFromId", source, function(user)
 		if allJob[job].isBlacklisted(user.get('identifier')) then
-			user.notify("Tu es <span style='color:red'>blacklisté</span> du métier, attends encore un peu.", error, true, 5000)
+			user.notify("Tu es <span style='color:red'>blacklisté</span> du métier, attends encore un peu.", "error", true, 5000)
 		else
 			local result = allJob[job].addEmployeWithRefresh(user)
 			if result == "already" then
-				user.notify("Tu as déjà le métier de <span style='color:yellow' > "..job.. "</span>, tu ne peux pas faire cette action.", success, "topCenter", true, 5000)
+				user.notify("Tu viens de quitter le métier de <span style='color:yellow' > " ..job.. "</span>, attends encode un peu.", "error", "leftCenter", true, 5000)
 			else
-				user.notify("Bienvenue chez les <span style='color:yellow' > "..job.. "</span> contact ton patron, il te donnera les infos dont tu as besoin.", success, "topCenter", true, 5000)
-				TriggerClientEvent("ijob:addBlip", user.get('source'), allJob[user.get('job')].getBlip(), true)
+				if result == "hireFirst" then
+					user.notify("Tu ne peux pas faire ça, tu es <span style='color:yellow' > ".. user.get('job') .. "</span> quitte d'abord ton emploie.", "error", "centerLeft", true, 5000)
+				else
+					user.notify("Bienvenue chez les <span style='color:yellow' > "..job.. "</span> contact ton patron, il te donnera les infos dont tu as besoin.", "success", "topCenter", true, 5000)
+					TriggerClientEvent("ijob:addBlip", user.get('source'), allJob[user.get('job')].getBlip(), true)
+				end
 			end
 		end
 	end)
 
 end)
 
-RegisterServerEvent('ijob:changeJobOff') -- Quand le joueur est Offline
-AddEventHandler('ijob:changeJobOff', function(job, employe)
+TriggerEvent('es:addGroupCommand', 'addjob', "mod", function(source, args, user)
+	local source = source
+	TriggerEvent("es:getPlayerFromId", tonumber(args[2]), function(targetUser) -- job, employeNetId
+		if args[2] == "help" or #args ~= 3 then
+			print("test")
+			TriggerClientEvent('chatMessage', source, "SYSTEM", {255, 0, 0}, "Usage: /addjob [serverId] [job], ex : /addjob 1 bucheron")
+			CancelEvent()
+			return
+		end
+		if targetUser ~= nil then
+			print("different de nil")
+			if allJob[targetUser.get('job')] ~= nil then
+				print("diff nil 2")
+				if allJob[targetUser.get('job')].isBlacklisted(targetUser) then
+					print("je suis blacklisté ?")
+					targetUser.notify("Tu es <span style='color:red'>blacklisté</span> du métier de " .. targetUser.get('job') .. ".", "error", true, 5000)
+				else
+					print("pas blacklisté")
+					result = allJob[args[3]].addEmployeWithRefresh(targetUser)
+					print(result)
+					if result == "already" then
+						TriggerEvent("es:getPlayerFromId", source, function(user)
+							user.set('job', args[3])
+							user.set('rank', allJob[args[3]].get('default.rank'))
+							TriggerClientEvent("ijob:updateJob", targetUser.get('source'), targetUser.get('job'), targetUser.get('rank'))
+							TriggerClientEvent("ijob:addBlip", targetUser.get('source'), allJob[targetUser.get('job')].getBlip(), true)
+							user.notify("Le joueur à déjà ce job.", "error", "topCenter", true, 5000)
+						end)
+					elseif result == "hireFirst" then
+						allJob[args[3]].removeEmploye(targetUser)
+						targetUser.notify("Tu es <span style='color:red'>retiré</span> du métier de " .. targetUser.get('job') .. ".", "success", "centerTop", true, 5000)
+						allJob[args[3]].addEmploye(employe, targetUser.get('fullname'))
+						TriggerClientEvent("ijob:updateJob", targetUser.get('source'), targetUser.get('job'), targetUser.get('rank'))
+						TriggerClientEvent("ijob:addBlip", targetUser.get('source'), allJob[targetUser.get('job')].getBlip(), true)
+						targetUser.notify("Tu es <span style='color:green'>ajouté</span> au métier de " .. job .. ".", "success", true, 5000)
+					else
+						TriggerClientEvent("ijob:updateJob", targetUser.get('source'), targetUser.get('job'), targetUser.get('rank'))
+						TriggerClientEvent("ijob:addBlip", targetUser.get('source'), allJob[targetUser.get('job')].getBlip(), true)
+						targetUser.notify("Tu es <span style='color:green'>ajouté</span> au métier de " .. targetUser.get('job') .. ".", "success", "centerTop", true, 5000)
+					end
+				end
+			else
+				TriggerEvent("es:getPlayerFromId", source, function(user)
+					user.notify("Le job spécifié n'existe pas", "error", "topCenter", true, 5000)
+				end)
+			end
+		else
+			TriggerEvent("es:getPlayerFromId", source, function(user)
+				user.notify("Le serverId " .. args[2] .. " n'existe pas.", "error", "topCenter", true, 5000)
+			end)
+		end
+	end)
+end, function(source, args, user)
+	print("TEST")
+	local source = source
+	TriggerClientEvent('chatMessage', source, "SYSTEM", {255, 0, 0}, "permission insuffisante!")
+end)
 
-	if allJob[job].get('isBlacklisted') then
-
-		-- TriggerClientEvent()  TODO : Faire une notification au joueur comme quoi il est blacklist
+-- commande démission (provisoire) :
+TriggerEvent('es:addCommand', 'demission', function(source, args, user)
+	if #args ~= 1 then
+		user.notify("Utilisation : /demission.", "error", "topCenter",true, 5000)
 	else
-		TriggerEvent("es:getPlayerFromIdentifier", employe, function(user)
-			allJob[job].addEmploye(employe, user.get('fullname'))
-			-- TriggerClientEvent()  TODO : Faire une notification au joueur comme quoi il est ajouté au job
-		end)
+		user.notify("Tu viens de quitter ton métier.", "success", "topCenter",true, 5000)
+		local test = allJob[user.get('job')].removeEmploye(user)
+		if test == "L employe n a pas ete trouve" then
+			local result = nil
+			for k,v in pairs(allJob) do
+				result = v.isEmploye(user)
+				if result then
+					user.set("job", k)
+					user.set("rank", result)
+					TriggerClientEvent("ijob:updateJob", user.get('source'), user.get('job'), user.get('rank'))
+					return
+					CancelEvent()
+				end
+			end
+			user.set("job", "chomeur")
+			user.set("rank", allJob["chomeur"].default.rank)
+			TriggerClientEvent("ijob:updateJob", user.get('source'), user.get('job'), user.get('rank'))
+		end
 	end
-
 end)
 
-RegisterServerEvent('ijob:changeJobByAdminOf') -- Quand le joueur est Offline
-AddEventHandler('ijob:changeJobOff', function(job, employe)
-
-		TriggerEvent("es:getPlayerFromIdentifier", employe, function(user)
-			allJob[job].addEmploye(employe, user.get('fullname'))
-			-- TriggerClientEvent()  TODO : Faire une notification au joueur comme quoi il est ajouté au job
-		end)
-
-end)
 ------------------------------------------------------------------------------------------------------------------------
 -------------------------------------------------------PAY--------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
