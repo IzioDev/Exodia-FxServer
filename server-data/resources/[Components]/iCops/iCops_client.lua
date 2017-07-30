@@ -12,6 +12,8 @@ local currentMenu = nil
 local active = false
 local gaveWeapons = false
 local officerDrag = nil
+local currentVeh = nil
+local timeVeh = nil
 local subButtonList = { 
 	["annimations"] = {
 		title = "Annimations",
@@ -124,6 +126,32 @@ function RunCopThread()
 								DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour " ..result.displayedMessageInZone.take)
 								if IsControlJustPressed(1, 38) then
 									TriggerEvent("police:retrieveArmurerie")
+								end
+							end
+						end
+					elseif result.garage then
+						if isInService and not(IsPedInAnyVehicle(GetPlayerPed(-1), 0)) then
+							if currentVeh == nil then
+								if timeVeh == nil then
+									DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour " ..result.displayedMessageInZone.noCurrentVeh)
+									if IsControlJustPressed(1, 38) then
+										OpenGarage(result, currentVeh)
+									end
+								else
+									if GetGameTimer() >= timeVeh + 1800000 then -- 30 minutes
+										if IsControlJustPressed(1, 38) then
+											OpenGarage(result, currentVeh)
+										end
+									else
+										if IsControlJustPressed(1, 38) then
+											TriggerEvent("pNotify:notifyFromServer", "Tu as sorti un véhicule il y a: " .. (math.ceil(GetGameTimer()-timeVeh)/60000) .. "minutes. </br> <center>Attends un peu.</center>")
+										end
+									end
+								end
+							else
+								DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour " ..result.displayedMessageInZone.currentVeh)
+								if IsControlJustPressed(1, 38) then
+									OpenGarage(result, currentVeh)
 								end
 							end
 						end
@@ -256,6 +284,80 @@ function CloseMenu(fake)
 	currentMenu = nil
 end
 
+function OpenGarage(result, currentVeh)
+	if currentVeh == nil then
+		ClearMenu()
+		MenuTitle = "Garage " .. userRank
+		this = result.carInfos[userRank]
+		for i = 1, #this do
+			Menu.addButton(menu.buttons[i].name, "SpawnVeh", {point = result.spawnPoints, car = this[i].carHash, price = this[i].price})
+		end
+		Menu.hidden = false
+		currentMenu = "main"
+	else
+		if DoesEntityExist(currentVeh) then
+			local x,y,z = table.unpack(GetEntityCoords(currentVeh, true))
+			TriggerEvent("izone:isPointInZone", x, y,"garageLspd", function(isVehInZone)
+				if isVehInZone then
+					Citizen.InvokeNative(0xEA386986E786A54F, Citizen.PointerValueIntInitialized(currentVeh))
+					currentVeh = nil
+					ClearMenu()
+					MenuTitle = "Garage " .. userRank
+					this = result.carInfos[userRank]
+					for i = 1, #this do
+						Menu.addButton(menu.buttons[i].name, "SpawnVeh", {point = result.spawnPoints, car = this[i].carHash, price = this[i].price})
+					end
+					Menu.hidden = false
+					currentMenu = "main"
+				else
+					TriggerEvent("pNotify:notifyFromServer", "Ton véhicule n'est pas dans le garage, merci de le rentrer.", "error", "topCenter", true, 5000)
+				end
+			end)
+		else
+			currentVeh = nil
+			ClearMenu()
+			MenuTitle = "Garage " .. userRank
+			this = result.carInfos[userRank]
+			for i = 1, #this do
+				Menu.addButton(menu.buttons[i].name, "SpawnVeh", {point = result.spawnPoints, car = this[i].carHash, price = this[i].price})
+			end
+			Menu.hidden = false
+			currentMenu = "main"
+		end
+	end
+end
+
+function SpawnVeh(args)
+	local points = args.point
+	local carHash = args.car
+	local carPrice = args.price
+
+	local car = GetHashKey(args.car)
+	local playerPed = GetPlayerPed(-1)
+	RequestModel(car)
+	while not HasModelLoaded(car) do
+			Citizen.Wait(0)
+	end
+	local playerCoords = GetEntityCoords(playerPed)
+	policevehicle = CreateVehicle(car, playerCoords, 90.0, true, false)
+	SetVehicleMod(policevehicle, 11, 2)
+	SetVehicleMod(policevehicle, 12, 2)
+	SetVehicleMod(policevehicle, 13, 2)
+	SetVehicleEnginePowerMultiplier(policevehicle, 35.0)
+	SetVehicleOnGroundProperly(policevehicle)
+	SetVehicleHasBeenOwnedByPlayer(policevehicle,true)
+	local netid = NetworkGetNetworkIdFromEntity(policevehicle)
+	SetNetworkIdCanMigrate(netid, true)
+	NetworkRegisterEntityAsNetworked(VehToNet(policevehicle))
+	TaskWarpPedIntoVehicle(playerPed, policevehicle, -1)
+	SetEntityInvincible(policevehicle, false)
+	SetEntityAsMissionEntity(policevehicle, true, true)
+
+	-- Il faut envoyer un event au serveur qui enleve au capitale le price, qui cautionne le joueur (virtuellement) et qui check connexion, déco..
+	-- Dans le meme genre de TODO, il faut faire la vérif waitingWeapons (si c'est pas nil, on lui donne, puis on vide.)
+	currentVeh = policevehicle
+end
+
 function PlayEmote(annimName)
 	local params = {}
 	if annimName == "stop" then
@@ -315,9 +417,9 @@ function Cuff()
 	end
 end
 
--- function TakeWeapon() -- TO SEE
+function TakeWeapon() -- TO SEE
 
--- end
+end
 
 function PutIntoVeh()
 	local t, distance = GetClosestPlayer()
@@ -378,7 +480,7 @@ function Jail()
 
 end
 
-function ForceVeh()
+function ForceVeh()--
 	Citizen.CreateThread(function()
 		local pos = GetEntityCoords(GetPlayerPed(-1))
 		local entityWorld = GetOffsetFromEntityInWorldCoords(GetPlayerPed(-1), 0.0, 20.0, 0.0)

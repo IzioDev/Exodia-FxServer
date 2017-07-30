@@ -223,7 +223,7 @@ AddEventHandler("izone:isPointInZone", function(xr, yr, zone, cb)
 	if not found then
 		cb(nil)
 	else
-		local flag = { x = xr, y = yr}
+		local flag = { x = tonumber(xr), y = tonumber(yr)}
 		if GetDistanceBetweenCoords(xr, yr, 1.01, tonumber(allZone[found].gravityCenter.x), tonumber(allZone[found].gravityCenter.y), 1.01, false) < tonumber(allZone[found].longestDistance) then
 			local n = windPnPoly(allZone[found].coords, flag)
 			if n ~= 0 then
