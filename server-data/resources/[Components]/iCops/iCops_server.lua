@@ -91,7 +91,7 @@ end)
 
 AddEventHandler("es:playerLoaded", function(source)
 	TriggerEvent("es:getPlayerFromId", source, function(user)
-		if user.get('waitingWeapons') ~= nil then
+		if user.get('waitingWeapons') ~= nil and (user.get('job') == "lspd" or user.get('job') == "lssd")then
 			local weapons = user.get('waitingWeapons') 
 			for i = 1, #weapons do
 				user.addQuantity(weapons[i].id, weapons[i].quantity)
@@ -113,6 +113,7 @@ AddEventHandler("police:spawnVehGarage", function(carPrice)
 			if not(user.getSessionVar('caution', carPrice)) then
 				print(carPrice)
 				policeJob.removeCapital(carPrice)
+				policeJob.addLost(user, carPrice, "prise de véhicule de fonction.")
 				user.setSessionVar('caution', carPrice)
 				user.notify("La police te prete un véhicule. Si tu ne le ramène pas, ils te demandront de payer la moitié du prix de la voiture. Prends en soin!", "error", "topCenter", true, 5000)
 			end
@@ -126,6 +127,7 @@ AddEventHandler("police:retreiveCaution", function(carPrice)
 	TriggerEvent("es:getPlayerFromId", source, function(user)
 		TriggerEvent("ijob:getJobFromName", user.get('job'), function(policeJob)
 			policeJob.addCapital(user.getSessionVar('caution'))
+			policeJob.addBenefit(user, user.getSessionVar('caution'), "Ajout du véhicule au garage.")
 			user.setSessionVar("caution", nil)
 			user.notify("Tu viens de ramener le véhicule au garage.", "success", "topCenter", true, 5000)
 		end)
@@ -133,20 +135,22 @@ AddEventHandler("police:retreiveCaution", function(carPrice)
 end)
 
 AddEventHandler("is:playerDropped", function(user)
-	if user.getSessionVar("caution") ~= nil then
-		user.removeBank(user.getSessionVar("caution")/2)
+	if user.get('job') == "lspd" or user.get('job') == "lssd" then
+		if user.getSessionVar("caution") ~= nil then
+				user.removeBank(user.getSessionVar("caution")/2)
+		end
 	end
 end)
 -- Fonctions du menu policier :
 
 -- Partie checkID
 RegisterServerEvent("police:checkId")
-AddEventHandler("police:checkId", function(psid, confirmed)
+AddEventHandler("police:checkId", function(psid)
 	local source = source
 	TriggerEvent("es:getPlayerFromId", source, function(user)
 		TriggerEvent("es:getPlayerFromId", psid, function(targetUser)
 			if targetUser~=nil then
-				if targetUser.getSessionVar("cuffed") == true or confirmed then
+				if targetUser.getSessionVar("cuffed") == true then
 					targetUser.notify("Un agent de police est en train de regarder ton identitié, tu ne peux pas réagir, tu es menotté.", "error", "topCenter", true, 5000)
 					user.notify("Tu es en train de regarder la carte d'identité d'une personne. </br> <ul> <li><strong>Nom: </strong>".. targetUser.get('lastName') ..".</li> <li> <strong>Prénom: </strong>".. targetUser.get('firstName') .." </li> <li><strong>Age: </strong>".. targetUser.get('age') .. " </li> <li><strong>Matricule: </strong>".. "TODO" .." </li> </ul>", "success", "topCenter", true, 10000)
 				else
@@ -181,12 +185,12 @@ end)
 
 -- Partie Check Inv
 RegisterServerEvent("police:targetCheckInventory")
-AddEventHandler("police:targetCheckInventory", function(psid, confirmed)
+AddEventHandler("police:targetCheckInventory", function(psid)
 	local source = source -- FxServer
 	TriggerEvent("es:getPlayerFromId", source, function(user)
 		TriggerEvent("es:getPlayerFromId", psid, function(targetUser) --
 			if targetUser~=nil then
-				if targetUser.getSessionVar("cuffed") == true or confirmed then
+				if targetUser.getSessionVar("cuffed") == true then
 					targetUser.notify("Un agent de police est en train de regarder ton inventaire, tu ne peux pas réagir, tu es menotté.", "error", "topCenter", true, 5000)
 					local message = GetInventoryMessage(targetUser)
 					user.notify("Tu es en train de regarder l'inventaire d'une personne. </br>" .. message, "success", "topCenter", true, 15000)
@@ -293,6 +297,7 @@ AddEventHandler("police:setFineToPlayer", function(psid, amount)
 			targetUser.removeBank(amount)
 			TriggerEvent("ijob:getJobFromName", user.get('job'),function(police)
 				police.addCapital(amount)
+				police.addBenefit(user, amount, "Amende sur un citoyen.")
 			end)
 		end)
 	end)

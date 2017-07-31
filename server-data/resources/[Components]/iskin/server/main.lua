@@ -79,7 +79,7 @@ AddEventHandler('esx_skin:savePlayerSkinInfos', function(skin)
 	end)
 end)
 
-TriggerEvent('es:addGroupCommand', 'skin', "owner", function(source, args, user)
+TriggerEvent('es:addGroupCommand', 'skin', "user", function(source, args, user)
 	if #args~=2 then
 		user.notify("Utilisation : /skin [PID]", "error", "topCenter", true, 5000)
 	else

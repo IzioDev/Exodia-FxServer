@@ -30,14 +30,15 @@ AddEventHandler("iJob:startLoading", function()
 	if addjobautomatic == true then
 		
 		tableTest = {
-			rank = { {name = "Capitaine", salary = 500}, {name="Cadet", salary = 100} },
+			rank = { {name = "gérant hopital", salary = 500}, {name="stagiaire", salary = 100}, {name="interne", salary = 300}},
 			blacklist = {{p = "steamTest", dhm = "14 6 5"} },
 			lost = { {p = "steamTest2", a = 10, re = "essence", dmh = "14 6 5"}, {p = "steamTest3", a = 10, re = "essence", dmh = "14 6 5"} },
 			benefit = { {p = "steamTest2", a = 10, re = "venteTest", dmh = "14 6 5"}, {p = "steamTest3", a = 10, re = "venteTest", dmh = "14 6 5"} },
 			capital = 100000,
-			name = "chomeur",
-			employe = { {pl = "employe", rank = "defaultRank", fullname = "fullName"} },
-			default = {rank = ""}
+			name = "médecin",
+			employe = { {pl = "steam:110000104bd6595", rank = "interne", displayName = "test Test"} },
+			default = {rank = "stagiaire"},
+			id = 5
 		}
 
 		local encodedRank = json.encode(tableTest.rank)
@@ -48,7 +49,7 @@ AddEventHandler("iJob:startLoading", function()
 		local capital = tostring(tableTest.capital)
 		local default = json.encode(tableTest.default)
 
-		MySQL.Sync.execute("INSERT INTO job (`capital`, `benefit`, `lost`, `default`, `rank`, `employe`, `blacklist`, `name`) VALUES (@capital, @benefit, @lost, @default, @rank, @employe, @blacklist, @name)", {
+		MySQL.Sync.execute("INSERT INTO job (`capital`, `benefit`, `lost`, `default`, `rank`, `employe`, `blacklist`, `name`, `id`) VALUES (@capital, @benefit, @lost, @default, @rank, @employe, @blacklist, @name, @id)", {
 			['@capital'] = capital, 
 			['@benefit'] = encodedBenefit, 
 			['@lost'] = encodedLost, 
@@ -56,7 +57,8 @@ AddEventHandler("iJob:startLoading", function()
 			['@rank'] = encodedRank, 
 			['@employe'] = encodedEmploye, 
 			['@blacklist'] = encodedBlacklist, 
-			['@name'] = tableTest.name
+			['@name'] = tableTest.name,
+			['@id'] = tableTest.id
 			})
 	end
 
