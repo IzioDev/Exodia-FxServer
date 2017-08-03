@@ -53,13 +53,15 @@ function CreateJob(capital, benefit, lost, name, default, rank, employe, zone, b
 		if user.get('job') == "chomeur" then
 			for i=1, #self.employe do
 				if self.employe[i].pl == user.get('identifier') then
+					print("already")
 					return "already"
 				end
-			end
+			end --
 			table.insert(self.employe, {pl = user.get('identifier'), fullname = user.get('dislayName'), rank = defaultRank})
 			user.set('job', self.name)
 			user.set('rank', self.default.rank)
-	
+			print("okaytch")
+			print(self.name .. user.get('rank'))
 			TriggerClientEvent("ijob:updateJob", user.get('source'), self.name, user.get('rank'))
 			TriggerClientEvent("is:updateJob", user.get('source'), self.name, user.get('rank'))
 			return "Employe ajoute"
@@ -91,16 +93,20 @@ function CreateJob(capital, benefit, lost, name, default, rank, employe, zone, b
 	rTable.removeEmploye = function(employe) -- l'objet utilisateur
 		for i=1, #self.employe do
 			if self.employe[i].pl == employe.get('identifier') then
+				print("trouvé")
 				table.remove(self.employe, i)
 				employe.set('job',"chomeur")
 				employe.set('rank', " ")
 				addBlackList(self, employe.get('identifier'))
-				self.haveChanged = true
+				SetChange(self)
 				TriggerClientEvent("ijob:updateJob", employe.get('source'), employe.get('job'), employe.get('rank'))
 				-- TriggerEvent("ijob:fireEmploye", employe, self.name) A voir si on le retire direct BDD ou attendre un save (60 sec)
 				return "Employe vire"
 			end
 		end
+		print("pas trouvé")
+		employe.set('job',"chomeur")
+		employe.set('rank', " ")
 		return "L employe n a pas ete trouve"
 	end
 	
@@ -371,7 +377,7 @@ function CreateJob(capital, benefit, lost, name, default, rank, employe, zone, b
 	rTable.getBlip = function()
 		local returnedBlipInfos = {}
 		for i = 1, #self.zone do
-			if self.zone[i].instructions.visible and self.zone[i].instructions.color and self.zone[i].instructions.sprite then
+			if self.zone[i].instructions and self.zone[i].instructions.visible and self.zone[i].instructions.color and self.zone[i].instructions.sprite then
 				table.insert(returnedBlipInfos,{
 					sprite = self.zone[i].instructions.sprite,
 					color = self.zone[i].instructions.color,

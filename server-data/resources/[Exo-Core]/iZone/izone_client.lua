@@ -145,30 +145,52 @@ AddEventHandler("izone:getResultFromPlayerInAnyJobZone", function(job, cb)
 	local x1, y1, z1 = table.unpack(plyCoords) -- on prend les coords du joueur
 	local job = string.lower(job) -- the job should be the zoneCatName
 	for i = 1, #allZoneByCat[job] do
-		if GetDistanceBetweenCoords(x1, y1, z1, tonumber(allZoneByCat[job][i].gravityCenter.x), tonumber(allZoneByCat[job][i].gravityCenter.y), 1.01, false) < tonumber(allZoneByCat[job][i].longestDistance) then
-			-- alors il y est peut etre : 
-			local n = windPnPoly(allZoneByCat[job][i].coords, plyCoords)
-			if n ~= 0 then -- alors il y est
-				allZoneByCat[job][i].instructions.nom = allZoneByCat[job][i].nom
-				cb(allZoneByCat[job][i].instructions) -- on retourne le résultat !
-				return
+		if allZoneByCat[job][i].instructions ~= nil then
+			if GetDistanceBetweenCoords(x1, y1, z1, tonumber(allZoneByCat[job][i].gravityCenter.x), tonumber(allZoneByCat[job][i].gravityCenter.y), 1.01, false) < tonumber(allZoneByCat[job][i].longestDistance) then
+				-- alors il y est peut etre : 
+				local n = windPnPoly(allZoneByCat[job][i].coords, plyCoords)
+				if n ~= 0 then -- alors il y est
+					allZoneByCat[job][i].instructions.nom = allZoneByCat[job][i].nom
+					cb(allZoneByCat[job][i].instructions) -- on retourne le résultat !
+					return
+				end
 			end
 		end
 	end
 	cb(nil)
 end)
 
+AddEventHandler("izone:isPlayerInAnyWarpSharedZone", function(cb)
+	local plyCoords = GetEntityCoords(GetPlayerPed(-1), true)
+	local x1, y1, z1 = table.unpack(plyCoords) -- on prend les coords du joueur
+	for i = 1, #allZoneByCat["shared"] do
+		if allZoneByCat["shared"][i].instructions.to then
+			if GetDistanceBetweenCoords(x1, y1, z1, tonumber(allZoneByCat["shared"][i].gravityCenter.x), tonumber(allZoneByCat["shared"][i].gravityCenter.y), 1.01, false) < tonumber(allZoneByCat["shared"][i].longestDistance) then
+				-- alors il y est peut etre : 
+				local n = windPnPoly(allZoneByCat["shared"][i].coords, plyCoords)
+				if n ~= 0 then -- alors il y est
+					allZoneByCat["shared"][i].instructions.nom = allZoneByCat["shared"][i].nom
+					cb(allZoneByCat["shared"][i].instructions) -- on retourne le résultat !
+					return
+				end
+			end
+		end 
+	end
+end)
+
 AddEventHandler("izone:isPlayerInIllZone", function(cb)
 	local plyCoords = GetEntityCoords(GetPlayerPed(-1), true)
 	local x1, y1, z1 = table.unpack(plyCoords) -- on prend les coords du joueur
 	for i = 1, #allZoneByCat["illegal"] do
-		if GetDistanceBetweenCoords(x1, y1, z1, tonumber(allZoneByCat["illegal"][i].gravityCenter.x), tonumber(allZoneByCat["illegal"][i].gravityCenter.y), 1.01, false) < tonumber(allZoneByCat["illegal"][i].longestDistance) then
-			-- alors il y est peut etre : 
-			local n = windPnPoly(allZoneByCat["illegal"][i].coords, plyCoords)
-			if n ~= 0 then -- alors il y est
-				allZoneByCat["illegal"][i].instructions.nom = allZoneByCat["illegal"][i].nom
-				cb(allZoneByCat["illegal"][i].instructions) -- on retourne le résultat !
-				return
+		if allZoneByCat["illegal"][i] ~= nil then
+			if GetDistanceBetweenCoords(x1, y1, z1, tonumber(allZoneByCat["illegal"][i].gravityCenter.x), tonumber(allZoneByCat["illegal"][i].gravityCenter.y), 1.01, false) < tonumber(allZoneByCat["illegal"][i].longestDistance) then
+				-- alors il y est peut etre : 
+				local n = windPnPoly(allZoneByCat["illegal"][i].coords, plyCoords)
+				if n ~= 0 then -- alors il y est
+					allZoneByCat["illegal"][i].instructions.nom = allZoneByCat["illegal"][i].nom
+					cb(allZoneByCat["illegal"][i].instructions) -- on retourne le résultat !
+					return
+				end
 			end
 		end
 	end
@@ -231,6 +253,8 @@ AddEventHandler("izone:isPointInZone", function(xr, yr, zone, cb)
 			else
 				cb(false)
 			end
+		else
+			cb(false)
 		end
 	end
 end)

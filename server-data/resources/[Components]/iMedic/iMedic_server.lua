@@ -4,8 +4,8 @@
 -- Written by Romain Billot <romainbillot3009@gmail.com>, Jully 2017
 
 RegisterServerEvent("print:serverArray")
-RegisterServerEvent("police:armurerieToServer")
-RegisterServerEvent("police:retrieveArmurerieToServer")
+RegisterServerEvent("imedic:armurerieToServer")
+RegisterServerEvent("imedic:retrieveArmurerieToServer")
 
 AddEventHandler("print:serverArray", function(toPrint)
 	print(json.encode(toPrint))
@@ -47,6 +47,7 @@ AddEventHandler("imedic:armurerieToServer", function(result)
 		else
 			user.notify("Tiens tes armes de service.. et euh, je suppose que tu n'as pas d'armes personnelles sur toi " .. user.get('displayName').. '?', "success", "topCenter", true, 5000)
 		end
+		print("3")
 		TriggerClientEvent("imedic:giveServiceWeapons", source, result)
 	end)
 end)

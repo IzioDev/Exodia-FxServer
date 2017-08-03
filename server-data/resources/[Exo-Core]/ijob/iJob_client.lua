@@ -28,6 +28,41 @@ local harvestJob = {"Fermier", "Bucheron", "Pompiste"}
 local guiOpened = false
 local displayedBlip = {}
 
+local function freezePlayer(id, freeze)
+    local player = id
+    SetPlayerControl(player, not freeze, false)
+
+    local ped = GetPlayerPed(player)
+
+    if not freeze then
+        if not IsEntityVisible(ped) then
+            SetEntityVisible(ped, true)
+        end
+
+        if not IsPedInAnyVehicle(ped) then
+            SetEntityCollision(ped, true)
+        end
+
+        FreezeEntityPosition(ped, false)
+        --SetCharNeverTargetted(ped, false)
+        SetPlayerInvincible(player, false)
+    else
+        if IsEntityVisible(ped) then
+            SetEntityVisible(ped, false)
+        end
+
+        SetEntityCollision(ped, false)
+        FreezeEntityPosition(ped, true)
+        --SetCharNeverTargetted(ped, true)
+        SetPlayerInvincible(player, true)
+        --RemovePtfxFromPed(ped)
+
+        if not IsPedFatallyInjured(ped) then
+            ClearPedTasksImmediately(ped)
+        end
+    end
+end
+
 RegisterNetEvent("ijob:updateJob")
 AddEventHandler("ijob:updateJob", function(jobName, rank)
 	userJob = jobName
@@ -36,9 +71,8 @@ AddEventHandler("ijob:updateJob", function(jobName, rank)
 		userRank = " "
 	end
 	TriggerEvent("is:updateJob", userJob, userRank)
-	print(tostring(IsHarvestJob(userJob)))
+
 	if IsHarvestJob(userJob) then
-		print("it's ok ok")
 		RunHarvestThread(true)
 	end
 end)
@@ -195,7 +229,33 @@ Citizen.CreateThread(function()
 				end
 			end
 		end)
+
+		TriggerEvent("izone:isPlayerInAnyWarpSharedZone", function(result)
+			DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour "..result.displayedMessageInZone)
+			if IsControlJustPressed(1, 38) then
+				TriggerEvent("medic:tpToResult", result)
+			end
+		end)
 	end
+end)
+
+AddEventHandler("medic:tpToResult", function(result)
+	RequestCollisionAtCoord(result.to.x, result.to.y, result.to.z)
+		freezePlayer(PlayerId(), true)
+		SetEntityCoords(GetPlayerPed(-1), result.to.x, result.to.y, result.to.z, 0, 0, 0, 0)
+		SetEntityHeading(GetPlayerPed(-1), result.to.heading)
+		while not HasCollisionLoadedAroundEntity(GetPlayerPed(-1)) do
+            Citizen.Wait(0)
+        end
+
+        ShutdownLoadingScreen()
+
+        DoScreenFadeIn(500)
+
+        while IsScreenFadingIn() do
+            Citizen.Wait(0)
+        end
+        freezePlayer(PlayerId(), false)
 end)
 
 RegisterNUICallback('close', function(data, cb)

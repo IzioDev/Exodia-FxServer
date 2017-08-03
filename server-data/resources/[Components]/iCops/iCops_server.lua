@@ -219,18 +219,18 @@ AddEventHandler("police:acceptedToShowPoached", function(officerPsid)
 	local source = source
 	TriggerEvent("es:getPlayerFromId", officerPsid, function(officerUser)
 		TriggerEvent("es:getPlayerFromId", source, function(user)
-			local message = GetInventoryMessage(targetUser)
+			local message = GetInventoryMessage(user)
 			officerUser.notify("Tu es en train de regarder l'inventaire d'une personne. </br>" .. message, "success", "topCenter", true, 15000)
 		end)
 	end)
 end)
 
-function GetInventoryMessage(user)
+function GetInventoryMessage(user) --
 	local allItem = user.get('item')
 	local userInventory = user.get('inventory')
 	local message = "<ul>"
 	for i=1, #userInventory do
-		message = message .. "<li><strong> " .. userInventory[i].quantity .. " " .. allItem[userInventory[i].id] .. "</strong></li>" 
+		message = message .. "<li><strong> " .. userInventory[i].quantity .. " " .. allItem[userInventory[i].id].name .. "</strong></li>" 
 	end
 	return message .. "</ul>"
 end

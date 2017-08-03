@@ -14,6 +14,7 @@ local gaveWeapons = false
 local officerDrag = nil
 local currentVeh = nil
 local timeVeh = nil
+local officerDrag = nil
 local subButtonList = { 
 	["annimations"] = {
 		title = "Annimations",
@@ -65,7 +66,7 @@ local mainButtonList = {
 AddEventHandler("is:updateJob", function(jobName, rank)
 	userJob = jobName
 	userRank = rank
-
+	print(userJob.. "from Polic")
 	if (userJob == "LSPD" or userJob == "LSSD") and not(active) then
 		active = true
 		RunCopThread()
@@ -255,13 +256,14 @@ Citizen.CreateThread(function() -- Thread Civil
 			end
 			TaskPlayAnim(myPed, 'mp_arresting', animation, 8.0, -8, -1, flags, 0, 0, 0, 0)
 		end
-	end
-	if (isDragged) then
-		local ped = GetPlayerPed(GetPlayerFromServerId(officerDrag))
-		local myPed = GetPlayerPed(-1)
-		AttachEntityToEntity(myPed, ped, 4103, 11816, 0.48, 0.00, 0.0, 0.0, 0.0, 0.0, false, false, false, false, 2, true)
-	else
-		DetachEntity(GetPlayerPed(-1), true, false)		
+
+		if (isDragged) then
+			local ped = GetPlayerPed(GetPlayerFromServerId(officerDrag))
+			local myPed = GetPlayerPed(-1)
+			AttachEntityToEntity(myPed, ped, 4103, 11816, 0.48, 0.00, 0.0, 0.0, 0.0, 0.0, false, false, false, false, 2, true)
+		else
+			DetachEntity(GetPlayerPed(-1), true, false)		
+		end
 	end
 end)
 
@@ -479,7 +481,6 @@ function Fines()
 			resultat = tonumber(resultat)
 			TriggerServerEvent("police:setFineToPlayer", GetPlayerServerId(t), resultat)
 		end
-		-- TriggerServerEvent("police:unSetPlayerIntoVeh", GetPlayerServerId(t))
 	else
 		TriggerEvent("pNotify:notifyFromServer", "Il n'y a personne à proximité. Tu ne peux pas faire cette action.", "error", "topCenter", true, 5000)
 	end
@@ -602,9 +603,9 @@ AddEventHandler('police:forcedEnteringVeh', function()
 
 		local rayHandle = CastRayPointToPoint(pos.x, pos.y, pos.z, entityWorld.x, entityWorld.y, entityWorld.z, 10, GetPlayerPed(-1), 0)
 		local _, _, _, _, vehicleHandle = GetRaycastResult(rayHandle)
-
+		print(tostring(vehicleHandle))
 		if vehicleHandle ~= nil then
-			SetPedIntoVehicle(GetPlayerPed(-1), vehicleHandle, 1)
+			SetPedIntoVehicle(GetPlayerPed(-1), vehicleHandle, 0)
 		end
 	end
 end)
@@ -614,13 +615,17 @@ AddEventHandler('police:forcedLeavingVeh', function()
 	local ped = GetPlayerPed(-1) 
 	ClearPedTasksImmediately(ped)
 	plyPos = GetEntityCoords(GetPlayerPed(-1),  true)
-	local xnew = plyPos.x+2
-	local ynew = plyPos.y+2
+	local xnew = plyPos.x + 2
+	local ynew = plyPos.y + 2
 	SetEntityCoords(GetPlayerPed(-1), xnew, ynew, plyPos.z)
 end)
 
 RegisterNetEvent("police:dragAnswer")
 AddEventHandler("police:dragAnswer", function(officerPsid)
 	isDragged = not(isDragged)
-	officerDrag = t
+	if isDragged then
+		officerDrag = officerPsid
+	else
+		officerDrag = nil
+	end
 end)

@@ -2,7 +2,6 @@
 -- Unauthorized copying of this file, via any medium is strictly prohibited
 -- Proprietary and confidential
 -- Written by Romain Billot <romainbillot3009@gmail.com>, Jully 2017
-
 local userRank = nil 
 local userJob = nil
 local isInService = true
@@ -12,47 +11,87 @@ local active = false
 local gaveWeapons = false
 local medicDrag = nil
 local currentVeh = nil
+local vehFromGarage = nil
 local timeVeh = nil
-local subButtonList = { 
-	["annimations"] = {
-		title = "Annimations",
-		name = "annimations",
-		buttons = {
-			{name = "Vous allez bien?", targetFunction = "PlayEmote", targetArrayParam = "circulation" },
-			{name = "Prendre des notes", targetFunction = "PlayEmote", targetArrayParam = "note" },
-			{name = "Sur les genouts", targetFunction = "PlayEmote", targetArrayParam = "medic:kneel" }, -- medic:kneel medic:tendtodeath medic:timeofdeath
-			{name = "Tend to Death", targetFunction = "PlayEmote", targetArrayParam = "medic:tendtodeath" },
-			{name = "Time of death", targetFunction = "PlayEmote", targetArrayParam = "medic:timeofdeath" } -- AddEventHandler("anim:Play", function(name)
-		}
-	},
-	["citoyens"] = {
-		title = "Citoyens",
-		name = "citoyens",
-		buttons = {
-			{name = "Carte d'identité", targetFunction = "ShowId", targetArrayParam = {} },
-			{name = "Mettre dans le véhicule", targetFunction = "PutIntoVeh", targetArrayParam = {} },
-			{name = "Faire sortir du véhicule", targetFunction = "UnputFromVeh", targetArrayParam = {} },
-			{name = "Escorter le joueur", targetFunction = "EscortPlayer", targetArrayParam = {} },
-			{name = "Premier soin", targetFunction = "firstAid", targetArrayParam = {}}
-		}
-	}
-}
-local mainButtonList = { 
-	["main"] = {
-		title = "Actions",
-		name = "main",
-		buttons = {
-			{name = "Annimations", targetFunction = "OpenMenu", targetArrayParam = subButtonList["annimations"] },
-			{name = "Citoyens", targetFunction = "OpenMenu", targetArrayParam = subButtonList["citoyens"] },
-			{name = "Fermer le menu", targetFunction = "CloseMenu", targetArrayParam = {}}
-		}
-	},
-}
+
+local function freezePlayer(id, freeze)
+    local player = id
+    SetPlayerControl(player, not freeze, false)
+
+    local ped = GetPlayerPed(player)
+
+    if not freeze then
+        if not IsEntityVisible(ped) then
+            SetEntityVisible(ped, true)
+        end
+
+        if not IsPedInAnyVehicle(ped) then
+            SetEntityCollision(ped, true)
+        end
+
+        FreezeEntityPosition(ped, false)
+        --SetCharNeverTargetted(ped, false)
+        SetPlayerInvincible(player, false)
+    else
+        if IsEntityVisible(ped) then
+            SetEntityVisible(ped, false)
+        end
+
+        SetEntityCollision(ped, false)
+        FreezeEntityPosition(ped, true)
+        --SetCharNeverTargetted(ped, true)
+        SetPlayerInvincible(player, true)
+        --RemovePtfxFromPed(ped)
+
+        if not IsPedFatallyInjured(ped) then
+            ClearPedTasksImmediately(ped)
+        end
+    end
+end
+
+--freezePlayer(PlayerId(), false)
+
+-- local subButtonList = { 
+-- 	["annimations"] = {
+-- 		title = "Annimations",
+-- 		name = "annimations",
+-- 		buttons = {
+-- 			{name = "Vous allez bien?", targetFunction = "PlayEmote", targetArrayParam = "circulation" },
+-- 			{name = "Prendre des notes", targetFunction = "PlayEmote", targetArrayParam = "note" },
+-- 			{name = "Sur les genouts", targetFunction = "PlayEmote", targetArrayParam = "medic:kneel" }, -- medic:kneel medic:tendtodeath medic:timeofdeath
+-- 			{name = "Tend to Death", targetFunction = "PlayEmote", targetArrayParam = "medic:tendtodeath" },
+-- 			{name = "Time of death", targetFunction = "PlayEmote", targetArrayParam = "medic:timeofdeath" } -- AddEventHandler("anim:Play", function(name)
+-- 		}
+-- 	},
+-- 	["citoyens"] = {
+-- 		title = "Citoyens",
+-- 		name = "citoyens",
+-- 		buttons = {
+-- 			{name = "Carte d'identité", targetFunction = "ShowId", targetArrayParam = {} },
+-- 			{name = "Mettre dans le véhicule", targetFunction = "PutIntoVeh", targetArrayParam = {} },
+-- 			{name = "Faire sortir du véhicule", targetFunction = "UnputFromVeh", targetArrayParam = {} },
+-- 			{name = "Escorter le joueur", targetFunction = "EscortPlayer", targetArrayParam = {} },
+-- 			{name = "Premier soin", targetFunction = "firstAid", targetArrayParam = {}}
+-- 		}
+-- 	}
+-- }
+-- local mainButtonList = { 
+-- 	["main"] = {
+-- 		title = "Actions",
+-- 		name = "main",
+-- 		buttons = {
+-- 			{name = "Annimations", targetFunction = "OpenMenu", targetArrayParam = subButtonList["annimations"] },
+-- 			{name = "Citoyens", targetFunction = "OpenMenu", targetArrayParam = subButtonList["citoyens"] },
+-- 			{name = "Fermer le menu", targetFunction = "CloseMenu", targetArrayParam = {}}
+-- 		}
+-- 	},
+-- }
 
 AddEventHandler("is:updateJob", function(jobName, rank)
 	userJob = jobName
 	userRank = rank
-
+	print(userJob)
+	print(tostring(userJob == "médecin"))
 	if (userJob == "médecin") and not(active) then
 		active = true
 		RunMedicThread()
@@ -128,6 +167,13 @@ function RunMedicThread()
 									OpenGarage(result, currentVeh)
 								end
 							end
+						elseif not(isInService) and not(IsPedInAnyVehicle(GetPlayerPed(-1), 0)) then
+							DisplayHelpText("Veuillez prendre votre service pour pouvoir interragir.")
+						end
+					elseif result.to then
+						DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour "..result.displayedMessageInZone)
+						if IsControlJustPressed(1, 38) then
+							TriggerEvent("medic:tpToResult", result)
 						end
 					end
 				end
@@ -135,6 +181,25 @@ function RunMedicThread()
 		end
 	end)
 end
+
+AddEventHandler("medic:tpToResult", function(result)
+	RequestCollisionAtCoord(result.to.x, result.to.y, result.to.z)
+		freezePlayer(PlayerId(), true)
+		SetEntityCoords(GetPlayerPed(-1), result.to.x, result.to.y, result.to.z, 0, 0, 0, 0)
+		SetEntityHeading(GetPlayerPed(-1), result.to.heading)
+		while not HasCollisionLoadedAroundEntity(GetPlayerPed(-1)) do
+            Citizen.Wait(0)
+        end
+
+        ShutdownLoadingScreen()
+
+        DoScreenFadeIn(500)
+
+        while IsScreenFadingIn() do
+            Citizen.Wait(0)
+        end
+        freezePlayer(PlayerId(), false)
+end)
 
 Citizen.CreateThread(function()
 	while true do
@@ -186,14 +251,15 @@ AddEventHandler("imedic:depositArmurerie", function(result)
 end)
 
 AddEventHandler("imedic:retrieveArmurerie", function()
-	TriggerServerEvent("imedic:retrieveArmurerieToServer")
+	TriggerServerEvent("imedic:retrieveArmurerieToServer") -- -468.99,"y":-279.74,"z":35.70
 end)
 
 RegisterNetEvent("imedic:giveServiceWeapons")
 AddEventHandler("imedic:giveServiceWeapons", function(result)
 	gaveWeapons = true
-	for i = 1, #result.weapons[userRank] do
-		GiveWeaponToPed(GetPlayerPed(-1), GetHashKey(result.weapons[userRank][i]), 500, false, false)
+	print(result.weapons)
+	for i = 1, #result.armurerie[userRank] do
+		GiveWeaponToPed(GetPlayerPed(-1), GetHashKey(result.armurerie[userRank][i]), 500, false, false)
 	end
 end)
 
@@ -237,23 +303,36 @@ function OpenGarage(result, currentVehi)
 		ClearMenu()
 		MenuTitle = "Garage " .. userRank
 		this = result.carInfos[userRank]
+		if #this == 0 then
+			TriggerEvent("pNotify:notifyFromServer", "Vous n'avez pas la permission de faire cela.", "error", "topCenter", true, 5000)
+			return
+		end
 		for i = 1, #this do
 			Menu.addButton(this[i].name .. ":" .. this[i].price .. "$", "SpawnVeh", {point = result.spawnPoints, car = this[i].carHash, price = this[i].price})
 		end
+		vehFromGarage = result.nom
 		Menu.hidden = false
 		currentMenu = "main"
 	else
 		if DoesEntityExist(currentVehi) then
-			local x,y,z = table.unpack(GetEntityCoords(currentVeh, true))
-			TriggerEvent("izone:isPointInZone", x, y,"garageLspd", function(isVehInZone)
+			local x,y,z = table.unpack(GetEntityCoords(currentVehi, true))
+			TriggerEvent("izone:isPointInZone", x, y, vehFromGarage, function(isVehInZone)
 				if isVehInZone then
 					Citizen.InvokeNative(0xEA386986E786A54F, Citizen.PointerValueIntInitialized(currentVeh))
-					TriggerServerEvent("police:retreiveCaution")
+					if GetVehicleEngineHealth(currentVehi) >= 100 then
+						TriggerServerEvent("police:retreiveCaution")
+					else
+						TriggerEvent("pNotify:notifyFromServer", "Ton véhicule de fonction est endommagé. La caution va etre salée.", "error", "topCenter", true, 5000)
+					end
 					currentVeh = nil
 					ClearMenu()
 				else
-					print("ton veh n'est pas dans le garage")
-					TriggerEvent("pNotify:notifyFromServer", "Ton véhicule n'est pas dans le garage, merci de le rentrer.", "error", "topCenter", true, 5000)
+					print(GetVehicleEngineHealth(currentVehi))
+					if GetVehicleEngineHealth(currentVehi) >= 100 then
+						TriggerEvent("pNotify:notifyFromServer", "Ton véhicule n'est pas devant le garage d'où tu as prit le véhicule.", "error", "topCenter", true, 5000)
+					else
+						TriggerEvent("pNotify:notifyFromServer", "Ton véhicule de fonction est endommagé. La caution va etre salée.", "error", "topCenter", true, 5000)
+					end
 				end
 			end)
 		else
@@ -297,6 +376,7 @@ function SpawnVeh(args)
 	SetVehicleEnginePowerMultiplier(medicVeh, 35.0)
 	SetVehicleOnGroundProperly(medicVeh)
 	SetVehicleHasBeenOwnedByPlayer(medicVeh,true)
+	SetVehicleDirtLevel(medicVeh, 0)
 	local netid = NetworkGetNetworkIdFromEntity(medicVeh)
 	SetNetworkIdCanMigrate(netid, true)
 	-- NetworkRegisterEntityAsNetworked(VehToNet(medicVeh))
