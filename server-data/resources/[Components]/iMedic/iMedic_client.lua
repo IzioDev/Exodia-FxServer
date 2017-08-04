@@ -55,11 +55,14 @@ local subButtonList = {
 		title = "Annimations",
 		name = "annimations",
 		buttons = {
-			{name = "Vous allez bien?", targetFunction = "PlayEmote", targetArrayParam = "circulation" },
+			{name = "Circulation", targetFunction = "PlayEmote", targetArrayParam = "circulation" },
 			{name = "Prendre des notes", targetFunction = "PlayEmote", targetArrayParam = "note" },
 			{name = "Sur les genouts", targetFunction = "PlayEmote", targetArrayParam = "medic:kneel" }, -- medic:kneel medic:tendtodeath medic:timeofdeath
 			{name = "Tend to Death", targetFunction = "PlayEmote", targetArrayParam = "medic:tendtodeath" },
-			{name = "Time of death", targetFunction = "PlayEmote", targetArrayParam = "medic:timeofdeath" } -- AddEventHandler("anim:Play", function(name)
+			{name = "Time of death", targetFunction = "PlayEmote", targetArrayParam = "medic:timeofdeath" }, -- AddEventHandler("anim:Play", function(name)
+			{name = "Bouche à bouche", targetFunction = "PlayEmote", targetArrayParam = "medic:mouthtomouth" },
+			{name = "Massage cardiaque", targetFunction = "PlayEmote", targetArrayParam = "medic:pumpchest" },
+			{name = "Annuler emote", targetFunction = "PlayEmote", targetArrayParam = "stop" }
 		}
 	},
 	["citoyens"] = {
@@ -89,8 +92,6 @@ local mainButtonList = {
 AddEventHandler("is:updateJob", function(jobName, rank)
 	userJob = jobName
 	userRank = rank
-	print(userJob)
-	print(tostring(userJob == "médecin"))
 	if (userJob == "médecin") and not(active) then
 		active = true
 		RunMedicThread()
@@ -394,7 +395,7 @@ function SpawnVeh(args)
 	SetVehicleNumberPlateText(medicVeh, plateText)
 
 	Menu.hidden = true
-	TriggerServerEvent("police:spawnVehGarage", carPrice)
+	TriggerServerEvent("imedic:spawnVehGarage", carPrice)
 	currentVeh = medicVeh
 	timeVeh = GetGameTimer()
 end
@@ -428,6 +429,12 @@ function PlayEmote(annimName)
 		return
 	elseif annimName == "medic:timeofdeath" then
 		TriggerEvent("anim:Play", "medic:timeofdeath")
+		return
+	elseif annimName == "medic:mouthtomouth" then
+		TriggerEvent("anim:Play", "medic:mouthtomouth")
+		return
+	elseif annimName == "medic:pumpchest" then
+		TriggerEvent("anim:Play", "medic:pumpchest")
 		return
 	end
 
@@ -567,29 +574,31 @@ AddEventHandler("playerDead", function()
 		StartScreenEffect("DeathFailOut", 0, 0)
 		ShakeGameplayCam("DEATH_FAIL_IN_EFFECT_SHAKE", 1.0)
 		local scaleform = RequestScaleformMovie("MP_BIG_MESSAGE_FREEMODE")
-		if HasScaleformMovieLoaded(scaleform) then
+		while not(HasScaleformMovieLoaded(scaleform)) do
 			Citizen.Wait(0)
-			PushScaleformMovieFunction(scaleform, "SHOW_SHARD_WASTED_MP_MESSAGE")
-			BeginTextComponent("STRING")
-			AddTextComponentString("Tu es gravement bléssé.")
-			EndTextComponent()
-			PopScaleformMovieFunctionVoid()
-		  	Citizen.Wait(500)
-		   	while IsEntityDead(PlayerPedId()) do
-		   		Citizen.Wait(0)
-				DrawScaleformMovieFullscreen(scaleform, 255, 255, 255, 255)
-		   	end
-		  	StopScreenEffect("DeathFailOut")
 		end
+		PushScaleformMovieFunction(scaleform, "SHOW_SHARD_WASTED_MP_MESSAGE")
+		BeginTextComponent("STRING")
+		AddTextComponentString("Tu es gravement bléssé")
+		EndTextComponent()
+		PopScaleformMovieFunctionVoid()
+		Citizen.Wait(500)
+			while IsEntityDead(PlayerPedId()) do
+		  		Citizen.Wait(0)
+				DrawScaleformMovieFullscreen(scaleform, 255, 255, 255, 255)
+		  	end
+		StopScreenEffect("DeathFailOut")
 	end)
 end)
 
 function ResPlayerInOneMinute()
 	Citizen.CreateThread(function()
+		exports.spawnmanager:setAutoSpawn(false)
 		local nowTime = GetGameTimer()
 		while GetGameTimer() <= nowTime + 60000 do
-			ResPlayer()
+			Wait(0)
 		end
+		ResPlayer()
 	end)
 end
 
@@ -610,15 +619,17 @@ end)
 
 RegisterNetEvent("iMedic:returnAreMedicsConnected")
 AddEventHandler("iMedic:returnAreMedicsConnected", function(isMedics)
+	exports.spawnmanager:setAutoSpawn(false)
 	if not(isMedics) then
 		ResPlayerInOneMinute()
 	else
 		Citizen.CreateThread(function()
 			local nowTime = GetGameTimer()
-			while GetGameTimer() <= nowTime + 600000 do
-				Wait(0)
+			while GetGameTimer() <= nowTime + 6000 do
+				Citizen.Wait(0)
 				if IsControlJustPressed(1, 246) then
 					TriggerServerEvent("iMedic:askAmbulance")
+					ResPlayer()
 					return
 				end
 			end
@@ -637,7 +648,7 @@ AddEventHandler("iMedic:askToMedicForAmbulance", function(askingSource, askingCo
 	Citizen.CreateThread(function()
 		callTaken = false
 		TriggerEvent("pNotify:notifyFromServer", "Un citoyen est dans le coma et est en train d'appeler. Appuies sur Y pour y répondre.", "success", "topCenter", true, 15000)
-		local nowtime = GetGameTimer()
+		local nowTime = GetGameTimer()
 		while GetGameTimer() <= nowTime + 15000 and not(callTaken) do
 			Wait(0)
 			if IsControlJustPressed(1, 246) then
@@ -670,13 +681,14 @@ function StartAmulanceMission(askingSource, askingCoords)
 		SetBlipRoute(blip, true)
 		SetBlipRouteColour(blip, 38)
 		local nowTime = GetGameTimer()
-		while GetGameTimer() <= nowTime + 420000 then
+		while GetGameTimer() <= nowTime + 420000 do
 			local x,y,z = table.unpack(GetEntityCoords(GetPlayerPed(-1), true))
 			Wait(100)
 			DisplayHelpText("Il te reste ".. math.ceil((nowTime + 420000 - GetGameTimer())/1000).. "secondes pour te rendre sur les lieux.")
 			if GetDistanceBetweenCoords(askingCoords.x, askingCoords.y, askingCoords.z, x, y, z, true) <= 5.0 then
-				SetBlipAsMissionCreatorBlip(displayedBlip[i],false)
+				SetBlipAsMissionCreatorBlip(blip, false)
 				Citizen.InvokeNative(0x86A652570E5F25DD, Citizen.PointerValueIntInitialized(blip))
+				-- need to resurrect
 				return
 			end
 		end

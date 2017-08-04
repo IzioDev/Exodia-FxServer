@@ -99,10 +99,10 @@ function addSpawnPoint(spawn)
     end
 
     -- model (try integer first, if not, hash it)
-    local model = spawn.model
+    local model = tonumber(spawn.model)
 
     if not tonumber(spawn.model) then
-        model = GetHashKey(spawn.model)
+        model = spawn.model
     end
 
     -- is the model actually a model?
@@ -246,7 +246,7 @@ function spawnPlayer(spawnIdx, cb)
         -- if the spawn has a model set
         if spawn.model then
             RequestModel(spawn.model)
-
+            print("on request le model")
             -- load the model for this spawn
             while not HasModelLoaded(spawn.model) do
                 RequestModel(spawn.model)
@@ -308,6 +308,7 @@ function spawnPlayer(spawnIdx, cb)
             freezePlayer(PlayerId(), false)
             TriggerEvent('playerSpawned', spawn)
             TriggerServerEvent('skin:notFirstSpawn')
+            autoSpawnEnabled = false
         else
             TriggerEvent('playerFirstSpawn')
             SetEntityVisible(GetPlayerPed(-1), 0, 1)

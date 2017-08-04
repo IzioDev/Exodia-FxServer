@@ -86,24 +86,6 @@ AddEventHandler("anim:Play", function(name) -- PlayScenario(char* Scenario_name,
                 PlayEmote("mini@strip_club@lap_dance@ld_girl_a_exit", "ld_girl_a_exit_f", 0, 1, 0, 0)
             end
 
-            if name == "medic:kneel" then
-                PlayEmote("amb@medic@standing@kneel@enter", "enter", 0, 1, 0, 0)
-                PlayEmote("amb@medic@standing@kneel@base", "base", 9, 1, 0, 1, 5.75)
-                PlayEmote("amb@medic@standing@kneel@exit", "exit", 0, 1, 0, 0)
-            end
-
-            if name == "medic:tendtodeath" then
-                PlayEmote("amb@medic@standing@tendtodead@enter", "enter", 0, 1, 0, 0)
-                PlayEmote("amb@medic@standing@tendtodead@base", "base", 9, 1, 0, 1, 5.75)
-                PlayEmote("amb@medic@standing@tendtodead@exit", "exit", 0, 1, 0, 0) -- or exit_flee
-            end
-
-            if name == "medic:timeofdeath" then
-                PlayEmote("amb@medic@standing@timeofdeath@enter", "enter", 0, 1, 0, 0)
-                PlayEmote("amb@medic@standing@timeofdeath@base", "base", 9, 1, 0, 1, 5.75)
-                PlayEmote("amb@medic@standing@timeofdeath@exit", "exit", 0, 1, 0, 0) -- exit_flee
-            end
-
             if name == "player:lap_dance_2" then
                 PlayEmote("mp_am_stripper", "lap_dance_girl", 0, 1, 0, 1)
                 PlayEmote(0, 0, 0, 0, 1, 0)
@@ -114,6 +96,32 @@ AddEventHandler("anim:Play", function(name) -- PlayScenario(char* Scenario_name,
                 PlayEmote(0, 0, 0, 0, 1, 0)
             end
 
+        end
+
+        if name == "medic:kneel" then
+            PlayEmote("amb@medic@standing@kneel@enter", "enter", 0, 1, 0, 0)
+            PlayEmote("amb@medic@standing@kneel@base", "base", 9, 1, 0, 1, 5.75)
+            PlayEmote("amb@medic@standing@kneel@exit", "exit", 0, 1, 0, 0)
+        end
+        if name == "medic:tendtodeath" then
+            PlayEmote("amb@medic@standing@tendtodead@enter", "enter", 0, 1, 0, 0)
+            PlayEmote("amb@medic@standing@tendtodead@base", "base", 9, 1, 0, 1, 5.75)
+            PlayEmote("amb@medic@standing@tendtodead@exit", "exit", 0, 1, 0, 0) -- or exit_flee
+        end
+        if name == "medic:timeofdeath" then
+            PlayEmote("amb@medic@standing@timeofdeath@enter", "enter", 0, 1, 0, 0)
+            PlayEmote("amb@medic@standing@timeofdeath@base", "base", 9, 1, 0, 1, 5.75)
+            PlayEmote("amb@medic@standing@timeofdeath@exit", "exit", 0, 1, 0, 0) -- exit_flee
+        end
+
+        if name == "medic:mouthtomouth" then
+            PlayEmote("mini@cpr@char_a@cpr_str", "cpr_kol", 9, 1, 0, 1, 5.75)
+        end
+
+        if name == "medic:pumpchest" then
+            PlayEmote("mini@cpr@char_a@cpr_str", "cpr_kol_idle", 0, 1, 0, 0)
+            PlayEmote("mini@cpr@char_a@cpr_str", "cpr_kol_to_cpr", 0, 1, 0, 0)
+            PlayEmote("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 9, 1, 0, 1, 5.75)
         end
 
 

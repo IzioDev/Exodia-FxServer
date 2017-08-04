@@ -48,7 +48,8 @@ end)
 RegisterServerEvent("iMedic:askAmbulance")
 AddEventHandler("iMedic:askAmbulance", function()
 	local source = source
-	TriggerEvent("es:getPlayers", source, function(Users)
+	TriggerEvent("es:getPlayers", function(Users)
+		print(tostring(Users[source]))
 		Users[source].notify("Tu es en train d'appeler une ambulance.", "success", "topCenter", true, 15000)
 		for k,v in pairs(Users) do
 			if v~= nil then
@@ -75,11 +76,11 @@ AddEventHandler("iMedic:areMedicsConnected", function()
 			end
 		end
 		if isMedics then
-			Users[source].notify("Appuies sur Y pour appeler une abulance.", "error", "topCenter", true, 20000)
-			TriggerClientEvent("iMedic:returnAreMedicsConnected", isMedics)
+			Users[source].notify("Appuies sur Y pour appeler une ambulance.", "error", "topCenter", true, 20000)
+			TriggerClientEvent("iMedic:returnAreMedicsConnected", source, isMedics)
 		else
 			Users[source].notify("Il n'y a pas de médecin en ville, attends 1 minute avant d'etre transporté à l'hopital.", "error", "topCenter", true, 60000)
-			TriggerClientEvent("iMedic:returnAreMedicsConnected", isMedics)
+			TriggerClientEvent("iMedic:returnAreMedicsConnected", source, isMedics)
 		end
 	end)
 end)
@@ -95,10 +96,10 @@ AddEventHandler("iMedic:onRespawn", function(x, y, z)
 end)
 
 function GetNearestHopital(xp, yp, zp)
-
+	return CalculShortest(xp, yp)
 end
 
-function CalculLongest(xp, yp)
+function CalculShortest(xp, yp)
 	local listDist = { }
 	for i=1, #hopital do
 		table.insert(listDist, { dist = DistanceFrom(tonumber(xp), tonumber(yp), tonumber(hopital[i].x), tonumber(hopital[i].y)), index = i})
@@ -108,10 +109,14 @@ end
 
 function MinimumNumber(table)
 	local min = 999999
+	local index = 0
 	for i=1, #table do
-		if min > table[i].dist then min = table[i] end
+		if min > table[i].dist then
+			min = table[i].dist
+			index = i 
+		end
 	end
-	return min
+	return table[index]
 end
 
 function DistanceFrom(x1,y1,x2,y2) 

@@ -134,6 +134,6 @@ AddEventHandler('onClientMapStart', function()
   RequestIpl("RC12B_Destroyed")
   RequestIpl("RC12B_HospitalInterior")
 
-  exports.spawnmanager:setAutoSpawn(false)
+  exports.spawnmanager:setAutoSpawn(true)
   exports.spawnmanager:forceRespawn()
 end)
