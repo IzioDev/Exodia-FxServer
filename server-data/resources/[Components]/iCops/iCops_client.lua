@@ -361,12 +361,25 @@ function SpawnVeh(args)
 	SetEntityInvincible(policevehicle, false)
 	SetEntityAsMissionEntity(policevehicle, true, true)
 
+	local plateText = "PO".. math.random(100,999)
+	local a, b, c = Generate3Char()
+	plateText = plateText .. a .. b .. c
+	SetVehicleNumberPlateText(medicVeh, plateText)
+
 	Menu.hidden = true
 	TriggerServerEvent("police:spawnVehGarage", carPrice)
 	-- Il faut envoyer un event au serveur qui enleve au capitale le price, qui cautionne le joueur (virtuellement) et qui check connexion, déco..
 	-- Dans le meme genre de TODO, il faut faire la vérif waitingWeapons (si c'est pas nil, on lui donne, puis on vide.)
 	currentVeh = policevehicle
 	timeVeh = GetGameTimer()
+end
+
+function Generate3Char()
+	local a = math.random(1,26)
+	local b = math.random(1,26)
+	local c = math.random(1,26)
+	local alphabet = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}
+	return alphabet[a], alphabet[b], alphabet[c]
 end
 
 function PlayEmote(annimName)

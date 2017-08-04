@@ -13,6 +13,7 @@ local medicDrag = nil
 local currentVeh = nil
 local vehFromGarage = nil
 local timeVeh = nil
+local callTaken = false
 
 local function freezePlayer(id, freeze)
     local player = id
@@ -49,43 +50,41 @@ local function freezePlayer(id, freeze)
     end
 end
 
---freezePlayer(PlayerId(), false)
-
--- local subButtonList = { 
--- 	["annimations"] = {
--- 		title = "Annimations",
--- 		name = "annimations",
--- 		buttons = {
--- 			{name = "Vous allez bien?", targetFunction = "PlayEmote", targetArrayParam = "circulation" },
--- 			{name = "Prendre des notes", targetFunction = "PlayEmote", targetArrayParam = "note" },
--- 			{name = "Sur les genouts", targetFunction = "PlayEmote", targetArrayParam = "medic:kneel" }, -- medic:kneel medic:tendtodeath medic:timeofdeath
--- 			{name = "Tend to Death", targetFunction = "PlayEmote", targetArrayParam = "medic:tendtodeath" },
--- 			{name = "Time of death", targetFunction = "PlayEmote", targetArrayParam = "medic:timeofdeath" } -- AddEventHandler("anim:Play", function(name)
--- 		}
--- 	},
--- 	["citoyens"] = {
--- 		title = "Citoyens",
--- 		name = "citoyens",
--- 		buttons = {
--- 			{name = "Carte d'identité", targetFunction = "ShowId", targetArrayParam = {} },
--- 			{name = "Mettre dans le véhicule", targetFunction = "PutIntoVeh", targetArrayParam = {} },
--- 			{name = "Faire sortir du véhicule", targetFunction = "UnputFromVeh", targetArrayParam = {} },
--- 			{name = "Escorter le joueur", targetFunction = "EscortPlayer", targetArrayParam = {} },
--- 			{name = "Premier soin", targetFunction = "firstAid", targetArrayParam = {}}
--- 		}
--- 	}
--- }
--- local mainButtonList = { 
--- 	["main"] = {
--- 		title = "Actions",
--- 		name = "main",
--- 		buttons = {
--- 			{name = "Annimations", targetFunction = "OpenMenu", targetArrayParam = subButtonList["annimations"] },
--- 			{name = "Citoyens", targetFunction = "OpenMenu", targetArrayParam = subButtonList["citoyens"] },
--- 			{name = "Fermer le menu", targetFunction = "CloseMenu", targetArrayParam = {}}
--- 		}
--- 	},
--- }
+local subButtonList = { 
+	["annimations"] = {
+		title = "Annimations",
+		name = "annimations",
+		buttons = {
+			{name = "Vous allez bien?", targetFunction = "PlayEmote", targetArrayParam = "circulation" },
+			{name = "Prendre des notes", targetFunction = "PlayEmote", targetArrayParam = "note" },
+			{name = "Sur les genouts", targetFunction = "PlayEmote", targetArrayParam = "medic:kneel" }, -- medic:kneel medic:tendtodeath medic:timeofdeath
+			{name = "Tend to Death", targetFunction = "PlayEmote", targetArrayParam = "medic:tendtodeath" },
+			{name = "Time of death", targetFunction = "PlayEmote", targetArrayParam = "medic:timeofdeath" } -- AddEventHandler("anim:Play", function(name)
+		}
+	},
+	["citoyens"] = {
+		title = "Citoyens",
+		name = "citoyens",
+		buttons = {
+			{name = "Carte d'identité", targetFunction = "ShowId", targetArrayParam = {} },
+			{name = "Mettre dans le véhicule", targetFunction = "PutIntoVeh", targetArrayParam = {} },
+			{name = "Faire sortir du véhicule", targetFunction = "UnputFromVeh", targetArrayParam = {} },
+			{name = "Escorter le joueur", targetFunction = "EscortPlayer", targetArrayParam = {} },
+			{name = "Premier soin", targetFunction = "firstAid", targetArrayParam = {}}
+		}
+	}
+}
+local mainButtonList = { 
+	["main"] = {
+		title = "Actions",
+		name = "main",
+		buttons = {
+			{name = "Annimations", targetFunction = "OpenMenu", targetArrayParam = subButtonList["annimations"] },
+			{name = "Citoyens", targetFunction = "OpenMenu", targetArrayParam = subButtonList["citoyens"] },
+			{name = "Fermer le menu", targetFunction = "CloseMenu", targetArrayParam = {}}
+		}
+	},
+}
 
 AddEventHandler("is:updateJob", function(jobName, rank)
 	userJob = jobName
@@ -224,13 +223,19 @@ AddEventHandler("imedic:swichService", function(service, result)
 			Sexe = "Male"
 		end
 		-- give uniform
-		SetPedComponentVariation(GetPlayerPed(-1), 9, result.uniform[userRank][Sexe].diff, result.uniform[userRank][Sexe].diffColor, 2)
-		SetPedComponentVariation(GetPlayerPed(-1), 8,  result.uniform[userRank][Sexe].tshirt_1, result.uniform[userRank][Sexe].tshirt_2, 2)   -- Tshirt
-		SetPedComponentVariation(GetPlayerPed(-1), 11, result.uniform[userRank][Sexe].torso_1, result.uniform[userRank][Sexe].torso_2, 2)     -- torso parts
-		SetPedComponentVariation(GetPlayerPed(-1), 10, result.uniform[userRank][Sexe].decals_1, result.uniform[userRank][Sexe].decals_2, 2)   -- decals
-		SetPedComponentVariation(GetPlayerPed(-1), 4, result.uniform[userRank][Sexe].pants_1, result.uniform[userRank][Sexe].pants_2, 2)      -- pants
-		SetPedComponentVariation(GetPlayerPed(-1), 6, result.uniform[userRank][Sexe].shoes, result.uniform[userRank][Sexe].shoes_2, 2)  	  -- Shoes
-		SetPedPropIndex(GetPlayerPed(-1), 1, result.uniform[userRank][Sexe].glasses_1, 0, 2)
+		-- SetPedComponentVariation(GetPlayerPed(-1), 9, result.uniform[userRank][Sexe].diff, result.uniform[userRank][Sexe].diffColor, 2)
+		-- SetPedComponentVariation(GetPlayerPed(-1), 8,  result.uniform[userRank][Sexe].tshirt_1, result.uniform[userRank][Sexe].tshirt_2, 2)   -- Tshirt
+		-- SetPedComponentVariation(GetPlayerPed(-1), 11, result.uniform[userRank][Sexe].torso_1, result.uniform[userRank][Sexe].torso_2, 2)     -- torso parts
+		-- SetPedComponentVariation(GetPlayerPed(-1), 10, result.uniform[userRank][Sexe].decals_1, result.uniform[userRank][Sexe].decals_2, 2)   -- decals
+		-- SetPedComponentVariation(GetPlayerPed(-1), 4, result.uniform[userRank][Sexe].pants_1, result.uniform[userRank][Sexe].pants_2, 2)      -- pants
+		-- SetPedComponentVariation(GetPlayerPed(-1), 6, result.uniform[userRank][Sexe].shoes, result.uniform[userRank][Sexe].shoes_2, 2)  	  -- Shoes
+		-- SetPedPropIndex(GetPlayerPed(-1), 1, result.uniform[userRank][Sexe].glasses_1, 0, 2)
+
+		SetPedComponentVariation(GetPlayerPed(-1), 11, 13, 3, 2)
+		SetPedComponentVariation(GetPlayerPed(-1), 8, 15, 0, 2)
+		SetPedComponentVariation(GetPlayerPed(-1), 4, 9, 3, 2)
+		SetPedComponentVariation(GetPlayerPed(-1), 3, 92, 0, 2)
+		SetPedComponentVariation(GetPlayerPed(-1), 6, 25, 0, 2)
 
 		-- take weapons
 		TriggerEvent("imedic:depositArmurerie", result)
@@ -383,11 +388,23 @@ function SpawnVeh(args)
 	TaskWarpPedIntoVehicle(playerPed, medicVeh, -1)
 	SetEntityInvincible(medicVeh, false)
 	SetEntityAsMissionEntity(medicVeh, true, true)
+	local plateText = "ME".. math.random(100,999)
+	local a, b, c = Generate3Char()
+	plateText = plateText .. a .. b .. c
+	SetVehicleNumberPlateText(medicVeh, plateText)
 
 	Menu.hidden = true
 	TriggerServerEvent("police:spawnVehGarage", carPrice)
 	currentVeh = medicVeh
 	timeVeh = GetGameTimer()
+end
+
+function Generate3Char()
+	local a = math.random(1,26)
+	local b = math.random(1,26)
+	local c = math.random(1,26)
+	local alphabet = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}
+	return alphabet[a], alphabet[b], alphabet[c]
 end
 
 function PlayEmote(annimName)
@@ -543,3 +560,103 @@ AddEventHandler("imedic:dragAnswer", function(officerPsid)
 	isDragged = not(isDragged)
 	officerDrag = t
 end)
+
+AddEventHandler("playerDead", function()
+	Citizen.CreateThread(function()
+		TriggerServerEvent("iMedic:areMedicsConnected")
+		StartScreenEffect("DeathFailOut", 0, 0)
+		ShakeGameplayCam("DEATH_FAIL_IN_EFFECT_SHAKE", 1.0)
+		local scaleform = RequestScaleformMovie("MP_BIG_MESSAGE_FREEMODE")
+		if HasScaleformMovieLoaded(scaleform) then
+			Citizen.Wait(0)
+			PushScaleformMovieFunction(scaleform, "SHOW_SHARD_WASTED_MP_MESSAGE")
+			BeginTextComponent("STRING")
+			AddTextComponentString("Tu es gravement bléssé.")
+			EndTextComponent()
+			PopScaleformMovieFunctionVoid()
+		  	Citizen.Wait(500)
+		   	while IsEntityDead(PlayerPedId()) do
+		   		Citizen.Wait(0)
+				DrawScaleformMovieFullscreen(scaleform, 255, 255, 255, 255)
+		   	end
+		  	StopScreenEffect("DeathFailOut")
+		end
+	end)
+end)
+
+function ResPlayerInOneMinute()
+	Citizen.CreateThread(function()
+		local nowTime = GetGameTimer()
+		while GetGameTimer() <= nowTime + 60000 do
+			ResPlayer()
+		end
+	end)
+end
+
+function ResPlayer()
+	-- TriggerServerEvent('es_em:sv_removeMoney')
+	-- TriggerServerEvent("item:reset")
+	-- TriggerServerEvent("skin_customization:SpawnPlayer")
+	-- RemoveAllPedWeapons(GetPlayerPed(-1),true)
+	local x,y,z = table.unpack(GetEntityCoords(GetPlayerPed(-1), 1))
+	TriggerServerEvent("iMedic:onRespawn", x, y, z)
+end
+
+RegisterNetEvent("iMedic:returnNearestHopital")
+AddEventHandler("iMedic:returnNearestHopital", function(nearestHopital)
+	NetworkResurrectLocalPlayer(nearestHopital.x, nearestHopital.y, nearestHopital.z, true, true, false)
+	SetEntityHeading(GetPlayerPed(-1), nearestHopital.heading)
+end)
+
+RegisterNetEvent("iMedic:returnAreMedicsConnected")
+AddEventHandler("iMedic:returnAreMedicsConnected", function(isMedics)
+	if not(isMedics) then
+		ResPlayerInOneMinute()
+	else
+		Citizen.CreateThread(function()
+			local nowTime = GetGameTimer()
+			while GetGameTimer() <= nowTime + 600000 do
+				Wait(0)
+				if IsControlJustPressed(1, 246) then
+					TriggerServerEvent("iMedic:askAmbulance")
+					return
+				end
+			end
+			ResPlayer()
+		end)
+	end
+end)
+
+RegisterNetEvent("iMedic:actionCallWithoutFollow")
+AddEventHandler("iMedic:actionCallWithoutFollow", function()
+	ResPlayerInOneMinute()
+end)
+
+RegisterNetEvent("iMedic:askToMedicForAmbulance")
+AddEventHandler("iMedic:askToMedicForAmbulance", function(askingSource)
+	Citizen.CreateThread(function()
+		callTaken = false
+		TriggerEvent("pNotify:notifyFromServer", "Un citoyen est dans le coma et est en train d'appeler. Appuies sur Y pour y répondre.", "success", "topCenter", true, 15000)
+		local nowtime = GetGameTimer()
+		while GetGameTimer() <= nowTime + 15000 and not(callTaken) do
+			Wait(0)
+			if IsControlJustPressed(1, 246) then
+				TriggerServerEvent("iMedic:callAmbulanceTaken", askingSource)
+				StartAmulanceMission(askingSource)
+				return
+			end
+		end
+		if not(callTaken) then
+			TriggerServerEvent("iMedic:callWithoutFollow", askingSource)
+		end
+	end)
+end)
+
+RegisterNetEvent("iMedic:returnCallTaken")
+AddEventHandler("iMedic:returnCallTaken", function()
+	callTaken = true
+end)
+
+function StartAmulanceMission(askingSource)
+	print("test")
+end

@@ -2,6 +2,13 @@
 -- Unauthorized copying of this file, via any medium is strictly prohibited
 -- Proprietary and confidential
 -- Written by Romain Billot <romainbillot3009@gmail.com>, Jully 2017
+local hopital = {
+	{['heading'] = 51.27, ['x'] = 296.35, ['y'] = -1447.12, ['z'] = 30.01 },
+	{['heading'] = 243.2, ['x'] = 360.82, ['y'] = -584.51, ['z'] = 28.9 },
+	{['heading'] = 329.4, ['x'] = 1152.42, ['y'] = -1528.1, ['z'] = 34.9 },
+	{['heading'] = 212.1, ['x'] = 1839.72, ['y'] = 3672.31, ['z'] = 34.3},
+	{['heading'] = 320.1, ['x'] = -242.51, ['y'] = 6325.91, ['z'] = 32.45 }
+}
 
 RegisterServerEvent("print:serverArray")
 RegisterServerEvent("imedic:armurerieToServer")
@@ -10,6 +17,106 @@ RegisterServerEvent("imedic:retrieveArmurerieToServer")
 AddEventHandler("print:serverArray", function(toPrint)
 	print(json.encode(toPrint))
 end)
+
+RegisterServerEvent("iMedic:callAmbulanceTaken")
+AddEventHandler("iMedic:callAmbulanceTaken", function(askingSource)
+	local source = source
+	TriggerEvent('es:getPlayers', function(Users)
+		Users[askingsource].notify("Une ambulance est en route", "success", "topCenter", true, 5000)
+		for k, v in pairs(Users) do
+			if v ~= nil then
+				v.notify("l'appel à été pris par ".. Users[source].get("displayName")..".")
+				TriggerClientEvent("iMedic:returnCallTaken", v.get('source'))
+			end
+		end
+	end)
+end)
+
+
+RegisterServerEvent("iMedic:callWithoutFollow")
+AddEventHandler("iMedic:callWithoutFollow", function(askingSource)
+	local source = source
+	TriggerEvent("es:getPlayers", function(Users)
+		if Users[askingSource].getSessionVar("isWaitingForCall") then
+			Users[askingSource].setSessionVar("isWaitingForCall", false)
+			Users[askingSource].notify("l'appel n'a pas eu de suite par l'équipe médicale principale. Nous t'envoyons une équipe bien plus compétente qui arrive bientot.", "error", "topCenter", true, 60000)
+			TriggerClientEvent("iMedic:actionCallWithoutFollow", askingSource)
+		end
+	end)
+end)
+
+RegisterServerEvent("iMedic:askAmbulance")
+AddEventHandler("iMedic:askAmbulance", function()
+	local source = source
+	TriggerEvent("es:getPlayers", source, function(Users)
+		Users[source].notify("Tu es en train d'appeler une ambulance.", "success", "topCenter", true, 15000)
+		for k,v in pairs(Users) do
+			if v~= nil then
+				if v.get('job') == "médecin" and v.get('source') ~= source then
+					TriggerClientEvent("iMedic:askToMedicForAmbulance", v.get('source'), source)
+					Users[source].setSessionVar("isWaitingForCall", true)
+				end
+			end
+		end
+	end)
+end)
+
+RegisterServerEvent("iMedic:areMedicsConnected")
+AddEventHandler("iMedic:areMedicsConnected", function()
+	local source = source
+	TriggerEvent("es:getPlayers", function(Users)
+		isMedics = false
+		for k,v in pairs(Users) do
+			if v~= nil then
+				if v.get('job') == "médecin" and v.get('source') ~= source then 
+					isMedics = true 
+					break 
+				end
+			end
+		end
+		if isMedics then
+			Users[source].notify("Appuies sur Y pour appeler une abulance.", "error", "topCenter", true, 20000)
+			TriggerClientEvent("iMedic:returnAreMedicsConnected", isMedics)
+		else
+			Users[source].notify("Il n'y a pas de médecin en ville, attends 1 minute avant d'etre transporté à l'hopital.", "error", "topCenter", true, 60000)
+			TriggerClientEvent("iMedic:returnAreMedicsConnected", isMedics)
+		end
+	end)
+end)
+
+RegisterServerEvent("iMedic:onRespawn")
+AddEventHandler("iMedic:onRespawn", function(x, y, z)
+	local source = source
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		local nearestHopital = GetNearestHopital(x, y, z)
+		TriggerClientEvent("iMedic:returnNearestHopital", user.get('source'), hopital[nearestHopital.index])
+		user.notify("Tu te retrouve à l'hopital le plus proche. </br> Tu perds toute notion du temps, tu ne te souvient plus de rien <strong> pour le moment </strong> </br> HRP: Ne retourne pas sur la scène d'où tu proviens.", "error", "topCenter", true, 5000)
+	end)
+end)
+
+function GetNearestHopital(xp, yp, zp)
+
+end
+
+function CalculLongest(xp, yp)
+	local listDist = { }
+	for i=1, #hopital do
+		table.insert(listDist, { dist = DistanceFrom(tonumber(xp), tonumber(yp), tonumber(hopital[i].x), tonumber(hopital[i].y)), index = i})
+	end
+	return MinimumNumber(listDist)
+end
+
+function MinimumNumber(table)
+	local min = 999999
+	for i=1, #table do
+		if min > table[i].dist then min = table[i] end
+	end
+	return min
+end
+
+function DistanceFrom(x1,y1,x2,y2) 
+	return math.sqrt((x2 - x1) ^ 2 + (y2 - y1) ^ 2) 
+end
 
 AddEventHandler("imedic:armurerieToServer", function(result)
 	local source = source
@@ -47,7 +154,6 @@ AddEventHandler("imedic:armurerieToServer", function(result)
 		else
 			user.notify("Tiens tes armes de service.. et euh, je suppose que tu n'as pas d'armes personnelles sur toi " .. user.get('displayName').. '?', "success", "topCenter", true, 5000)
 		end
-		print("3")
 		TriggerClientEvent("imedic:giveServiceWeapons", source, result)
 	end)
 end)

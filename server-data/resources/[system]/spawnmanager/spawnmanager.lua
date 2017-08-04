@@ -330,7 +330,7 @@ local diedAt
 Citizen.CreateThread(function()
     -- main loop thing
     while true do
-        Citizen.Wait(50)
+        Citizen.Wait(0)
 
         local playerPed = GetPlayerPed(-1)
 
@@ -352,6 +352,7 @@ Citizen.CreateThread(function()
 
             if IsEntityDead(playerPed) then
                 if not diedAt then
+                    TriggerEvent("playerDead")
                     diedAt = GetGameTimer()
                 end
             else
