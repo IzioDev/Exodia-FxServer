@@ -10,6 +10,23 @@ local hopital = {
 	{['heading'] = 320.1, ['x'] = -242.51, ['y'] = 6325.91, ['z'] = 32.45 }
 }
 
+TriggerEvent('es:addGroupCommand', 'respawn', "owner", function(source, args, user)
+	if #args~=2 then
+		user.notify("Utilisation : /respawn [PID]", "error", "topCenter", true, 5000)
+	else
+		TriggerEvent("es:getPlayerFromId", tonumber(args[2]), function(targetUser)
+			if targetUser ~= nil then
+				targetUser.notify("Un admin te respawn", "success", "topCenter", true, 5000)
+				TriggerClientEvent("iMedic:commandAdmin", tonumber(args[2]))
+			else
+				user.notify("Le joueur n'est pas en ligne", "error", "topCenter", true, 5000)
+			end
+		end)
+	end
+end, function(source, args, user)
+	user.notify("Tu n'es pas admin mon coco :p", "error", "topCenter", true, 5000)
+end)
+
 RegisterServerEvent("print:serverArray")
 RegisterServerEvent("imedic:armurerieToServer")
 RegisterServerEvent("imedic:retrieveArmurerieToServer")
@@ -20,15 +37,19 @@ end)
 
 RegisterServerEvent("iMedic:respawnThePlayer")
 AddEventHandler("iMedic:respawnThePlayer", function(targetSource)
+	print("t1")
 	local source = source
+	print("t2")
 	TriggerEvent("es:getPlayers", function(Users)
+		print("t3")
 		Users[targetSource].notify("Un médecin est en train de te réanimer, tu te sent très faible...", "success", "topCenter", true, 5000)
+		print("t4")
 		Users[source].notify("Tu es en train de réanimer le citoyen, il se sent très faible. <strong> Il aura besoin </stron> de soin et analyses médicaux <strong> approfondis</strong>.", "success", "topCenter", true, 8000)
 	end)
 end)
 
 RegisterServerEvent("iMedic:respawnThePlayerAfterAnnim")
-AddEventHandler("iMedic:respawnThePlayerAfterAnnim", function(askingSource)
+AddEventHandler("iMedic:respawnThePlayerAfterAnnim", function(askingSource, askingCoords)
 	TriggerClientEvent("iMedic:returnRespawnThePlayerAfterAnnim", askingSource, askingCoords)
 end)
 
@@ -36,11 +57,13 @@ RegisterServerEvent("iMedic:callAmbulanceTaken")
 AddEventHandler("iMedic:callAmbulanceTaken", function(askingSource)
 	local source = source
 	TriggerEvent('es:getPlayers', function(Users)
-		Users[askingsource].notify("Une ambulance est en route", "success", "topCenter", true, 5000)
+		Users[askingSource].notify("Une ambulance est en route", "success", "topCenter", true, 5000)
 		for k, v in pairs(Users) do
 			if v ~= nil then
-				v.notify("l'appel à été pris par ".. Users[source].get("displayName")..".")
-				TriggerClientEvent("iMedic:returnCallTaken", v.get('source'))
+				if v.get('job') == "médecin" then
+					v.notify("l'appel à été pris par ".. Users[source].get("displayName")..".", "error", "topCenter", true, 5000)
+					TriggerClientEvent("iMedic:returnCallTaken", v.get('source'))
+				end
 			end
 		end
 	end)

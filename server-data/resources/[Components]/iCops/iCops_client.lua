@@ -168,6 +168,7 @@ end
 
 Citizen.CreateThread(function()
 	while true do
+		DisablePlayerVehicleRewards(PlayerId())
 		Wait(0)
 		if not(Menu.hidden) then
 			Menu.renderGUI()

@@ -14,6 +14,7 @@ local currentVeh = nil
 local vehFromGarage = nil
 local timeVeh = nil
 local callTaken = false
+local launched = false
 
 local function freezePlayer(id, freeze)
     local player = id
@@ -625,11 +626,10 @@ AddEventHandler("iMedic:returnAreMedicsConnected", function(isMedics)
 	else
 		Citizen.CreateThread(function()
 			local nowTime = GetGameTimer()
-			while GetGameTimer() <= nowTime + 6000 do
+			while GetGameTimer() <= nowTime + 600000 do
 				Citizen.Wait(0)
 				if IsControlJustPressed(1, 246) then
 					TriggerServerEvent("iMedic:askAmbulance")
-					ResPlayer()
 					return
 				end
 			end
@@ -648,7 +648,13 @@ AddEventHandler("iMedic:returnRespawnThePlayerAfterAnnim", function(askingCoords
 	ResPlayerHere(askingCoords)
 end)
 
+RegisterNetEvent("iMedic:commandAdmin")
+AddEventHandler("iMedic:commandAdmin", function(askingCoords)
+	ResPlayer(askingCoords)
+end)
+
 function ResPlayerHere(askingCoords)
+	print(json.encode(askingCoords))
 	NetworkResurrectLocalPlayer(askingCoords.x, askingCoords.y, askingCoords.z, true, true, false)
 end
 
@@ -669,6 +675,7 @@ AddEventHandler("iMedic:askToMedicForAmbulance", function(askingSource, askingCo
 		if not(callTaken) then
 			TriggerServerEvent("iMedic:callWithoutFollow", askingSource)
 		end
+		callTaken = false
 	end)
 end)
 
@@ -692,7 +699,7 @@ function StartAmulanceMission(askingSource, askingCoords)
 		local playerPed = GetPlayerFromServerId(askingSource)
 		local playerDead = true
 		local nowTime = GetGameTimer()
-		while GetGameTimer() <= nowTime + 420000 and playerDead do
+		while GetGameTimer() <= nowTime + 420000 and playerDead do -- timer en fonction de la distance.
 			local x,y,z = table.unpack(GetEntityCoords(GetPlayerPed(-1), true))
 			Wait(100)
 			DisplayHelpText("Il te reste ".. math.ceil((nowTime + 420000 - GetGameTimer())/1000).. "secondes pour te rendre sur les lieux.")
@@ -718,23 +725,25 @@ end
 
 function FixPlayer(askingSource, askingCoords)
 	Citizen.CreateThread(function()
-		local x,y,z = table.unpack(GetEntityCoords(GetPlayerPed(-1), true))
-		Wait(100)
-		if GetDistanceBetweenCoords(askingCoords.x, askingCoords.y, askingCoords.z, x, y, z, true) <= 5.0 then
-			DisplayHelpText("Appuies sur Y pour appliquer les premiers soins à la personne morte.")
-			if IsControlJustPressed(1, 246) then
-				TriggerServerEvent("iMedic:respawnThePlayer", askingSource)
-				PlayEmote("mini@cpr@char_a@cpr_str", "cpr_kol_idle", 0, 1, 0, 0)
-            	PlayEmote("mini@cpr@char_a@cpr_str", "cpr_kol_to_cpr", 0, 1, 0, 0)
-            	PlayEmote("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 9, 1, 0, 1, 5.75)
-            	TriggerServerEvent("iMedic:respawnThePlayerAfterAnnim", askingSource, askingCoords)
-				return
+		while true do
+			local x,y,z = table.unpack(GetEntityCoords(GetPlayerPed(-1), true))
+			Wait(0)
+			if GetDistanceBetweenCoords(askingCoords.x, askingCoords.y, askingCoords.z, x, y, z, true) <= 5.0 then
+				DisplayHelpText("Appuies sur Y pour appliquer les premiers soins à la personne morte.")
+				if IsControlJustPressed(1, 246) then
+					TriggerServerEvent("iMedic:respawnThePlayer", askingSource)
+					TaskStartScenarioInPlace(GetPlayerPed(-1), 'CODE_HUMAN_MEDIC_TEND_TO_DEAD', 0, true)
+					Citizen.Wait(8000)
+					ClearPedTasks(GetPlayerPed(-1))
+        	    	TriggerServerEvent("iMedic:respawnThePlayerAfterAnnim", askingSource, askingCoords)
+        	    	break
+				end
 			end
 		end
 	end)
 end
 
-function PlayEmote(dict, name, flags, duration ,stop, loop, waitTimeUntilClear)
+local function PlayEmoteMedic(dict, name, flags, duration ,stop, loop, waitTimeUntilClear)
     if stop ~= 1 then
         ClearPedSecondaryTask(player)
         ClearPedTasks(player)
@@ -785,3 +794,9 @@ function PlayEmote(dict, name, flags, duration ,stop, loop, waitTimeUntilClear)
         ClearPedTasksImmediately(player)
     end
 end
+
+AddEventHandler("iMedic:respawnAnnim", function()
+	PlayEmoteMedic("mini@cpr@char_a@cpr_str", "cpr_kol_idle", 0, 1, 0, 0)
+    PlayEmoteMedic("mini@cpr@char_a@cpr_str", "cpr_kol_to_cpr", 0, 1, 0, 0)
+    PlayEmoteMedic("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 9, 1, 0, 1, 5.75)
+end)
