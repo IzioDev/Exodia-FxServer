@@ -633,7 +633,7 @@ AddEventHandler("iMedic:actionCallWithoutFollow", function()
 end)
 
 RegisterNetEvent("iMedic:askToMedicForAmbulance")
-AddEventHandler("iMedic:askToMedicForAmbulance", function(askingSource)
+AddEventHandler("iMedic:askToMedicForAmbulance", function(askingSource, askingCoords)
 	Citizen.CreateThread(function()
 		callTaken = false
 		TriggerEvent("pNotify:notifyFromServer", "Un citoyen est dans le coma et est en train d'appeler. Appuies sur Y pour y répondre.", "success", "topCenter", true, 15000)
@@ -642,7 +642,7 @@ AddEventHandler("iMedic:askToMedicForAmbulance", function(askingSource)
 			Wait(0)
 			if IsControlJustPressed(1, 246) then
 				TriggerServerEvent("iMedic:callAmbulanceTaken", askingSource)
-				StartAmulanceMission(askingSource)
+				StartAmulanceMission(askingSource, askingCoords)
 				return
 			end
 		end
@@ -657,6 +657,28 @@ AddEventHandler("iMedic:returnCallTaken", function()
 	callTaken = true
 end)
 
-function StartAmulanceMission(askingSource)
-	print("test")
+function StartAmulanceMission(askingSource, askingCoords)
+	Citizen.CreateThread(function()
+		local blip = AddBlipForCoord(tonumber(askingCoords.x), tonumber(askingCoords.y), tonumber(askingCoords.z))
+		SetBlipSprite(blip, 1)
+		SetBlipColour(blip, 3)
+		BeginTextCommandSetBlipName("STRING")
+		AddTextComponentString("Appel Médecin")
+		EndTextCommandSetBlipName(blip)
+		SetBlipAsShortRange(blip,true)
+		SetBlipAsMissionCreatorBlip(blip,true)
+		SetBlipRoute(blip, true)
+		SetBlipRouteColour(blip, 38)
+		local nowTime = GetGameTimer()
+		while GetGameTimer() <= nowTime + 420000 then
+			local x,y,z = table.unpack(GetEntityCoords(GetPlayerPed(-1), true))
+			Wait(100)
+			DisplayHelpText("Il te reste ".. math.ceil((nowTime + 420000 - GetGameTimer())/1000).. "secondes pour te rendre sur les lieux.")
+			if GetDistanceBetweenCoords(askingCoords.x, askingCoords.y, askingCoords.z, x, y, z, true) <= 5.0 then
+				SetBlipAsMissionCreatorBlip(displayedBlip[i],false)
+				Citizen.InvokeNative(0x86A652570E5F25DD, Citizen.PointerValueIntInitialized(blip))
+				return
+			end
+		end
+	end)
 end

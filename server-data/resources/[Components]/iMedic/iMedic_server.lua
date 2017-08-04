@@ -53,7 +53,7 @@ AddEventHandler("iMedic:askAmbulance", function()
 		for k,v in pairs(Users) do
 			if v~= nil then
 				if v.get('job') == "médecin" and v.get('source') ~= source then
-					TriggerClientEvent("iMedic:askToMedicForAmbulance", v.get('source'), source)
+					TriggerClientEvent("iMedic:askToMedicForAmbulance", v.get('source'), source, Users[source].get('coords'))
 					Users[source].setSessionVar("isWaitingForCall", true)
 				end
 			end
