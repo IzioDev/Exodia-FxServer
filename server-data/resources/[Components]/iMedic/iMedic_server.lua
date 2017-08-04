@@ -18,6 +18,20 @@ AddEventHandler("print:serverArray", function(toPrint)
 	print(json.encode(toPrint))
 end)
 
+RegisterServerEvent("iMedic:respawnThePlayer")
+AddEventHandler("iMedic:respawnThePlayer", function(targetSource)
+	local source = source
+	TriggerEvent("es:getPlayers", function(Users)
+		Users[targetSource].notify("Un médecin est en train de te réanimer, tu te sent très faible...", "success", "topCenter", true, 5000)
+		Users[source].notify("Tu es en train de réanimer le citoyen, il se sent très faible. <strong> Il aura besoin </stron> de soin et analyses médicaux <strong> approfondis</strong>.", "success", "topCenter", true, 8000)
+	end)
+end)
+
+RegisterServerEvent("iMedic:respawnThePlayerAfterAnnim")
+AddEventHandler("iMedic:respawnThePlayerAfterAnnim", function(askingSource)
+	TriggerClientEvent("iMedic:returnRespawnThePlayerAfterAnnim", askingSource, askingCoords)
+end)
+
 RegisterServerEvent("iMedic:callAmbulanceTaken")
 AddEventHandler("iMedic:callAmbulanceTaken", function(askingSource)
 	local source = source
@@ -75,6 +89,7 @@ AddEventHandler("iMedic:areMedicsConnected", function()
 				end
 			end
 		end
+		Users[source].setSessionVar("isDead", true)
 		if isMedics then
 			Users[source].notify("Appuies sur Y pour appeler une ambulance.", "error", "topCenter", true, 20000)
 			TriggerClientEvent("iMedic:returnAreMedicsConnected", source, isMedics)

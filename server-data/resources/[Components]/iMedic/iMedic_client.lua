@@ -643,6 +643,15 @@ AddEventHandler("iMedic:actionCallWithoutFollow", function()
 	ResPlayerInOneMinute()
 end)
 
+RegisterNetEvent("iMedic:returnRespawnThePlayerAfterAnnim")
+AddEventHandler("iMedic:returnRespawnThePlayerAfterAnnim", function(askingCoords)
+	ResPlayerHere(askingCoords)
+end)
+
+function ResPlayerHere(askingCoords)
+	NetworkResurrectLocalPlayer(askingCoords.x, askingCoords.y, askingCoords.z, true, true, false)
+end
+
 RegisterNetEvent("iMedic:askToMedicForAmbulance")
 AddEventHandler("iMedic:askToMedicForAmbulance", function(askingSource, askingCoords)
 	Citizen.CreateThread(function()
@@ -680,17 +689,99 @@ function StartAmulanceMission(askingSource, askingCoords)
 		SetBlipAsMissionCreatorBlip(blip,true)
 		SetBlipRoute(blip, true)
 		SetBlipRouteColour(blip, 38)
+		local playerPed = GetPlayerFromServerId(askingSource)
+		local playerDead = true
 		local nowTime = GetGameTimer()
-		while GetGameTimer() <= nowTime + 420000 do
+		while GetGameTimer() <= nowTime + 420000 and playerDead do
 			local x,y,z = table.unpack(GetEntityCoords(GetPlayerPed(-1), true))
 			Wait(100)
 			DisplayHelpText("Il te reste ".. math.ceil((nowTime + 420000 - GetGameTimer())/1000).. "secondes pour te rendre sur les lieux.")
+
+			playerDead = IsEntityDead(playerPed)
+
 			if GetDistanceBetweenCoords(askingCoords.x, askingCoords.y, askingCoords.z, x, y, z, true) <= 5.0 then
 				SetBlipAsMissionCreatorBlip(blip, false)
 				Citizen.InvokeNative(0x86A652570E5F25DD, Citizen.PointerValueIntInitialized(blip))
-				-- need to resurrect
+				FixPlayer(askingSource, askingCoords)
+				return
+			end
+		end
+
+		if GetGameTimer() >= nowTime + 420000 then
+			-- on pourrait pénaliser le médecin
+		elseif playerDead then
+			-- le joueur est en vie
+		end
+
+	end)
+end
+
+function FixPlayer(askingSource, askingCoords)
+	Citizen.CreateThread(function()
+		local x,y,z = table.unpack(GetEntityCoords(GetPlayerPed(-1), true))
+		Wait(100)
+		if GetDistanceBetweenCoords(askingCoords.x, askingCoords.y, askingCoords.z, x, y, z, true) <= 5.0 then
+			DisplayHelpText("Appuies sur Y pour appliquer les premiers soins à la personne morte.")
+			if IsControlJustPressed(1, 246) then
+				TriggerServerEvent("iMedic:respawnThePlayer", askingSource)
+				PlayEmote("mini@cpr@char_a@cpr_str", "cpr_kol_idle", 0, 1, 0, 0)
+            	PlayEmote("mini@cpr@char_a@cpr_str", "cpr_kol_to_cpr", 0, 1, 0, 0)
+            	PlayEmote("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 9, 1, 0, 1, 5.75)
+            	TriggerServerEvent("iMedic:respawnThePlayerAfterAnnim", askingSource, askingCoords)
 				return
 			end
 		end
 	end)
+end
+
+function PlayEmote(dict, name, flags, duration ,stop, loop, waitTimeUntilClear)
+    if stop ~= 1 then
+        ClearPedSecondaryTask(player)
+        ClearPedTasks(player)
+
+        local i = 0
+        RequestAnimDict(dict)
+        while not HasAnimDictLoaded(dict) and i < 500 do
+            Wait(10)
+            RequestAnimDict(dict)
+            i = i+1
+        end
+
+        if HasAnimDictLoaded(dict) then
+            TaskPlayAnim(player, dict , name, 2.0, 1, -1, flags, 0, 1, 1, 1)
+        end
+
+        Wait(0)
+
+        if loop ~= 1 then
+            while GetEntityAnimCurrentTime(player, dict, name) <= duration and IsEntityPlayingAnim(player, dict, name, 3) do
+                Wait(0)
+            end
+            ClearPedTasks(player)
+        else
+            launched = true
+            while GetEntityAnimCurrentTime(player, dict, name) <= duration and IsEntityPlayingAnim(player, dict , name, 3) and launched do
+                Wait(0)
+                 drawTxt("Appuyez sur ~g~E~s~ pour arrêter ~b~l'animation",0,1,0.5,0.8,0.6,255,255,255,255)
+                if IsControlJustPressed(1, 38) then
+                    StopAnimTask(player, dict, name, 1)
+                    Citizen.CreateThread(function()
+                        while true do
+                            if waitTimeUntilClear == nil or waitTimeUntilClear == 0 then
+                                Wait(2500)
+                            else
+                                waitingTime = (waitTimeUntilClear * 1000)
+                                Wait(waitingTime)
+                            end
+                            ClearPedTasksImmediately(player)
+                            break
+                        end
+                    end)
+                end
+            end
+            launched = false
+        end
+    else
+        ClearPedTasksImmediately(player)
+    end
 end

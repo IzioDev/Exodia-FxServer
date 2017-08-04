@@ -17,6 +17,7 @@ AddEventHandler('esx_skin:responsePlayerSkinInfos', function(skin, newer)
 	Skin = json.decode(skin)
 	new = newer
 	if(newer)then
+		TriggerEvent('skinchanger:loadSkin', Skin)
 		TriggerEvent('skinchanger:openMenu')
 	else
 		TriggerEvent('skinchanger:loadSkin', Skin)
