@@ -892,12 +892,68 @@ AddEventHandler("veh_s:notif", function(text)
 end)
 
 --Thread Garage :
+local isInGarage = false
+
+local function freezePlayer(id, freeze)
+    local player = id
+    SetPlayerControl(player, not freeze, false)
+
+    local ped = GetPlayerPed(player)
+
+    if not freeze then
+        if not IsEntityVisible(ped) then
+            SetEntityVisible(ped, true)
+        end
+
+        if not IsPedInAnyVehicle(ped) then
+            SetEntityCollision(ped, true)
+        end
+
+        FreezeEntityPosition(ped, false)
+        --SetCharNeverTargetted(ped, false)
+        SetPlayerInvincible(player, false)
+    else
+        if IsEntityVisible(ped) then
+            SetEntityVisible(ped, false)
+        end
+
+        SetEntityCollision(ped, false)
+        FreezeEntityPosition(ped, true)
+        --SetCharNeverTargetted(ped, true)
+        SetPlayerInvincible(player, true)
+        --RemovePtfxFromPed(ped)
+
+        if not IsPedFatallyInjured(ped) then
+            ClearPedTasksImmediately(ped)
+        end
+    end
+end
+
+function TpTo(Coords)
+	RequestCollisionAtCoord(Coords.x, Coords.y, Coords.z)
+		freezePlayer(PlayerId(), true)
+		SetEntityCoords(GetPlayerPed(-1), Coords.x, Coords.y, Coords.z, 0, 0, 0, 0)
+		SetEntityHeading(GetPlayerPed(-1), Coords.heading)
+		while not HasCollisionLoadedAroundEntity(GetPlayerPed(-1)) do
+            Citizen.Wait(0)
+        end
+
+        ShutdownLoadingScreen()
+
+        DoScreenFadeIn(500)
+
+        while IsScreenFadingIn() do
+            Citizen.Wait(0)
+        end
+        freezePlayer(PlayerId(), false)
+end
+
 function OpenGarageMenu(result)
 	ClearMenu()
 	MenuTitle = "Gestion Garage"
 
 	Menu.addButton("Acheter pour "..result.price, "BuyGarage", result.price)
-	Menu.addButton("Visiter", "VisitGarage", {} )
+	Menu.addButton("Visiter", "VisitGarage", result.garagePoint )
 	Menu.addButton("Vendre pour"..math.ceil(result.price/2), "SellGarage", math.ceil(result.price/2))
 	Menu.addButton("Fermer le menu", "CloseMenu", {} )
 
@@ -916,7 +972,7 @@ Citizen.CreateThread(function()
 			Menu.renderGUI()
 		end
 		TriggerEvent("isPlayerInZoneReturnResult", "gestionAchatGarage", function(result)
-			if isInZone then
+			if result then
 				DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour "..result.displayedMessageInZone)
 				if IsControlJustPressed(1, 38) then
 					Menu.hidden = not(Menu.hidden)
@@ -930,16 +986,100 @@ Citizen.CreateThread(function()
 				end
 			end
 		end)
+		TriggerEvent("isPlayerInZoneReturnResult", "sortieGarage", function(result)
+			if result then
+				if not(IsPedInAnyVehicle(GetPlayerPed(-1), false))
+					DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour "..result.displayedMessageInZone)
+					if IsControlJustPressed(1, 38) then
+						LeaveGarage(result)
+					end
+				else
+					LeaveGarageWithCar(result, "TODO")
+				end
+			end
+		end)
+		TriggerEvent("isPlayerInZoneReturnResult", "entréeGarage", function(result)
+			if result then
+				if not(IsPedInAnyVehicle(GetPlayerPed(-1), false))
+					DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour "..result.displayedMessageInZone)
+					if IsControlJustPressed(1, 38) then
+						EnterGarage(result)
+					end
+				else
+					EnterGarageWithCar(result, "TODO")
+				end
+			end
+		end)
 	end
 end)
+
+function EnterGarage(result)
+	TriggerServerEvent("iGarage:playerGotAGarage", result, nil)
+end
+
+RegisterNetEvent("iGarage:returnPlayerGotAGarage")
+AddEventHandler("iGarage:returnPlayerGotAGarage", function(isGotting, result)
+	if isGotting then
+		isInGarage = true
+		TpTo(result.garagePoint)
+	end
+end)
+
+function EnterGarageWithCar(result, carPlate)
+	isInGarage = true
+	-- s'il à un garage
+	local myCar = GetVehiclePedIsIn(GetPlayerPed(-1), false)
+	local plate = GetVehicleNumberPlateText(myCar)
+	TriggerServerEvent("iGarage:playerGotAGarage", result, plate)
+	-- mettre le véhicle à in
+	TpTo(result.garagePoint)
+end
+
+function LeaveGarage(result)
+	TpTo(result.finalPoint)
+	isInGarage = false
+end
+
+function LeaveGarageWithCar(result, carPlate)
+	TpTo(result.finalPoint)
+	-- faire spawn le véhicle puis le wrap dedans
+	-- mettre le véhicle à out
+	isInGarage = false
+end
 
 function BuyGarage(garagePrice) -- fonction appelées quand on clique sur le boutton.
 	-- on check son argent, s'il en a assez on lui attribut un garage et on le TP dedans, en lui mettant ses voitures dedans
 	-- sinon notif.
 end
 
-function VisitGarage(peutImporte) -- 
+function VisitGarage(garageCoords) -- 
+	isInGarage = true
+	local nowTime = GetGameTimer()
+
+	TpTo(garageCoords)
+
 	-- on le fait entrer pendant 5 minutes maximum, ou (inclusif) alors quand il se rend sur la zone.
+	while isInGarage and (GetGameTimer() <= nowTime + 300000) do
+
+		Wait(0)
+
+		local playerPed = GetPlayerPed(-1)
+
+		for i=0, 32 do
+			if i ~= PlayerId() then
+				local otherPlayerPed = GetPlayerPed(i)
+				SetEntityLocallyInvisible(otherPlayerPed)
+				SetEntityNoCollisionEntity(playerPed,  otherPlayerPed,  true)
+			end
+		end
+
+	end
+
+	if isInGarage = false then
+		TriggerEvent("pNotify:notifyFromServer","Tu viens de sortir du garage, il t'a plut? Achète-le!", "success", "topCenter", true, 5000)
+	elseif GetGameTimer() <= nowTime + 300000 then
+		TriggerEvent("pNotify:notifyFromServer","Le temps est écoulé, la visite t'a plut? N'hésite pas à acheter le garage!", "success", "topCenter", true, 5000)
+	end
 end
 
 function SellGarage(garageSellingPrice) -- 

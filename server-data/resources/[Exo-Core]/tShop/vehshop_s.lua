@@ -270,3 +270,40 @@ SaveCarDatas()
 --         end)
 --     end)
 -- end)
+
+-- Partie iGarage:
+RegisterServerEvent("iGarage:playerGotAGarage")
+AddEventHandler("iGarage:playerGotAGarage", function(result, plate)
+  local source = source
+  TriggerEvent("es:getPlayerFromId", source, function(user)
+    if user.getOtherInGameInfos('garage') == true then
+      if plate ~= nil then
+        if allVeh[plate] then
+          allVeh[plate].set('state', 'in')
+          local cars = GetAllVehicleFromAPlayerWithInState(user.get('identifier'))
+          TriggerClientEvent("iGarage:returnPlayerGotAGarage", source, user.getOtherInGameInfos('garage'), result, cars)
+        else
+          user.notify("Et moi j'veux pas d'enmmerdes avec les keuffs, dégage de là, les véhicules volés c'est pas ici!</br> <strong>Le concierge</strong>", "error", "topCenter", true, 5000)
+        end
+      else
+        local cars = GetAllVehicleFromAPlayerWithInState(user.get('identifier'))
+        TriggerClientEvent("iGarage:returnPlayerGotAGarage", source, user.getOtherInGameInfos('garage'), result, cars)
+      end
+    else
+      user.notify("Uhm.. Mais tu n'as pas de garage! D'ailleurs je t'invite à regarder nos magnifiques offres promotionnelles mon choux. </br> <strong>La jolie secrétaire. ♥</strong>", "error", "topCenter", true, 5000)
+    end
+  end)
+end)
+
+function GetAllVehicleFromAPlayerWithInState(identifier)
+  local toBeReturned = {}
+  TriggerEvent("car:getAllPlayerCars", identifier, function(Cars)
+    for k,v in pairs(Cars) do
+      if v.get('state') == "in" then
+        table.insert(toBeReturned, v)
+      end
+    end
+  end)
+  return toBeReturned
+end
+
