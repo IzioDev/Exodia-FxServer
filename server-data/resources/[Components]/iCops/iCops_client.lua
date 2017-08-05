@@ -5,7 +5,7 @@
 
 local userRank = nil 
 local userJob = nil
-local isInService = true
+local isInService = false
 local isDragged = false
 local isHandCuffed = false
 local currentMenu = nil

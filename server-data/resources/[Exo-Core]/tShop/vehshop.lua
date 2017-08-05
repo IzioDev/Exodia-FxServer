@@ -886,7 +886,68 @@ end)
 
 RegisterNetEvent("veh_s:notif")
 AddEventHandler("veh_s:notif", function(text)
-	 SetNotificationTextEntry("STRING")
-         AddTextComponentString(text)
-         DrawNotification(false, false)		
+	SetNotificationTextEntry("STRING")
+    AddTextComponentString(text)
+    DrawNotification(false, false)		
 end)
+
+--Thread Garage :
+function OpenGarageMenu(result)
+	ClearMenu()
+	MenuTitle = "Gestion Garage"
+
+	Menu.addButton("Acheter pour "..result.price, "BuyGarage", result.price)
+	Menu.addButton("Visiter", "VisitGarage", {} )
+	Menu.addButton("Vendre pour"..math.ceil(result.price/2), "SellGarage", math.ceil(result.price/2))
+	Menu.addButton("Fermer le menu", "CloseMenu", {} )
+
+	Menu.hidden = false
+end
+
+function CloseMenu(fake)
+	ClearMenu()
+	Menu.hidden = true
+end
+
+Citizen.CreateThread(function()
+	while true do
+		Wait(0)
+		if not(Menu.hidden) then
+			Menu.renderGUI()
+		end
+		TriggerEvent("isPlayerInZoneReturnResult", "gestionAchatGarage", function(result)
+			if isInZone then
+				DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour "..result.displayedMessageInZone)
+				if IsControlJustPressed(1, 38) then
+					Menu.hidden = not(Menu.hidden)
+					if not(Menu.hidden) then
+						OpenGarageMenu(result)
+					end
+				end
+			else
+				if not(Menu.hidden) then
+					CloseMenu("OSEF")
+				end
+			end
+		end)
+	end
+end)
+
+function BuyGarage(garagePrice) -- fonction appelées quand on clique sur le boutton.
+	-- on check son argent, s'il en a assez on lui attribut un garage et on le TP dedans, en lui mettant ses voitures dedans
+	-- sinon notif.
+end
+
+function VisitGarage(peutImporte) -- 
+	-- on le fait entrer pendant 5 minutes maximum, ou (inclusif) alors quand il se rend sur la zone.
+end
+
+function SellGarage(garageSellingPrice) -- 
+	-- On vend le garage du mec, on lui donne l'argent, et on lui donne 10 minutes pour ranger ses voitures ou il souhaite. Sinon :boom:
+end
+
+function DisplayHelpText(str)
+	SetTextComponentFormat("STRING")
+	AddTextComponentString(str)
+	DisplayHelpTextFromStringLabel(0, 0, 1, -1)
+end

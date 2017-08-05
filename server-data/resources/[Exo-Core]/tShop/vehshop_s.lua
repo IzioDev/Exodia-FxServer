@@ -27,7 +27,7 @@ AddEventHandler("onVehRestart", function()
     end
     allVeh[result[i].vehicle_plate] = CreateCar(result[i])
   end
-  SetTimeout(500, function()
+  SetTimeout(1500, function()
     TriggerEvent("es:getPlayers", function(Users)
       for k,v in pairs(Users) do
         TriggerClientEvent("veh:BlibAfterRestart", tonumber(v.get('source')))
@@ -95,38 +95,38 @@ function PrintArrayUnknowIndex(table)
     end
 end
 
-AddEventHandler('vehshop:retrieve', function()
-  TriggerEvent('es:getPlayerFromId', source, function(user)
-    player = user.get('identifier')
-  end)
-  local src = source
-  local vehicle
-  local plate
-  local state
-  local primarycolor
-  local secondarycolor
-  local pearlescentcolor
-  local wheelcolor
-  local lastpos
-  local result = MySQL.Sync.fetchAll("SELECT * FROM user_vehicle WHERE identifier = @username", {
-      ['@username'] = player
-  })
+-- AddEventHandler('vehshop:retrieve', function()
+--   TriggerEvent('es:getPlayerFromId', source, function(user)
+--     player = user.get('identifier')
+--   end)
+--   local src = source
+--   local vehicle
+--   local plate
+--   local state
+--   local primarycolor
+--   local secondarycolor
+--   local pearlescentcolor
+--   local wheelcolor
+--   local lastpos
+--   local result = MySQL.Sync.fetchAll("SELECT * FROM user_vehicle WHERE identifier = @username", {
+--       ['@username'] = player
+--   })
 
-  if (result) then -- Spawn Veh on connection
-      for i=1, #result do
-        vehicle = result[i].vehicle_model
-        plate = result[i].vehicle_plate
-        state = result[i].vehicle_state
-        primarycolor = result[i].vehicle_colorprimary
-        secondarycolor = result[i].vehicle_colorsecondary
-        pearlescentcolor = result[i].vehicle_pearlescentcolor
-        wheelcolor = result[i].vehicle_wheelcolor
-        lastpos = result[i].lastpos
-        TriggerClientEvent('veh:spawn', src, vehicle, plate, state, primarycolor, secondarycolor, pearlescentcolor, wheelcolor, lastpos)
-        allVeh[plate].set('state', "out")
-      end
-  end
-end)
+--   if (result) then -- Spawn Veh on connection
+--       for i=1, #result do
+--         vehicle = result[i].vehicle_model
+--         plate = result[i].vehicle_plate
+--         state = result[i].vehicle_state
+--         primarycolor = result[i].vehicle_colorprimary
+--         secondarycolor = result[i].vehicle_colorsecondary
+--         pearlescentcolor = result[i].vehicle_pearlescentcolor
+--         wheelcolor = result[i].vehicle_wheelcolor
+--         lastpos = result[i].lastpos
+--         TriggerClientEvent('veh:spawn', src, vehicle, plate, state, primarycolor, secondarycolor, pearlescentcolor, wheelcolor, lastpos)
+--         allVeh[plate].set('state', "out")
+--       end
+--   end
+-- end)
 
 function IsPlayerGotThisVeh(player, vehPlate, LastPosEncoded) -- vehplate string
   if allVeh[vehPlate] then
@@ -168,14 +168,11 @@ AddEventHandler('CheckMoneyForVeh', function(name, vehicle, price)
         end
       end
     else
-      print("else")
       if tonumber(user.get('money')) >= price then
         user.removeMoney((price))
-        print("Triggered")
         TriggerClientEvent('FinishMoneyCheckForVeh', user.get('source'), name, vehicle, price)
         TriggerClientEvent("veh_s:notif", user.get('source'), "Vehicule ~r~Livré!~w~")
       else
-        print("Arf...")
         TriggerClientEvent("veh_s:notif", user.get('source'), "Tu n'as pas assez d'argent")
       end
     end
@@ -224,7 +221,7 @@ end)
 function SaveCarDatas()
   SetTimeout(saveTime, function()
     for k, v in pairs(allVeh) do
-      if v.get('haveChanged') then
+      if v.get('haveChanged') == true then
         MySQL.Async.execute("UPDATE user_vehicle SET `identifier`=@identifier, `vehicle_wheelcolor`=@vehicle_wheelcolor, `vehicle_pearlescentcolor` = @vehicle_pearlescentcolor, `vehicle_colorsecondary`=@vehicle_colorsecondary, `vehicle_colorprimary`=@vehicle_colorprimary, `vehicle_state`=@vehicle_state,`lastpos`=@lastpos, `inventory`=@inventory WHERE vehicle_plate = @vehicle_plate",{
           ['@identifier'] = v.get('identifier'),
           ['@vehicle_wheelcolor'] = json.encode(v.get('vehicle_wheelcolor')),

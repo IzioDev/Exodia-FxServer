@@ -239,6 +239,26 @@ AddEventHandler("izone:isPlayerInZone", function(zone, cb)
 	end
 end)
 
+AddEventHandler("izone:isPlayerInZoneReturnResult", function(zone, cb)
+	found = FindZone(zone)
+	if not found then
+		cb(nil)
+	else
+		local plyCoords = GetEntityCoords(GetPlayerPed(-1), true)
+		local x1, y1, z1 = table.unpack(plyCoords)
+		if GetDistanceBetweenCoords(x1, y1, z1, tonumber(allZone[found].gravityCenter.x), tonumber(allZone[found].gravityCenter.y), 1.01, false) < tonumber(allZone[found].longestDistance) then
+			local n = windPnPoly(allZone[found].coords, plyCoords)
+			if n ~= 0 then
+				cb(allZone[found].instructions)
+			else
+				cb(false)
+			end
+		else
+			cb(false)
+		end
+	end
+end)
+
 
 AddEventHandler("izone:isPointInZone", function(xr, yr, zone, cb)
 	found = FindZone(zone)

@@ -127,6 +127,7 @@ function CreateCar(carInfos) -- Create Car Object
 
 	rTable.set = function(k, v)
 		self[k] = v
+		SetChange(self)
 	end
 
 	rTable.get = function(k)

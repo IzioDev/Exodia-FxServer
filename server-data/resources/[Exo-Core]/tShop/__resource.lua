@@ -7,5 +7,6 @@ server_scripts {
 } 
 
 client_scripts {
-		"vehshop.lua"
+		"vehshop.lua",
+		"gui.lua"
 }
