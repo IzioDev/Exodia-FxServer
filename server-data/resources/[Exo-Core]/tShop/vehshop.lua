@@ -951,10 +951,10 @@ end
 function OpenGarageMenu(result)
 	ClearMenu()
 	MenuTitle = "Gestion Garage"
-
-	Menu.addButton("Acheter pour "..result.price, "BuyGarage", result.price)
-	Menu.addButton("Visiter", "VisitGarage", result.garagePoint )
-	Menu.addButton("Vendre pour"..math.ceil(result.price/2), "SellGarage", math.ceil(result.price/2))
+	print(json.encode(result.garagePoint))
+	Menu.addButton("Acheter pour ".. " " ..result.price, "BuyGarage", result.price)
+	Menu.addButton("Visiter", "VisitGarage", result.garagePoint)
+	Menu.addButton("Vendre pour".. " " ..math.ceil(result.price/2), "SellGarage", math.ceil(result.price/2))
 	Menu.addButton("Fermer le menu", "CloseMenu", {} )
 
 	Menu.hidden = false
@@ -971,7 +971,8 @@ Citizen.CreateThread(function()
 		if not(Menu.hidden) then
 			Menu.renderGUI()
 		end
-		TriggerEvent("isPlayerInZoneReturnResult", "gestionAchatGarage", function(result)
+
+		TriggerEvent("izone:isPlayerInZoneReturnResult", "gestionAchatGarage", function(result)
 			if result then
 				DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour "..result.displayedMessageInZone)
 				if IsControlJustPressed(1, 38) then
@@ -986,9 +987,9 @@ Citizen.CreateThread(function()
 				end
 			end
 		end)
-		TriggerEvent("isPlayerInZoneReturnResult", "sortieGarage", function(result)
+		TriggerEvent("izone:isPlayerInZoneReturnResult", "sortieGarage", function(result)
 			if result then
-				if not(IsPedInAnyVehicle(GetPlayerPed(-1), false))
+				if not(IsPedInAnyVehicle(GetPlayerPed(-1), false)) then
 					DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour "..result.displayedMessageInZone)
 					if IsControlJustPressed(1, 38) then
 						LeaveGarage(result)
@@ -998,9 +999,9 @@ Citizen.CreateThread(function()
 				end
 			end
 		end)
-		TriggerEvent("isPlayerInZoneReturnResult", "entréeGarage", function(result)
+		TriggerEvent("izone:isPlayerInZoneReturnResult", "entréeGarage", function(result)
 			if result then
-				if not(IsPedInAnyVehicle(GetPlayerPed(-1), false))
+				if not(IsPedInAnyVehicle(GetPlayerPed(-1), false)) then
 					DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour "..result.displayedMessageInZone)
 					if IsControlJustPressed(1, 38) then
 						EnterGarage(result)
@@ -1075,7 +1076,7 @@ function VisitGarage(garageCoords) --
 
 	end
 
-	if isInGarage = false then
+	if isInGarage == false then
 		TriggerEvent("pNotify:notifyFromServer","Tu viens de sortir du garage, il t'a plut? Achète-le!", "success", "topCenter", true, 5000)
 	elseif GetGameTimer() <= nowTime + 300000 then
 		TriggerEvent("pNotify:notifyFromServer","Le temps est écoulé, la visite t'a plut? N'hésite pas à acheter le garage!", "success", "topCenter", true, 5000)

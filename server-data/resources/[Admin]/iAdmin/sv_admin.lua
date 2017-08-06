@@ -285,7 +285,7 @@ TriggerEvent('es:addGroupCommand', 'bring', "mod", function(source, args, user)
 			-- User permission check
 			TriggerEvent("es:getPlayerFromId", player, function(target)
 
-				TriggerClientEvent('es_admin:teleportUser', target.get('source'), target.get('coords.x'), target.get('coords.y'), target.get('coords.z'))
+				TriggerClientEvent('es_admin:teleportUser', target.get('source'), user.get('coords').x, user.get('coords').y, user.get('coords').z)
 
 				TriggerClientEvent('chatMessage', player, "SYSTEM", {255, 0, 0}, "You have brought by ^2" .. GetPlayerName(source))
 				TriggerClientEvent('chatMessage', source, "SYSTEM", {255, 0, 0}, "Player ^2" .. GetPlayerName(player) .. "^0 has been brought")
@@ -328,7 +328,7 @@ TriggerEvent('es:addGroupCommand', 'goto', "mod", function(source, args, user)
 			TriggerEvent("es:getPlayerFromId", player, function(target)
 				if(target)then
 
-					TriggerClientEvent('es_admin:teleportUser', source, target.get('coords.x'), target.get('coords.y'), target.get('coords.z'))
+					TriggerClientEvent('es_admin:teleportUser', source, target.get('coords').x, target.get('coords').y, target.get('coords').z)
 
 					TriggerClientEvent('chatMessage', player, "SYSTEM", {255, 0, 0}, "You have been teleported to by ^2" .. GetPlayerName(source))
 					TriggerClientEvent('chatMessage', source, "SYSTEM", {255, 0, 0}, "Teleported to player ^2" .. GetPlayerName(player) .. "")

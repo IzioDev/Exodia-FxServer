@@ -130,7 +130,8 @@ function RunMedicThread()
 			end
 			TriggerEvent("izone:getResultFromPlayerInAnyJobZone", userJob, function(result)
 				if result ~= nil then
-					if result.service then
+					local xp, yp, zp = table.unpack(GetEntityCoords(GetPlayerPed(-1), true))
+					if result.service and zp <= 28 then
 						if isInService then
 							DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour " ..result.displayedMessageInZone.leave)
 						else

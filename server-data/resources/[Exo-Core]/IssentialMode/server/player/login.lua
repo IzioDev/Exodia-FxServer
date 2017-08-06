@@ -112,7 +112,7 @@ function RegisterANewChar(identifier, source, firstname, lastname, age, ok)
 		temp.min = "0" .. temp.min
 	end
 	local lastSeen = tostring(temp.hour) .. "h" .. tostring(temp.min) .. " | " .. tostring(temp.month) .. " / " .. tostring(temp.day) .. " / " .. tostring(temp.year)
-	MySQL.Sync.execute("INSERT INTO users (`otherInGameInfos`, `identifier`, `permission_level`, `money`, `group`, `rank`, `job`, `inventory`, `identity`, `skin`, `bank`, `lastpos`) VALUES (@otherInGameInfos, @username, @permission_level, @money, 'user', @rank, @job, @inventory, @identity, @skin, @bank, @lastpos)", {
+	MySQL.Sync.execute("INSERT INTO users (`identifier`, `permission_level`, `money`, `group`, `rank`, `job`, `inventory`, `identity`, `skin`, `bank`, `lastpos`, `otherInGameInfos`) VALUES (@username, @permission_level, @money, 'user', @rank, @job, @inventory, @identity, @skin, @bank, @lastpos, @otherInGameInfos)", {
 	    ['@username'] = identifier,
 	    ['@permission_level'] = 0,
 	    ['@money'] = 500,
@@ -311,7 +311,7 @@ function savePlayerDatas()
 						v:incrementPlayTime()
 						if v.get('haveChanged') == true then
 							v.set('haveChanged', false)
-							MySQL.Async.execute("UPDATE users SET `otherInGameInfos`=@otherInGameInfos, `money`=@value, `dirty_money`=@v2, `job`=@v3, `rank`=@v4, `identity`=@v5, `inventory`=@v6, `lastpos`=@v7 WHERE identifier = @identifier AND id = @id",{
+							MySQL.Sync.execute("UPDATE users SET `otherInGameInfos`=@otherInGameInfos, `money`=@value, `dirty_money`=@v2, `job`=@v3, `rank`=@v4, `identity`=@v5, `inventory`=@v6, `lastpos`=@v7 WHERE identifier = @identifier AND id = @id",{
 								['@value'] = v.get('money'),
 								['@v2'] = v.get('dirtyMoney'),
 								['@v3'] = v.get('job'),
