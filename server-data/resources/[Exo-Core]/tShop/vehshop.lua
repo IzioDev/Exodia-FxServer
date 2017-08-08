@@ -892,6 +892,7 @@ AddEventHandler("veh_s:notif", function(text)
 end)
 
 --Thread Garage :
+local toDeleteVehicle = {}
 local isInGarage = false
 
 local function freezePlayer(id, freeze)
@@ -929,8 +930,10 @@ local function freezePlayer(id, freeze)
     end
 end
 
+freezePlayer(PlayerId(), false)
+
 function TpTo(Coords)
-	RequestCollisionAtCoord(Coords.x, Coords.y, Coords.z)
+		RequestCollisionAtCoord(Coords.x, Coords.y, Coords.z)
 		freezePlayer(PlayerId(), true)
 		SetEntityCoords(GetPlayerPed(-1), Coords.x, Coords.y, Coords.z, 0, 0, 0, 0)
 		SetEntityHeading(GetPlayerPed(-1), Coords.heading)
@@ -940,7 +943,7 @@ function TpTo(Coords)
 
         ShutdownLoadingScreen()
 
-        DoScreenFadeIn(500)
+        DoScreenFadeIn(1500)
 
         while IsScreenFadingIn() do
             Citizen.Wait(0)
@@ -952,9 +955,9 @@ function OpenGarageMenu(result)
 	ClearMenu()
 	MenuTitle = "Gestion Garage"
 	print(json.encode(result.garagePoint))
-	Menu.addButton("Acheter pour ".. " " ..result.price, "BuyGarage", result.price)
-	Menu.addButton("Visiter", "VisitGarage", result.garagePoint)
-	Menu.addButton("Vendre pour".. " " ..math.ceil(result.price/2), "SellGarage", math.ceil(result.price/2))
+	Menu.addButton("Acheter pour ".. " " ..result.price.."$", "BuyGarage", result.price)
+	Menu.addButton("Visiter", "VisitGarage", {garagePoint = result.garagePoint, sortieGarage = result.sortieGarage})
+	Menu.addButton("Vendre pour".. " " ..math.ceil(result.price/2).."$", "SellGarage", math.ceil(result.price/2))
 	Menu.addButton("Fermer le menu", "CloseMenu", {} )
 
 	Menu.hidden = false
@@ -989,13 +992,16 @@ Citizen.CreateThread(function()
 		end)
 		TriggerEvent("izone:isPlayerInZoneReturnResult", "sortieGarage", function(result)
 			if result then
-				if not(IsPedInAnyVehicle(GetPlayerPed(-1), false)) then
-					DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour "..result.displayedMessageInZone)
-					if IsControlJustPressed(1, 38) then
-						LeaveGarage(result)
+				local x,y,z = table.unpack(GetEntityCoords(GetPlayerPed(-1), true))
+				if z<0 then
+					if not(IsPedInAnyVehicle(GetPlayerPed(-1), false)) then
+						DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour "..result.displayedMessageInZone)
+						if IsControlJustPressed(1, 38) then
+							LeaveGarage(result)
+						end
+					else
+						LeaveGarageWithCar(result, "TODO")
 					end
-				else
-					LeaveGarageWithCar(result, "TODO")
 				end
 			end
 		end)
@@ -1019,76 +1025,205 @@ function EnterGarage(result)
 end
 
 RegisterNetEvent("iGarage:returnPlayerGotAGarage")
-AddEventHandler("iGarage:returnPlayerGotAGarage", function(isGotting, result)
+AddEventHandler("iGarage:returnPlayerGotAGarage", function(isGotting, result, cars)
 	if isGotting then
+		if IsPedInAnyVehicle(GetPlayerPed(-1), false) then
+			Citizen.InvokeNative(0xEA386986E786A54F, Citizen.PointerValueIntInitialized(GetVehiclePedIsIn(GetPlayerPed(-1), false)))
+		end
 		isInGarage = true
 		TpTo(result.garagePoint)
+		if #cars ~= 0 then
+			SpawnCars(cars, result)
+		end
 	end
 end)
 
 function EnterGarageWithCar(result, carPlate)
-	isInGarage = true
-	-- s'il à un garage
 	local myCar = GetVehiclePedIsIn(GetPlayerPed(-1), false)
 	local plate = GetVehicleNumberPlateText(myCar)
 	TriggerServerEvent("iGarage:playerGotAGarage", result, plate)
-	-- mettre le véhicle à in
-	TpTo(result.garagePoint)
 end
 
 function LeaveGarage(result)
+	for i=1, #toDeleteVehicle do
+		Citizen.InvokeNative(0xEA386986E786A54F, Citizen.PointerValueIntInitialized(toDeleteVehicle[i], false))
+	end
 	TpTo(result.finalPoint)
 	isInGarage = false
 end
 
 function LeaveGarageWithCar(result, carPlate)
-	TpTo(result.finalPoint)
+	TriggerServerEvent("iGarage:leaveGarageWithCar", result, plate)
 	-- faire spawn le véhicle puis le wrap dedans
 	-- mettre le véhicle à out
-	isInGarage = false
 end
+
+RegisterNetEvent("iGarage:returnLeaveGarageWithCar")
+AddEventHandler("iGarage:returnLeaveGarageWithCar", function(result, car)
+	for i=1, #toDeleteVehicle do
+		Citizen.InvokeNative(0xEA386986E786A54F, Citizen.PointerValueIntInitialized(toDeleteVehicle[i], false))
+	end
+	TpTo(result.finalPoint)
+	SpawnCarOutSide(car, result)
+	isInGarage = false
+end)
 
 function BuyGarage(garagePrice) -- fonction appelées quand on clique sur le boutton.
-	-- on check son argent, s'il en a assez on lui attribut un garage et on le TP dedans, en lui mettant ses voitures dedans
-	-- sinon notif.
+	TriggerServerEvent("iGarage:buyCheckForMoney", garagePrice)
 end
 
-function VisitGarage(garageCoords) -- 
+function VisitGarage(Coords)
 	isInGarage = true
-	local nowTime = GetGameTimer()
-
-	TpTo(garageCoords)
-
-	-- on le fait entrer pendant 5 minutes maximum, ou (inclusif) alors quand il se rend sur la zone.
-	while isInGarage and (GetGameTimer() <= nowTime + 300000) do
-
-		Wait(0)
-
-		local playerPed = GetPlayerPed(-1)
-
-		for i=0, 32 do
-			if i ~= PlayerId() then
-				local otherPlayerPed = GetPlayerPed(i)
-				SetEntityLocallyInvisible(otherPlayerPed)
-				SetEntityNoCollisionEntity(playerPed,  otherPlayerPed,  true)
+	Citizen.CreateThread(function()
+		local nowTime = GetGameTimer()
+		TriggerEvent("pv:voip", "null")
+	
+		TpTo(Coords.garagePoint)
+		-- on le fait entrer pendant 5 minutes maximum, ou (inclusif) alors quand il se rend sur la zone.
+		while isInGarage and (GetGameTimer() <= nowTime + 3000) do
+	
+			Wait(0)
+	
+			local playerPed = GetPlayerPed(-1)
+	
+			for i=0, 32 do
+				if i ~= PlayerId() then
+					local otherPlayerPed = GetPlayerPed(i)
+					SetEntityLocallyInvisible(otherPlayerPed)
+					SetEntityNoCollisionEntity(playerPed,  otherPlayerPed,  true)
+				end
 			end
+	
 		end
-
-	end
-
-	if isInGarage == false then
-		TriggerEvent("pNotify:notifyFromServer","Tu viens de sortir du garage, il t'a plut? Achète-le!", "success", "topCenter", true, 5000)
-	elseif GetGameTimer() <= nowTime + 300000 then
-		TriggerEvent("pNotify:notifyFromServer","Le temps est écoulé, la visite t'a plut? N'hésite pas à acheter le garage!", "success", "topCenter", true, 5000)
-	end
+	
+		if isInGarage == false then
+			TriggerEvent("pNotify:notifyFromServer","Tu viens de sortir du garage, il t'a plut? Achète-le!", "success", "topCenter", true, 5000)
+		elseif GetGameTimer() > nowTime + 3000 then
+			TriggerEvent("pNotify:notifyFromServer","Le temps est écoulé, la visite t'a plut? N'hésite pas à acheter le garage!", "success", "topCenter", true, 5000)
+			TpTo(Coords.sortieGarage)
+		end
+		TriggerEvent("pv:voip", "default")
+	end)
 end
 
-function SellGarage(garageSellingPrice) -- 
-	-- On vend le garage du mec, on lui donne l'argent, et on lui donne 10 minutes pour ranger ses voitures ou il souhaite. Sinon :boom:
+function SellGarage(garageSellingPrice)
+	TriggerServerEvent("sellCheckForGotting", garageSellingPrice)
 end
 
 function DisplayHelpText(str)
 	SetTextComponentFormat("STRING")
 	AddTextComponentString(str)
 	DisplayHelpTextFromStringLabel(0, 0, 1, -1)
+end
+
+RegisterNetEvent("izio:spawnCar") -- Débugg
+AddEventHandler("izio:spawnCar", function(plate)
+	RequestModel(GetHashKey("alpha"))
+	
+  	while not HasModelLoaded(GetHashKey("alpha")) do
+  	  Citizen.Wait(0)
+  	end
+  	local x,y,z = table.unpack(GetEntityCoords(GetPlayerPed(-1), true))
+  	local heading = GetEntityHeading(GetPlayerPed(-1))
+	veh = CreateVehicle(GetHashKey("alpha"), x, y, z, heading, false, false)
+	SetVehicleNumberPlateText(veh, plate)
+    SetVehicleOnGroundProperly(veh)
+end)
+
+function SpawnCars(cars, result)
+	for i = 1, #cars do
+		vehicle = cars[i].model
+		plate = cars[i].plate
+		primarycolor = cars[i].colorprimary
+		secondarycolor = cars[i].colorsecondary
+		pearlescentcolor = cars[i].pearlescentcolor
+		wheelcolor = cars[i].wheelcolor
+		lastpos = result.spawnPointCar[i]
+
+  		local X = tonumber(lastpos.x)
+  		local Y = tonumber(lastpos.y)
+  		local Z = tonumber(lastpos.z)
+  		local H = tonumber(lastpos.heading)
+
+  		local car = GetHashKey(vehicle)
+  		local mods = {}
+	
+  		RequestModel(car)
+	
+  		while not HasModelLoaded(car) do
+  		  Citizen.Wait(0)
+  		end
+
+	
+  		veh = CreateVehicle(car, X, Y, Z, H, false, false)
+  		table.insert(toDeleteVehicle, veh)
+
+  		for i = 0,24 do
+  		  mods[i] = GetVehicleMod(veh,i)
+  		end
+
+    	for i,mod in pairs(mods) do
+    	  SetVehicleModKit(veh,0)
+    	  SetVehicleMod(veh,i,mod)
+    	end
+		
+    	SetVehicleNumberPlateText(veh, plate)
+    	SetVehicleOnGroundProperly(veh)
+
+    	SetVehicleColours(veh, primarycolor, secondarycolor)
+    	SetVehicleExtraColours(veh, pearlescentcolor, wheelcolor)
+    end
+end
+
+function SpawnCarOutSide(car, result)
+	vehicle = car.model
+	plate = car.plate
+	primarycolor = car.colorprimary
+	secondarycolor = car.colorsecondary
+	pearlescentcolor = car.pearlescentcolor
+	wheelcolor = car.wheelcolor
+	lastpos = result.finalPoint
+
+	print(vehicle)
+	print(plate)
+	print(json.encode(lastpos))
+  	local X = tonumber(lastpos.x)
+  	local Y = tonumber(lastpos.y)
+  	local Z = tonumber(lastpos.z)
+  	local H = tonumber(lastpos.heading)
+
+
+  	local modelHash = GetHashKey(vehicle)
+  	local mods = {}
+
+  	RequestModel(modelHash)
+
+  	while not HasModelLoaded(modelHash) do
+  	  Citizen.Wait(0)
+  	end
+
+  	veh = CreateVehicle(modelHash, X, Y, Z, H, true, false)
+  	for i = 0,24 do
+  	  mods[i] = GetVehicleMod(veh,i)
+  	end
+    for i,mod in pairs(mods) do
+      SetVehicleModKit(veh,0)
+      SetVehicleMod(veh,i,mod)
+    end
+
+    local netid = NetworkGetNetworkIdFromEntity(veh)
+
+	SetVehicleHasBeenOwnedByPlayer(veh,true)
+	SetNetworkIdCanMigrate(netid, true)
+
+	TaskWarpPedIntoVehicle(GetPlayerPed(-1), veh, -1)
+
+	SetEntityInvincible(veh, false)
+	SetEntityAsMissionEntity(veh, true, true)
+
+    SetVehicleNumberPlateText(veh, plate)
+    SetVehicleOnGroundProperly(veh)
+
+    SetVehicleColours(veh, primarycolor, secondarycolor)
+    SetVehicleExtraColours(veh, pearlescentcolor, wheelcolor)
 end

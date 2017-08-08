@@ -321,7 +321,7 @@ function savePlayerDatas()
 								['@v7'] = json.encode(v.get('coords')),
 								['@identifier'] = v.get('identifier'),
 								['@id'] = v.get('id'),
-								['otherInGameInfos'] = v.get('otherInGameInfos')
+								['otherInGameInfos'] = json.encode(v.get('otherInGameInfos'))
 							})
 						end
 					end

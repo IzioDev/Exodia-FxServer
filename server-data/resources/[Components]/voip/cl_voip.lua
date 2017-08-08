@@ -1,5 +1,6 @@
 local voip = {}
 voip['default'] = {name = 'default', setting = 10.0}
+voip['null'] = {name = "null", setting = 0.00001}
 -- voip['local'] = {name = 'local', setting = 10.0}
 -- voip['whisper'] = {name = 'whisper', setting = 2.0}
 -- voip['yell'] = {name = 'yell', setting = 25.0}
@@ -20,7 +21,7 @@ AddEventHandler('pv:voip', function(voipDistance)
 		distanceSetting = voip['default'].setting
 	end
 	
-	NotificationMessage("Your VOIP is now ~b~" .. distanceName ..".")
+	-- NotificationMessage("Your VOIP is now ~b~" .. distanceName ..".")
 	NetworkSetTalkerProximity(distanceSetting)
 		
 end)

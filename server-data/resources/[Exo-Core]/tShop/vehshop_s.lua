@@ -27,6 +27,9 @@ AddEventHandler("onVehRestart", function()
     end
     allVeh[result[i].vehicle_plate] = CreateCar(result[i])
   end
+
+  SaveCarDatas()
+
   SetTimeout(1500, function()
     TriggerEvent("es:getPlayers", function(Users)
       for k,v in pairs(Users) do
@@ -54,7 +57,9 @@ end)
 
 AddEventHandler("car:getAllPlayerCars", function(player, car)
   local carsResult = {}
-  for i,v in ipairs(allVeh) do
+  for k,v in pairs(allVeh) do
+    print(v.get("owner"))
+    print(player)
     if v.get("owner") == player then
       table.insert(carsResult, v)
     end
@@ -221,26 +226,27 @@ end)
 function SaveCarDatas()
   SetTimeout(saveTime, function()
     for k, v in pairs(allVeh) do
-      if v.get('haveChanged') == true then
-        MySQL.Async.execute("UPDATE user_vehicle SET `identifier`=@identifier, `vehicle_wheelcolor`=@vehicle_wheelcolor, `vehicle_pearlescentcolor` = @vehicle_pearlescentcolor, `vehicle_colorsecondary`=@vehicle_colorsecondary, `vehicle_colorprimary`=@vehicle_colorprimary, `vehicle_state`=@vehicle_state,`lastpos`=@lastpos, `inventory`=@inventory WHERE vehicle_plate = @vehicle_plate",{
-          ['@identifier'] = v.get('identifier'),
-          ['@vehicle_wheelcolor'] = json.encode(v.get('vehicle_wheelcolor')),
-          ['@vehicle_pearlescentcolor'] = v.get('vehicle_pearlescentcolor'),
-          ['@vehicle_colorsecondary'] = v.get('vehicle_colorsecondary'),
-          ['@vehicle_colorprimary'] = v.get('vehicle_colorprimary'),
-          ['@vehicle_state'] = v.get('vehicle_state'),
-          ['@identifier'] = v.get('identifier'),
+      print("Vehicle changed ? ".. tostring(v.get('haveChanged')))
+      if v.get('haveChanged') then
+        print("query launched")
+        MySQL.Sync.execute("UPDATE user_vehicle SET `identifier`=@identifier, `vehicle_wheelcolor`=@vehicle_wheelcolor, `vehicle_pearlescentcolor` = @vehicle_pearlescentcolor, `vehicle_colorsecondary`=@vehicle_colorsecondary, `vehicle_colorprimary`=@vehicle_colorprimary, `vehicle_state`=@vehicle_state,`lastpos`=@lastpos, `inventory`=@inventory WHERE vehicle_plate = @vehicle_plate",{
+          ['@identifier'] = v.get('owner'),
+          ['@vehicle_wheelcolor'] = v.get('wheelcolor'),
+          ['@vehicle_pearlescentcolor'] = v.get('pearlescentcolor'),
+          ['@vehicle_colorsecondary'] = v.get('colorsecondary'),
+          ['@vehicle_colorprimary'] = v.get('colorprimary'),
+          ['@vehicle_state'] = v.get('state'),
           ['@lastpos'] = json.encode(v.get('lastpos')),
           ['@inventory'] = json.encode(v.get('inventory')),
-          ['@vehicle_plate'] = v.get('vehicle_plate')
+          ['@vehicle_plate'] = v.get('plate')
           })
         v.set("haveChanged", false)
+        print("set to false")
       end
     end
     SaveCarDatas()
   end)
 end
-SaveCarDatas()
 
 -- AddEventHandler('es:firstSpawn', function(source) -- Donner une première voiture ? De toutes manière il faut changer le code
 --     TriggerEvent('es:getPlayerFromId', source, function(user)
@@ -272,25 +278,91 @@ SaveCarDatas()
 -- end)
 
 -- Partie iGarage:
+RegisterServerEvent("iGarage:buyCheckForMoney")
+AddEventHandler("iGarage:buyCheckForMoney", function(price)
+  local source = source
+  TriggerEvent("es:getPlayerFromId", source, function(user)
+    if user.get('bank') >= price then
+      if user.getOtherInGameInfos("garage") then
+        user.notify("Tu as déjà un garage mon gourmand!", "error", "topCenter", true, 5000)
+      else
+        user.notify("Tu viens d'acheter un garage, tu peux y mettre au maximum 5 voitures, mais que des véhicules achetés! Pas de buisness illégal ici. </br><strong>Cordialement, l'agence immobilière.</strong>", "success", "topCenter", true, 10000)
+        user.setOtherInGameInfos("garage", true)
+        user.removeBank(price)
+      end
+    else
+      user.notify("Tu n'as pas "..price.. "$ en banque.", "error", "topCenter", true, 5000)
+    end
+  end)
+end)
+
+RegisterServerEvent("sellCheckForGotting")
+AddEventHandler("sellCheckForGotting", function(sellingPrice)
+  local source = source
+  TriggerEvent("es:getPlayerFromId", source, function(user)
+    if user.getOtherInGameInfos("garage") then
+      user.notify("Tu viens de vendre ton garage pour "..sellingPrice.."$. Tu ne le trouvait pas bien?", "error", "topCenter", true, 5000)
+      user.addBank(sellingPrice)
+      TriggerClientEvent("banking:updateBalance", source, user.get('bank'))
+      user.setOtherInGameInfos("garage", false)
+    else
+      user.notify("Je ne trouve pas de garage à ton nom dans le registre.", "error", "topCenter", true, 5000)
+    end
+  end)
+end)
+
 RegisterServerEvent("iGarage:playerGotAGarage")
 AddEventHandler("iGarage:playerGotAGarage", function(result, plate)
   local source = source
   TriggerEvent("es:getPlayerFromId", source, function(user)
-    if user.getOtherInGameInfos('garage') == true then
-      if plate ~= nil then
-        if allVeh[plate] then
-          allVeh[plate].set('state', 'in')
+    if not(user.getSessionVar("garageEntré")) or (os.time() - user.getSessionVar("garageEntré") > 5) then
+      user.setSessionVar("garageEntré", os.time())
+      if user.getOtherInGameInfos('garage') == true then
+        if plate ~= nil then
+          if allVeh[plate] then
+            allVeh[plate].set('state', 'in')
+            local cars = GetAllVehicleFromAPlayerWithInState(user.get('identifier'))
+            user.notify("Tu viens de rentrer un véhicule dans ton garage.", "success", "topCenter", true, 5000)
+            TriggerClientEvent("iGarage:returnPlayerGotAGarage", source, user.getOtherInGameInfos('garage'), result, cars)
+          else
+            if not(user.getSessionVar("notifiedFromConcierge")) or (os.time() - user.getSessionVar("notifiedFromConcierge") > 5) then
+              user.notify("Et moi j'veux pas d'enmmerdes avec les keuffs, dégage de là, les véhicules volés c'est pas ici!</br> <strong>Le concierge</strong>", "error", "topCenter", true, 5000)
+              user.setSessionVar("notifiedFromConcierge", os.time())
+            end
+          end
+        else
           local cars = GetAllVehicleFromAPlayerWithInState(user.get('identifier'))
           TriggerClientEvent("iGarage:returnPlayerGotAGarage", source, user.getOtherInGameInfos('garage'), result, cars)
-        else
-          user.notify("Et moi j'veux pas d'enmmerdes avec les keuffs, dégage de là, les véhicules volés c'est pas ici!</br> <strong>Le concierge</strong>", "error", "topCenter", true, 5000)
         end
       else
-        local cars = GetAllVehicleFromAPlayerWithInState(user.get('identifier'))
-        TriggerClientEvent("iGarage:returnPlayerGotAGarage", source, user.getOtherInGameInfos('garage'), result, cars)
+        if not(user.getSessionVar("notifiedFromSecretary")) or (os.time() - user.getSessionVar("notifiedFromSecretary") > 5) then
+          user.notify("Uhm.. Mais tu n'as pas de garage! D'ailleurs je t'invite à regarder nos magnifiques offres promotionnelles mon choux. </br> <strong>La jolie secrétaire. ♥</strong>", "error", "topCenter", true, 5000)
+          user.setSessionVar("notifiedFromSecretary", os.time())
+        end
       end
-    else
-      user.notify("Uhm.. Mais tu n'as pas de garage! D'ailleurs je t'invite à regarder nos magnifiques offres promotionnelles mon choux. </br> <strong>La jolie secrétaire. ♥</strong>", "error", "topCenter", true, 5000)
+    end
+  end)
+end)
+
+RegisterServerEvent("iGarage:leaveGarageWithCar")
+AddEventHandler("iGarage:leaveGarageWithCar", function(result, plate)
+  local source = source
+  TriggerEvent("es:getPlayerFromId", source, function(user)
+    if not(user.getSessionVar("garageSortie")) or (os.time() - user.getSessionVar("garageSortie") > 5) then
+      user.setSessionVar("garageSortie", os.time())
+      if allVeh[plate] then
+        allVeh[plate].set('state', 'out')
+        user.notify("Tu viens de sortir un véhicule.", "success", "topCenter", true, 5000)
+        local car = {
+          model = allVeh[plate].get('model'),
+          plate = allVeh[plate].get('plate'),
+          colorprimary = allVeh[plate].get("colorprimary"),
+          colorsecondary = allVeh[plate].get("colorsecondary"),
+          pearlescentcolor = allVeh[plate].get("pearlescentcolor"),
+          wheelcolor = allVeh[plate].get("wheelcolor")
+        }
+        TriggerClientEvent("iGarage:returnLeaveGarageWithCar", source, result, car)
+      end
     end
   end)
 end)
@@ -300,10 +372,26 @@ function GetAllVehicleFromAPlayerWithInState(identifier)
   TriggerEvent("car:getAllPlayerCars", identifier, function(Cars)
     for k,v in pairs(Cars) do
       if v.get('state') == "in" then
-        table.insert(toBeReturned, v)
+        table.insert(toBeReturned, {
+            model = v.get('model'),
+            plate = v.get('plate'),
+            colorprimary = v.get("colorprimary"),
+            colorsecondary = v.get("colorsecondary"),
+            pearlescentcolor = v.get("pearlescentcolor"),
+            wheelcolor = v.get("wheelcolor")
+          })
       end
     end
   end)
   return toBeReturned
 end
+
+TriggerEvent('es:addGroupCommand', 'izio', "mod", function(source, args, user)
+  local source = source
+  if #args == 2 then
+    TriggerClientEvent("izio:spawnCar", source, args[2])
+  end
+end, function(source, args, user)
+
+end)
 

@@ -82,7 +82,7 @@ function RunCopThread()
 			if not(active) then
 				return
 			end
-			if IsControlJustPressed(1, 288) and isInService then -- partie menu
+			if IsControlJustPressed(1, 288) and isInService and GetLastInputMethod(2) then -- partie menu
 				if IsPedInAnyVehicle(GetPlayerPed(-1), false) then -- alors UI check
 					local actualVeh = GetVehiclePedIsIn(GetPlayerPed(-1), false)
 					local a,b = string.find(GetVehicleNumberPlateText(actualVeh), "PO")

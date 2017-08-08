@@ -135,7 +135,7 @@ function CreateUser(source, Issential)
 		self.bank = newBank
 
 		TriggerClientEvent("banking:addBalance", self.source, math.abs(tonumber(m)))
-		TriggerClientEvent("banking:updateBalance", self.source, math.abs(tonumber(m)))
+		TriggerClientEvent("banking:updateBalance", self.source, self.bank)
 		SetChange(self)
 	end
 	
@@ -144,7 +144,7 @@ function CreateUser(source, Issential)
 		self.bank = newBank
 
 		TriggerClientEvent("banking:removeBalance", self.source, -math.abs(tonumber(m)))
-		TriggerClientEvent("banking:updateBalance", self.source, -math.abs(tonumber(m)))
+		TriggerClientEvent("banking:updateBalance", self.source, self.bank)
 		SetChange(self)
 	end
 
