@@ -121,9 +121,9 @@ function RunMedicThread()
 						OpenMenu(mainButtonList["main"])
 					end
 				end
-			elseif IsControlJustPressed(1, 177) and currentMenu ~= nil then
+			elseif IsControlJustPressed(1, 177) and GetLastInputMethod(2) and currentMenu ~= nil then
 				if currentMenu == "main" then
-					CloseMenu()
+					CloseMenu("osef")
 				else
 					OpenMenu(mainButtonList["main"])
 				end
@@ -140,14 +140,12 @@ function RunMedicThread()
 						if IsControlJustPressed(1, 38) then
 							TriggerEvent("imedic:swichService", isInService, result)
 						end
-
 					elseif result.garage then
 						if isInService and not(IsPedInAnyVehicle(GetPlayerPed(-1), 0)) then
 							if currentVeh == nil then
 								if timeVeh == nil then
 									DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour " ..result.displayedMessageInZone.noCurrentVeh)
 									if IsControlJustPressed(1, 38) then
-										print("first spawn")
 										OpenGarage(result, currentVeh)
 									end
 								else
@@ -265,7 +263,6 @@ end)
 RegisterNetEvent("imedic:giveServiceWeapons")
 AddEventHandler("imedic:giveServiceWeapons", function(result)
 	gaveWeapons = true
-	print(result.weapons)
 	for i = 1, #result.armurerie[userRank] do
 		GiveWeaponToPed(GetPlayerPed(-1), GetHashKey(result.armurerie[userRank][i]), 500, false, false)
 	end
@@ -397,6 +394,7 @@ function SpawnVeh(args)
 	SetVehicleNumberPlateText(medicVeh, plateText)
 
 	Menu.hidden = true
+	CloseMenu("test")
 	TriggerServerEvent("imedic:spawnVehGarage", carPrice)
 	currentVeh = medicVeh
 	timeVeh = GetGameTimer()
@@ -701,7 +699,7 @@ function StartAmulanceMission(askingSource, askingCoords)
 		local nowTime = GetGameTimer()
 		while GetGameTimer() <= nowTime + 420000 and playerDead do -- timer en fonction de la distance.
 			local x,y,z = table.unpack(GetEntityCoords(GetPlayerPed(-1), true))
-			Wait(100)
+			Wait(0)
 			DisplayHelpText("Il te reste ".. math.ceil((nowTime + 420000 - GetGameTimer())/1000).. "secondes pour te rendre sur les lieux.")
 
 			playerDead = IsEntityDead(playerPed)

@@ -11,7 +11,12 @@
 --====================================================================================
 
 function getPhoneRandomNumber()
-    return '0' .. math.random(600000000,699999999)
+    local base = math.random(1,3)
+    if base <= 2 then
+        return '0' .. math.random(600000000,699999999)
+    else
+        return '0' .. math.random(700000000,799999999)
+    end
 end
 
 function getSourceFromIdentifier(identifier, cb)
@@ -92,7 +97,7 @@ end
 
 function notifyContactChange(source, identifier)
     local sourcePlayer = tonumber(source)
-    if sourcePlayer ~= nil then 
+    if sourcePlayer ~= nil then
         TriggerClientEvent("gcPhone:contactList", sourcePlayer, getContacts(identifier))
     end
 end
@@ -162,7 +167,7 @@ local function updatePlayerMessages()
                     ['@receiver'] = MessagesToAdd[k].receiver,
                     ['@message'] = MessagesToAdd[k].message,
                     ['@time'] = MessagesToAdd[k].time,
-                    ['@isRead'] = MessagesToAdd[k].owner,
+                    ['@isRead'] = MessagesToAdd[k].isRead,
                     ['@owner'] = MessagesToAdd[k].owner
                 })
             end
@@ -172,27 +177,21 @@ local function updatePlayerMessages()
 end
 updatePlayerMessages()
 
-local lastmessage = {
-    transmitter = 0,
-    receiver = 0,
-    message = 0,
-    time = 0,
-    isRead = 0,
-    owner = 0,
-}
+-- local lastmessage = {
+--     transmitter = 0,
+--     receiver = 0,
+--     message = 0,
+--     time = 0,
+--     isRead = 0,
+--     owner = 0,
+-- }
 
 function _internalAddMessage(transmitter, receiver, message, owner)
     print('ADD MESSAGE: ' .. transmitter .. receiver .. message .. owner)
     local tstamp = os.date("*t", os.time())
     local time = os.date(tstamp.year .. "-" .. tstamp.month .. "-" .. tstamp.day .. " " .. tstamp.hour .. ":" .. tstamp.min .. ":" .. tstamp.sec)
-    table.insert(MessagesToAdd, {transmitter,receiver,message,isRead,owner})
-    lastmessage.transmitter = transmitter
-    lastmessage.receiver = receiver
-    lastmessage.message = message
-    lastmessage.time = time
-    lastmessage.isRead = owner
-    lastmessage.owner = owner
-    return lastmessage
+    table.insert(MessagesToAdd, {transmitter = transmitter, receiver = receiver, message = message, isRead = isRead, owner = owner, time = time, id = #MessageToAdd+1})
+    return MessagesToAdd[#MessagesToAdd]
 end
 
 function addMessage(source, identifier, phone_number, message)

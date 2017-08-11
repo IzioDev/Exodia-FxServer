@@ -3,13 +3,15 @@
 -- Proprietary and confidential
 -- Written by Romain Billot <romainbillot3009@gmail.com>, Jully 2017
 
-resource_manifest_version '77731fab-63ca-442c-a67b-abc70f28dfa5'
+-- Last manifest version
+resource_manifest_version "77731fab-63ca-442c-a67b-abc70f28dfa5"
 
-client_scripts {
-    'client.lua'
-}
-
+-- Loading the component
 server_scripts {
-	'server.lua',
+	'iLivreur_server.lua',
 	'@mysql-async/lib/MySQL.lua'
+}
+client_scripts {
+	'iLivreur_client.lua',
+	'gui.lua'
 }
