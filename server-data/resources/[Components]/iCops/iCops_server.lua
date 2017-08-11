@@ -6,9 +6,17 @@
 RegisterServerEvent("print:serverArray")
 RegisterServerEvent("police:armurerieToServer")
 RegisterServerEvent("police:retrieveArmurerieToServer")
+RegisterServerEvent("police:refreshService")
 
 AddEventHandler("print:serverArray", function(toPrint)
 	print(json.encode(toPrint))
+end)
+
+AddEventHandler("police:refreshService", function(isInService)
+	local source = source
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		user.setSessionVar("isInService", isInService)
+	end)
 end)
 
 AddEventHandler("police:armurerieToServer", function(result)

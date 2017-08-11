@@ -439,7 +439,6 @@ function CloseCreator(name, veh, price)
 			local secondarycolor = colors[2]	
 			local pearlescentcolor = extra_colors[1]
 			local wheelcolor = extra_colors[2]
-			Citizen.Trace("Bought ok Buy For Veh")
 			TriggerServerEvent('BuyForVeh', name, vehicle, price, plate, primarycolor, secondarycolor, pearlescentcolor, wheelcolor)
 		end
 		vehshop.opened = false
@@ -1117,17 +1116,18 @@ function DisplayHelpText(str)
 end
 
 RegisterNetEvent("izio:spawnCar") -- Débugg
-AddEventHandler("izio:spawnCar", function(plate)
-	RequestModel(GetHashKey("alpha"))
+AddEventHandler("izio:spawnCar", function(plate, model)
+	RequestModel(GetHashKey(model))
 	
-  	while not HasModelLoaded(GetHashKey("alpha")) do
+  	while not HasModelLoaded(GetHashKey(model)) do
   	  Citizen.Wait(0)
   	end
   	local x,y,z = table.unpack(GetEntityCoords(GetPlayerPed(-1), true))
   	local heading = GetEntityHeading(GetPlayerPed(-1))
-	veh = CreateVehicle(GetHashKey("alpha"), x, y, z, heading, false, false)
+	veh = CreateVehicle(GetHashKey(model), x, y, z, heading, true, false) --
 	SetVehicleNumberPlateText(veh, plate)
     SetVehicleOnGroundProperly(veh)
+    SetVehicleColours(veh, 24, 0)
 end)
 
 function SpawnCars(cars, result)

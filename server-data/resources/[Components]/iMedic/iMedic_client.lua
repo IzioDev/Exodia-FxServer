@@ -251,7 +251,7 @@ AddEventHandler("imedic:swichService", function(service, result)
 	else
 		TriggerEvent("pNotify:notifyFromServer", "Tu viens de déposer tes armes de service, récupérer tes armes personnelles et de quitter ton service.", "error", "topCenter", true, 3500)
 	end
-	-- TriggerServerEvent("", isInService)
+	TriggerServerEvent("iMedic:refreshService", isInService)
 end)
 
 AddEventHandler("imedic:depositArmurerie", function(result)

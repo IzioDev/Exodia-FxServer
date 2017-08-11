@@ -283,6 +283,24 @@ AddEventHandler("es:getPlayerFromId", function(user, cb)
 	end
 end)
 
+AddEventHandler("es:getPlayerFromJob", function(job, cb)
+	if(Users)then
+		local toBeReturned = {}
+		for i=1, #Users do
+			if Users[i].get('job') == job then
+				table.insert(toBeReturned, Users[i])
+			end
+		end
+		if #toBeReturned ~= 0 then
+			cb(toBeReturned)
+		else
+			cb(nil)
+		end
+	else
+		cb(nil)
+	end
+end)
+
 AddEventHandler("es:getPlayerFromIdentifier", function(identifier, cb)
 	local result = MySQL.Sync.fetchAll("SELECT * FROM users WHERE identifier = @name" , {['@name'] = identifier})
 	if(result[1])then

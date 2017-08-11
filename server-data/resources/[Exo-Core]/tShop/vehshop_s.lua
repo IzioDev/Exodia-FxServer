@@ -388,8 +388,8 @@ end
 
 TriggerEvent('es:addGroupCommand', 'izio', "mod", function(source, args, user)
   local source = source
-  if #args == 2 then
-    TriggerClientEvent("izio:spawnCar", source, args[2])
+  if #args == 3 then
+    TriggerClientEvent("izio:spawnCar", source, args[2], args[3])
   end
 end, function(source, args, user)
 

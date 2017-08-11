@@ -202,7 +202,7 @@ AddEventHandler("police:swichService", function(service, result)
 	else
 		TriggerEvent("pNotify:notifyFromServer", "Vous venez de quitter votre service", "error", "topCenter", true, 3500)
 	end
-	-- TriggerServerEvent("", isInService)
+	TriggerServerEvent("police:refreshService", isInService)
 end)
 
 AddEventHandler("police:depositArmurerie", function(result)

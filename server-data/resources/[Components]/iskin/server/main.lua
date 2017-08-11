@@ -68,13 +68,13 @@ AddEventHandler('esx_skin:savePlayerSkinInfos', function(skin)
 				})
 			if not(user.get('freeSkin')) then
 				user.removeMoney(500)
-				msg = "<b style='color:green'>Your new clothes are here! </b> Give me <b style='color : red'> 500$!</b> Now."
+				msg = "<b style='color:green'>Tes nouveaux vetements sont là! </b> Donne moi <b style='color : red'> 500$!</b> tout de suite et dégage!."
 			else
-				msg = "Welcome in that <b style='color:green'> beautifull </b> city !"
+				msg = "Bienvenue dans cette<b style='color:green'> magnifique </b>ville !"
 			end
-			user.notify(msg, "success", "centerLeft", true, 5000)
+			user.notify(msg, "success", "topCenter", true, 5000)
 		else
-			user.notify(msg, "error", "centerLeft", true, 5000)
+			user.notify(msg, "error", "topCenter", true, 5000)
 		end
 	end)
 end)

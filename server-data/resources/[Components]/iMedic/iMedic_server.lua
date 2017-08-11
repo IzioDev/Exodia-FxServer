@@ -35,6 +35,13 @@ AddEventHandler("print:serverArray", function(toPrint)
 	print(json.encode(toPrint))
 end)
 
+AddEventHandler("iMedic:refreshService", function(isInService)
+	local source = source
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		user.setSessionVar("isInService", isInService)
+	end)
+end)
+
 RegisterServerEvent("iMedic:respawnThePlayer")
 AddEventHandler("iMedic:respawnThePlayer", function(targetSource)
 	print("t1")
