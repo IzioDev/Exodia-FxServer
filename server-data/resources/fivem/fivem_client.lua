@@ -16,7 +16,7 @@ AddEventHandler('onClientMapStart', function()
   RequestIpl("TrevorsTrailer")
   RequestIpl("TrevorsTrailerTidy")
   RemoveIpl("farm_burnt")
-  RemoveIpl("farm_burnt_lod")
+  RemoveIpl("farm_burnt_lod") 
   RemoveIpl("farm_burnt_props")
   RemoveIpl("farmint_cap")
   RemoveIpl("farmint_cap_lod")
@@ -133,6 +133,54 @@ AddEventHandler('onClientMapStart', function()
   RemoveIpl("RC12B_Fixed")
   RequestIpl("RC12B_Destroyed")
   RequestIpl("RC12B_HospitalInterior")
+
+  RequestIpl("gr_case0_bunkerclosed")
+  RequestIpl("gr_case1_bunkerclosed")
+  RequestIpl("gr_case2_bunkerclosed")
+  RequestIpl("gr_case3_bunkerclosed")
+  RequestIpl("gr_case4_bunkerclosed")
+  RequestIpl("gr_case5_bunkerclosed")
+  RequestIpl("gr_case6_bunkerclosed")
+  RequestIpl("gr_case7_bunkerclosed")
+  RequestIpl("gr_case9_bunkerclosed")
+  RequestIpl("gr_case10_bunkerclosed")
+  RequestIpl("gr_case11_bunkerclosed")
+
+  RequestIpl("hei_carrier_distantlights")
+  RequestIpl("hei_carrier_lodlights")
+  RequestIpl("hei_carrier_slod")
+
+  RequestIpl("ch3_rd2_bishopschickengraffiti") -- 1861.28, 2402.11, 58.53
+  RequestIpl("cs5_04_mazebillboardgraffiti") -- 2697.32, 3162.18, 58.1
+  RequestIpl("cs5_roads_ronoilgraffiti") -- 2119.12, 3058.21, 53.25
+
+  RequestIpl("canyonriver01")
+  RequestIpl("canyonriver01_lod")
+
+  RequestIpl("cs3_05_water_grp1")
+  RequestIpl("cs3_05_water_grp1_lod")
+  RequestIpl("cs3_05_water_grp2")
+  RequestIpl("cs3_05_water_grp2_lod")
+
+  RequestIpl("bh1_47_joshhse_unburnt")
+  RequestIpl("bh1_47_joshhse_unburnt_lod")
+
+  RequestIpl("rc12b_default")
+
+  RequestIpl("CanyonRvrShallow")
+
+  RequestIpl("methtrailer_grp1")
+
+  RequestIpl("FruitBB")
+  RequestIpl("sc1_01_newbill")
+  RequestIpl("hw1_02_newbill")
+  RequestIpl("hw1_emissive_newbill")
+  RequestIpl("sc1_14_newbill")
+  RequestIpl("dt1_17_newbill")
+
+  RequestIpl("des_farmhouse")
+
+  RequestIpl("TrevorsTrailerTrash")
 
   exports.spawnmanager:setAutoSpawn(true)
   exports.spawnmanager:forceRespawn()

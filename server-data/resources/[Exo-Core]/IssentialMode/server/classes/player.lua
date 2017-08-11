@@ -50,6 +50,7 @@ function CreateUser(source, Issential)
 	else
 		self.weapons = json.decode(Issential.waitingWeapons)
 	end
+	self.otherInGameInfos = json.decode(Issential.otherInGameInfos)
 	self.lastpos = json.decode(Issential.lastpos)
 	self.coords = json.decode(Issential.lastpos)
 	self.session = {}
@@ -134,6 +135,7 @@ function CreateUser(source, Issential)
 		self.bank = newBank
 
 		TriggerClientEvent("banking:addBalance", self.source, math.abs(tonumber(m)))
+		TriggerClientEvent("banking:updateBalance", self.source, self.bank)
 		SetChange(self)
 	end
 	
@@ -142,6 +144,7 @@ function CreateUser(source, Issential)
 		self.bank = newBank
 
 		TriggerClientEvent("banking:removeBalance", self.source, -math.abs(tonumber(m)))
+		TriggerClientEvent("banking:updateBalance", self.source, self.bank)
 		SetChange(self)
 	end
 
@@ -322,6 +325,14 @@ function CreateUser(source, Issential)
 
 	rTable.getSessionVar = function(k)
 		return self.session[k]
+	end
+
+	rTable.setOtherInGameInfos = function(k, v)
+		self.otherInGameInfos[k] = v
+	end
+
+	rTable.getOtherInGameInfos = function(k)
+		return self.otherInGameInfos[k]
 	end
 
 	rTable.set = function(k, v)

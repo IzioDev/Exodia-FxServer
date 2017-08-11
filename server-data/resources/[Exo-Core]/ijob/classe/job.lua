@@ -24,6 +24,8 @@ function CreateJob(capital, benefit, lost, name, default, rank, employe, zone, b
 	self.blacklist = blacklist       -- {p = pl, dhm = tostring(temp.day) .. " " .. tostring(temp.hour) .. " " .. tostring(temp.min)}
 	self.haveChanged = false
 	self.harvestZone = {}
+	self.waitingBenefit = {}
+	self.waitingLost = {}
 
 	for i = 1, #self.zone do
 		local a, b = string.find(self.zone[i].nom, "rec")
@@ -39,6 +41,10 @@ function CreateJob(capital, benefit, lost, name, default, rank, employe, zone, b
 
 	local rTable = {}
 
+	rTable.sellHarvest = function() -- Todo
+
+	end
+
 	rTable.addZone = function(zone) -- On ajoute la zone ayant pour nom de catégorie, le nom de job (ex: récolte traitement etc...)
 		table.insert(self.zone, zone)
 	end
@@ -47,16 +53,17 @@ function CreateJob(capital, benefit, lost, name, default, rank, employe, zone, b
 		if user.get('job') == "chomeur" then
 			for i=1, #self.employe do
 				if self.employe[i].pl == user.get('identifier') then
+					print("already")
 					return "already"
 				end
-			end
+			end --
 			table.insert(self.employe, {pl = user.get('identifier'), fullname = user.get('dislayName'), rank = defaultRank})
 			user.set('job', self.name)
 			user.set('rank', self.default.rank)
-	
+			print("okaytch")
+			print(self.name .. user.get('rank'))
 			TriggerClientEvent("ijob:updateJob", user.get('source'), self.name, user.get('rank'))
-		
-			SetChange(self)
+			TriggerClientEvent("is:updateJob", user.get('source'), self.name, user.get('rank'))
 			return "Employe ajoute"
 		else
 			return "hireFirst"
@@ -86,16 +93,20 @@ function CreateJob(capital, benefit, lost, name, default, rank, employe, zone, b
 	rTable.removeEmploye = function(employe) -- l'objet utilisateur
 		for i=1, #self.employe do
 			if self.employe[i].pl == employe.get('identifier') then
+				print("trouvé")
 				table.remove(self.employe, i)
 				employe.set('job',"chomeur")
 				employe.set('rank', " ")
 				addBlackList(self, employe.get('identifier'))
-				self.haveChanged = true
+				SetChange(self)
 				TriggerClientEvent("ijob:updateJob", employe.get('source'), employe.get('job'), employe.get('rank'))
 				-- TriggerEvent("ijob:fireEmploye", employe, self.name) A voir si on le retire direct BDD ou attendre un save (60 sec)
 				return "Employe vire"
 			end
 		end
+		print("pas trouvé")
+		employe.set('job',"chomeur")
+		employe.set('rank', " ")
 		return "L employe n a pas ete trouve"
 	end
 	
@@ -225,19 +236,19 @@ function CreateJob(capital, benefit, lost, name, default, rank, employe, zone, b
 		return self.benefit
 	end
 	
-	rTable.addBenefit = function(pl, m, r) -- On ajoute un entré au bénéfice
+	rTable.addBenefit = function(user, m, r) -- On ajoute un entré au bénéfice
 		local temp = os.date("*t", os.time())
 		local m = math.abs(math.ceil(tonumber(m) * 100 ) / 100 )
-		table.insert(self.benefit, {p = pl, a = m, re = r, dm = tostring(temp.day) .. " " .. tostring(temp.month)})
-		self.haveChanged = true
+		table.insert(self.benefit, {name = user.get('displayName'),p = user.get('identifier'), a = m, re = r, dm = tostring(temp.day) .. " " .. tostring(temp.month)})
+		SetChange(self)
 		return "benefice ajoute"
 	end
 	
-	rTable.addLost = function(pl, m, r) -- player, montant, raison (essence, réparation outil etc..)
+	rTable.addLost = function(user, m, r) -- player, montant, raison (essence, réparation outil etc..)
 		local temp = os.date("*t", os.time())
 		local m = - math.abs(math.ceil(tonumber(m) * 100 ) / 100 )
-		table.insert(self.benefit, {p = pl, a = m, re = r, dmh = tostring(temp.day) .. " " .. tostring(temp.month) .. " " .. tostring(temp.hour)})
-		self.haveChanged = true
+		table.insert(self.benefit, {name = user.get('displayName'),p = user.get('identifier'), a = m, re = r, dmh = tostring(temp.day) .. " " .. tostring(temp.month) .. " " .. tostring(temp.hour)})
+		SetChange(self)
 		return "lost ajoute"
 	end
 	
@@ -366,7 +377,7 @@ function CreateJob(capital, benefit, lost, name, default, rank, employe, zone, b
 	rTable.getBlip = function()
 		local returnedBlipInfos = {}
 		for i = 1, #self.zone do
-			if self.zone[i].instructions.visible and self.zone[i].instructions.color and self.zone[i].instructions.sprite then
+			if self.zone[i].instructions and self.zone[i].instructions.visible and self.zone[i].instructions.color and self.zone[i].instructions.sprite then
 				table.insert(returnedBlipInfos,{
 					sprite = self.zone[i].instructions.sprite,
 					color = self.zone[i].instructions.color,

@@ -112,7 +112,7 @@ function RegisterANewChar(identifier, source, firstname, lastname, age, ok)
 		temp.min = "0" .. temp.min
 	end
 	local lastSeen = tostring(temp.hour) .. "h" .. tostring(temp.min) .. " | " .. tostring(temp.month) .. " / " .. tostring(temp.day) .. " / " .. tostring(temp.year)
-	MySQL.Sync.execute("INSERT INTO users (`identifier`, `permission_level`, `money`, `group`, `rank`, `job`, `inventory`, `identity`, `skin`, `bank`, `lastpos`) VALUES (@username, @permission_level, @money, 'user', @rank, @job, @inventory, @identity, @skin, @bank, @lastpos)", {
+	MySQL.Sync.execute("INSERT INTO users (`identifier`, `permission_level`, `money`, `group`, `rank`, `job`, `inventory`, `identity`, `skin`, `bank`, `lastpos`, `otherInGameInfos`) VALUES (@username, @permission_level, @money, 'user', @rank, @job, @inventory, @identity, @skin, @bank, @lastpos, @otherInGameInfos)", {
 	    ['@username'] = identifier,
 	    ['@permission_level'] = 0,
 	    ['@money'] = 500,
@@ -122,7 +122,10 @@ function RegisterANewChar(identifier, source, firstname, lastname, age, ok)
 	    ['@identity'] = json.encode({firstName = firstname, lastName = lastname, age = age, phoneNumber = "NOOBI", playTime = "0", accountNumber = "0", lastSeen = lastSeen}),
 	    ['@skin'] = json.encode(defaultSkin),
 	    ['@lastpos'] = json.encode({x = -1038.99, y = -2740.23, z = 13.86}),
-	    ['@bank'] = 250
+	    ['@bank'] = 250,
+	    ['@otherInGameInfos'] = json.encode({
+	    		garage = false
+	    	})
 	})
  	LoadUserFromPicking(firstname, lastname, age, false, source, ok)
 end
@@ -160,7 +163,7 @@ function registerUser(identifier, source)
  	if not hasAccount(identifier) then
  		local temp = os.date("*t", os.time())
 		local lastSeen = tostring(temp.min) .. " : " .. tostring(temp.hour) .. " | " .. tostring(temp.month) .. " / " .. tostring(temp.day) .. " / " .. tostring(temp.year)
-		MySQL.Sync.execute("INSERT INTO users (`identifier`, `permission_level`, `money`, `group`, `rank`, `job`, `inventory`, `identity`, `skin`, `bank`, `lastpos`) VALUES (@username, @permission_level, @money, 'user', @rank, @job, @inventory, @identity, @skin, @bank, @lastpos)", {
+		MySQL.Sync.execute("INSERT INTO users (`otherInGameInfos`, `identifier`, `permission_level`, `money`, `group`, `rank`, `job`, `inventory`, `identity`, `skin`, `bank`, `lastpos`) VALUES (@otherInGameInfos, @username, @permission_level, @money, 'user', @rank, @job, @inventory, @identity, @skin, @bank, @lastpos)", {
 		    ['@username'] = identifier,
 		    ['@permission_level'] = 0,
 		    ['@money'] = 500,
@@ -170,7 +173,10 @@ function registerUser(identifier, source)
 		    ['@identity'] = json.encode({firstName = "Ana", lastName = "Nass", age = "20", phoneNumber = "NOOBI", playTime = "0", accountNumber = "0", lastSeen = lastSeen}),
 		    ['@skin'] = json.encode(defaultSkin),
 		    ['@lastpos'] = json.encode({x = -1038.99, y = -2740.23, z = 13.86}),
-		    ['@bank'] = 250
+		    ['@bank'] = 250,
+		    ['@otherInGameInfos'] = json.encode({
+	    		garage = false
+	    	})
 		}, function (rowsUpdate)
 		    print('\nUn nouveau joeur vient de s enregistrer\n')
 		end)
@@ -277,6 +283,24 @@ AddEventHandler("es:getPlayerFromId", function(user, cb)
 	end
 end)
 
+AddEventHandler("es:getPlayerFromJob", function(job, cb)
+	if(Users)then
+		local toBeReturned = {}
+		for i=1, #Users do
+			if Users[i].get('job') == job then
+				table.insert(toBeReturned, Users[i])
+			end
+		end
+		if #toBeReturned ~= 0 then
+			cb(toBeReturned)
+		else
+			cb(nil)
+		end
+	else
+		cb(nil)
+	end
+end)
+
 AddEventHandler("es:getPlayerFromIdentifier", function(identifier, cb)
 	local result = MySQL.Sync.fetchAll("SELECT * FROM users WHERE identifier = @name" , {['@name'] = identifier})
 	if(result[1])then
@@ -304,19 +328,20 @@ function savePlayerDatas()
 					if v ~= nil then -- Pas sûr que cela soit nécéssaire
 						v:incrementPlayTime()
 						if v.get('haveChanged') == true then
-							MySQL.Async.execute("UPDATE users SET `money`=@value, `dirty_money`=@v2, `job`=@v3, `rank`=@v4, `identity`=@v5, `inventory`=@v6, `lastpos`=@v7 WHERE identifier = @identifier AND id = @id",{
-								 ['@value'] = v.get('money'),
-								 ['@v2'] = v.get('dirtyMoney'),
-								 ['@v3'] = v.get('job'),
-								 ['@v4'] = v.get('rank'),
-								 ['@v5'] = json.encode(v.get('identity')),
-								 ['@v6'] = json.encode(v.get('inventory')),
-								 ['@v7'] = json.encode(v.get('coords')),
-								 ['@identifier'] = v.get('identifier'),
-								 ['@id'] = v.get('id')}, function()
-							end)
+							v.set('haveChanged', false)
+							MySQL.Sync.execute("UPDATE users SET `otherInGameInfos`=@otherInGameInfos, `money`=@value, `dirty_money`=@v2, `job`=@v3, `rank`=@v4, `identity`=@v5, `inventory`=@v6, `lastpos`=@v7 WHERE identifier = @identifier AND id = @id",{
+								['@value'] = v.get('money'),
+								['@v2'] = v.get('dirtyMoney'),
+								['@v3'] = v.get('job'),
+								['@v4'] = v.get('rank'),
+								['@v5'] = json.encode(v.get('identity')),
+								['@v6'] = json.encode(v.get('inventory')),
+								['@v7'] = json.encode(v.get('coords')),
+								['@identifier'] = v.get('identifier'),
+								['@id'] = v.get('id'),
+								['otherInGameInfos'] = json.encode(v.get('otherInGameInfos'))
+							})
 						end
-						v.set('haveChanged', 0)
 					end
 				end
 			else

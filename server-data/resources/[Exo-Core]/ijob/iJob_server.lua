@@ -30,14 +30,15 @@ AddEventHandler("iJob:startLoading", function()
 	if addjobautomatic == true then
 		
 		tableTest = {
-			rank = { {name = "Capitaine", salary = 500}, {name="Cadet", salary = 100} },
+			rank = { {name = "gérant hopital", salary = 500}, {name="stagiaire", salary = 100}, {name="interne", salary = 300}},
 			blacklist = {{p = "steamTest", dhm = "14 6 5"} },
 			lost = { {p = "steamTest2", a = 10, re = "essence", dmh = "14 6 5"}, {p = "steamTest3", a = 10, re = "essence", dmh = "14 6 5"} },
 			benefit = { {p = "steamTest2", a = 10, re = "venteTest", dmh = "14 6 5"}, {p = "steamTest3", a = 10, re = "venteTest", dmh = "14 6 5"} },
 			capital = 100000,
-			name = "chomeur",
-			employe = { {pl = "employe", rank = "defaultRank", fullname = "fullName"} },
-			default = {rank = ""}
+			name = "médecin",
+			employe = { {pl = "steam:110000104bd6595", rank = "interne", displayName = "test Test"} },
+			default = {rank = "stagiaire"},
+			id = 5
 		}
 
 		local encodedRank = json.encode(tableTest.rank)
@@ -48,7 +49,7 @@ AddEventHandler("iJob:startLoading", function()
 		local capital = tostring(tableTest.capital)
 		local default = json.encode(tableTest.default)
 
-		MySQL.Sync.execute("INSERT INTO job (`capital`, `benefit`, `lost`, `default`, `rank`, `employe`, `blacklist`, `name`) VALUES (@capital, @benefit, @lost, @default, @rank, @employe, @blacklist, @name)", {
+		MySQL.Sync.execute("INSERT INTO job (`capital`, `benefit`, `lost`, `default`, `rank`, `employe`, `blacklist`, `name`, `id`) VALUES (@capital, @benefit, @lost, @default, @rank, @employe, @blacklist, @name, @id)", {
 			['@capital'] = capital, 
 			['@benefit'] = encodedBenefit, 
 			['@lost'] = encodedLost, 
@@ -56,7 +57,8 @@ AddEventHandler("iJob:startLoading", function()
 			['@rank'] = encodedRank, 
 			['@employe'] = encodedEmploye, 
 			['@blacklist'] = encodedBlacklist, 
-			['@name'] = tableTest.name
+			['@name'] = tableTest.name,
+			['@id'] = tableTest.id
 			})
 	end
 
@@ -176,7 +178,7 @@ function saveJobIfChanged()
 
 			for k,v in pairs(allJob)do
 				print("Job changed ? : ".. tostring(v.get('haveChanged')))
-				if v.get('haveChanged') then -- only if changed	
+				if v.get('haveChanged') == true then -- only if changed	
 					MySQL.Sync.execute("UPDATE job SET `capital`=@vcapital, `benefit`=@vbenefit, `lost`=@vlost, `rank`=@vrank, `employe`=@vemploye, `blacklist`=@vblacklist, `name`=@vname WHERE name = @vname",{
 						['@vcapital'] = tostring(v.get('capital')), 
 						['@vbenefit'] = json.encode(v.get('benefit')),
@@ -480,27 +482,35 @@ TriggerEvent('es:addGroupCommand', 'addjob', "mod", function(source, args, user)
 					targetUser.notify("Tu es <span style='color:red'>blacklisté</span> du métier de " .. targetUser.get('job') .. ".", "error", true, 5000)
 				else
 					print("pas blacklisté")
-					result = allJob[args[3]].addEmployeWithRefresh(targetUser)
-					print(result)
-					if result == "already" then
-						TriggerEvent("es:getPlayerFromId", source, function(user)
-							user.set('job', args[3])
-							user.set('rank', allJob[args[3]].get('default.rank'))
-							TriggerClientEvent("ijob:updateJob", targetUser.get('source'), targetUser.get('job'), targetUser.get('rank'))
-							TriggerClientEvent("ijob:addBlip", targetUser.get('source'), allJob[targetUser.get('job')].getBlip(), true)
-							user.notify("Le joueur à déjà ce job.", "error", "topCenter", true, 5000)
-						end)
-					elseif result == "hireFirst" then
-						allJob[args[3]].removeEmploye(targetUser)
-						targetUser.notify("Tu es <span style='color:red'>retiré</span> du métier de " .. targetUser.get('job') .. ".", "success", "centerTop", true, 5000)
-						allJob[args[3]].addEmploye(employe, targetUser.get('fullname'))
-						TriggerClientEvent("ijob:updateJob", targetUser.get('source'), targetUser.get('job'), targetUser.get('rank'))
-						TriggerClientEvent("ijob:addBlip", targetUser.get('source'), allJob[targetUser.get('job')].getBlip(), true)
-						targetUser.notify("Tu es <span style='color:green'>ajouté</span> au métier de " .. job .. ".", "success", true, 5000)
+					if allJob[args[3]] then
+						result = allJob[args[3]].addEmployeWithRefresh(targetUser)
+						print(result)
+						if result == "already" then
+							TriggerEvent("es:getPlayerFromId", source, function(user)
+								user.set('job', args[3])
+								user.set('rank', allJob[args[3]].get('default.rank'))
+								TriggerClientEvent("ijob:addBlip", targetUser.get('source'), allJob[args[3]].getBlip(), true)
+								TriggerClientEvent("ijob:updateJob", targetUser.get('source'), args[3], targetUser.get('rank'))
+								user.notify("Le joueur à déjà ce job.", "error", "topCenter", true, 5000)
+							end)
+						elseif result == "hireFirst" then
+							allJob[targetUser.get('job')].removeEmploye(targetUser)
+							targetUser.notify("Tu es retiré du métier de " .. targetUser.get('job') .. ".", "success", "topCenter", true, 5000)
+								print(targetUser.get('job') .. targetUser.get('rank'))
+							TriggerEvent('es:getPlayerFromId', tonumber(args[2]), function(targetUserr)
+								print(targetUserr.get('job') .. targetUserr.get('rank'))
+								allJob[args[3]].addEmployeWithRefresh(targetUser)
+								TriggerClientEvent("ijob:updateJob", targetUserr.get('source'), args[3], targetUserr.get('rank'))
+								TriggerClientEvent("ijob:addBlip", targetUserr.get('source'), allJob[args[3]].getBlip(), true)
+								targetUser.notify("Tu es ajouté au métier de " .. targetUserr.get('job') .. ".", "success", "topCenter",true, 5000)
+							end)
+						else
+							TriggerClientEvent("ijob:updateJob", targetUser.get('source'), args[3], targetUser.get('rank'))
+							TriggerClientEvent("ijob:addBlip", targetUser.get('source'), allJob[args[3]].getBlip(), true)
+							targetUser.notify("Tu es <span style='color:green'>ajouté</span> au métier de " .. targetUser.get('job') .. ".", "success", "topCenter", true, 5000)
+						end
 					else
-						TriggerClientEvent("ijob:updateJob", targetUser.get('source'), targetUser.get('job'), targetUser.get('rank'))
-						TriggerClientEvent("ijob:addBlip", targetUser.get('source'), allJob[targetUser.get('job')].getBlip(), true)
-						targetUser.notify("Tu es <span style='color:green'>ajouté</span> au métier de " .. targetUser.get('job') .. ".", "success", "centerTop", true, 5000)
+						user.notify("Le job n'existe pas.", "error", "topCenter", true, 5000)
 					end
 				end
 			else

@@ -5,7 +5,7 @@
 
 local userRank = nil 
 local userJob = nil
-local isInService = true
+local isInService = false
 local isDragged = false
 local isHandCuffed = false
 local currentMenu = nil
@@ -14,6 +14,7 @@ local gaveWeapons = false
 local officerDrag = nil
 local currentVeh = nil
 local timeVeh = nil
+local officerDrag = nil
 local subButtonList = { 
 	["annimations"] = {
 		title = "Annimations",
@@ -65,7 +66,7 @@ local mainButtonList = {
 AddEventHandler("is:updateJob", function(jobName, rank)
 	userJob = jobName
 	userRank = rank
-
+	print(userJob.. "from Polic")
 	if (userJob == "LSPD" or userJob == "LSSD") and not(active) then
 		active = true
 		RunCopThread()
@@ -81,7 +82,7 @@ function RunCopThread()
 			if not(active) then
 				return
 			end
-			if IsControlJustPressed(1, 288) and isInService then -- partie menu
+			if IsControlJustPressed(1, 288) and isInService and GetLastInputMethod(2) then -- partie menu
 				if IsPedInAnyVehicle(GetPlayerPed(-1), false) then -- alors UI check
 					local actualVeh = GetVehiclePedIsIn(GetPlayerPed(-1), false)
 					local a,b = string.find(GetVehicleNumberPlateText(actualVeh), "PO")
@@ -167,6 +168,7 @@ end
 
 Citizen.CreateThread(function()
 	while true do
+		DisablePlayerVehicleRewards(PlayerId())
 		Wait(0)
 		if not(Menu.hidden) then
 			Menu.renderGUI()
@@ -200,7 +202,7 @@ AddEventHandler("police:swichService", function(service, result)
 	else
 		TriggerEvent("pNotify:notifyFromServer", "Vous venez de quitter votre service", "error", "topCenter", true, 3500)
 	end
-	-- TriggerServerEvent("", isInService)
+	TriggerServerEvent("police:refreshService", isInService)
 end)
 
 AddEventHandler("police:depositArmurerie", function(result)
@@ -255,13 +257,14 @@ Citizen.CreateThread(function() -- Thread Civil
 			end
 			TaskPlayAnim(myPed, 'mp_arresting', animation, 8.0, -8, -1, flags, 0, 0, 0, 0)
 		end
-	end
-	if (isDragged) then
-		local ped = GetPlayerPed(GetPlayerFromServerId(officerDrag))
-		local myPed = GetPlayerPed(-1)
-		AttachEntityToEntity(myPed, ped, 4103, 11816, 0.48, 0.00, 0.0, 0.0, 0.0, 0.0, false, false, false, false, 2, true)
-	else
-		DetachEntity(GetPlayerPed(-1), true, false)		
+
+		if (isDragged) then
+			local ped = GetPlayerPed(GetPlayerFromServerId(officerDrag))
+			local myPed = GetPlayerPed(-1)
+			AttachEntityToEntity(myPed, ped, 4103, 11816, 0.48, 0.00, 0.0, 0.0, 0.0, 0.0, false, false, false, false, 2, true)
+		else
+			DetachEntity(GetPlayerPed(-1), true, false)		
+		end
 	end
 end)
 
@@ -359,12 +362,25 @@ function SpawnVeh(args)
 	SetEntityInvincible(policevehicle, false)
 	SetEntityAsMissionEntity(policevehicle, true, true)
 
+	local plateText = "PO".. math.random(100,999)
+	local a, b, c = Generate3Char()
+	plateText = plateText .. a .. b .. c
+	SetVehicleNumberPlateText(medicVeh, plateText)
+
 	Menu.hidden = true
 	TriggerServerEvent("police:spawnVehGarage", carPrice)
 	-- Il faut envoyer un event au serveur qui enleve au capitale le price, qui cautionne le joueur (virtuellement) et qui check connexion, déco..
 	-- Dans le meme genre de TODO, il faut faire la vérif waitingWeapons (si c'est pas nil, on lui donne, puis on vide.)
 	currentVeh = policevehicle
 	timeVeh = GetGameTimer()
+end
+
+function Generate3Char()
+	local a = math.random(1,26)
+	local b = math.random(1,26)
+	local c = math.random(1,26)
+	local alphabet = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}
+	return alphabet[a], alphabet[b], alphabet[c]
 end
 
 function PlayEmote(annimName)
@@ -401,7 +417,7 @@ end
 function ShowId()
 	local t, distance = GetClosestPlayer()
 	if(distance ~= -1 and distance < 3) then
-		TriggerServerEvent("police:checkId", GetPlayerServerId(t), false)
+		TriggerServerEvent("police:checkId", GetPlayerServerId(t))
 		print("test")
 	else
 		TriggerEvent("pNotify:notifyFromServer", "Il n'y a personne à proximité. Tu ne peux pas faire cette action.", "error", "topCenter", true, 5000)
@@ -411,7 +427,7 @@ end
 function Search()
 	local t, distance = GetClosestPlayer()
 	if(distance ~= -1 and distance < 3) then
-		TriggerServerEvent("police:targetCheckInventory", GetPlayerServerId(t), false)
+		TriggerServerEvent("police:targetCheckInventory", GetPlayerServerId(t))
 	else
 		TriggerEvent("pNotify:notifyFromServer", "Il n'y a personne à proximité. Tu ne peux pas faire cette action.", "error", "topCenter", true, 5000)
 	end
@@ -479,7 +495,6 @@ function Fines()
 			resultat = tonumber(resultat)
 			TriggerServerEvent("police:setFineToPlayer", GetPlayerServerId(t), resultat)
 		end
-		-- TriggerServerEvent("police:unSetPlayerIntoVeh", GetPlayerServerId(t))
 	else
 		TriggerEvent("pNotify:notifyFromServer", "Il n'y a personne à proximité. Tu ne peux pas faire cette action.", "error", "topCenter", true, 5000)
 	end
@@ -602,9 +617,9 @@ AddEventHandler('police:forcedEnteringVeh', function()
 
 		local rayHandle = CastRayPointToPoint(pos.x, pos.y, pos.z, entityWorld.x, entityWorld.y, entityWorld.z, 10, GetPlayerPed(-1), 0)
 		local _, _, _, _, vehicleHandle = GetRaycastResult(rayHandle)
-
+		print(tostring(vehicleHandle))
 		if vehicleHandle ~= nil then
-			SetPedIntoVehicle(GetPlayerPed(-1), vehicleHandle, 1)
+			SetPedIntoVehicle(GetPlayerPed(-1), vehicleHandle, 0)
 		end
 	end
 end)
@@ -614,13 +629,17 @@ AddEventHandler('police:forcedLeavingVeh', function()
 	local ped = GetPlayerPed(-1) 
 	ClearPedTasksImmediately(ped)
 	plyPos = GetEntityCoords(GetPlayerPed(-1),  true)
-	local xnew = plyPos.x+2
-	local ynew = plyPos.y+2
+	local xnew = plyPos.x + 2
+	local ynew = plyPos.y + 2
 	SetEntityCoords(GetPlayerPed(-1), xnew, ynew, plyPos.z)
 end)
 
 RegisterNetEvent("police:dragAnswer")
 AddEventHandler("police:dragAnswer", function(officerPsid)
 	isDragged = not(isDragged)
-	officerDrag = t
+	if isDragged then
+		officerDrag = officerPsid
+	else
+		officerDrag = nil
+	end
 end)

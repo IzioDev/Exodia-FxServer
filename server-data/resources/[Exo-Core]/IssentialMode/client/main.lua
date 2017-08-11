@@ -61,13 +61,13 @@ function IzioFreezePlayer(id, freeze)
 end
 
 Citizen.CreateThread(function()
-AddTextEntry("FE_THDR_GTAO", "~y~RC ~r~Entertainment") -- title
-AddTextEntry("PM_SCR_MAP", "Los Santos State") -- map button
-AddTextEntry("PM_SCR_GAM", "Exit") -- gaame button
-AddTextEntry("PM_SCR_SET", "Configs") -- settings button
-AddTextEntry("PM_SCR_RPL", "RockStart Editor") -- editor button
-AddTextEntry("PM_PANE_LEAVE", "Back to the server list") -- disconnect button
-AddTextEntry("PM_PANE_QUIT", "Back to windows") -- exit button
+AddTextEntry("FE_THDR_GTAO", "~y~Exodia ~r~RP") -- title
+AddTextEntry("PM_SCR_MAP", "Etat de Los Santos") -- map button
+AddTextEntry("PM_SCR_GAM", "Quitter") -- gaame button
+AddTextEntry("PM_SCR_SET", "Configuration") -- settings button
+AddTextEntry("PM_SCR_RPL", "Editeur Rockstar") -- editor button
+AddTextEntry("PM_PANE_LEAVE", "Retour à la liste des serveurs") -- disconnect button
+AddTextEntry("PM_PANE_QUIT", "Retour vers windows") -- exit button
 	while true do
 		Citizen.Wait(1000)
 		local pos = GetEntityCoords(GetPlayerPed(-1))
@@ -84,12 +84,16 @@ RegisterNetEvent("es:afterSelection")
 AddEventHandler("es:afterSelection", function(spawn)
   RequestCollisionAtCoord(spawn.x, spawn.y, spawn.z + 0.5)
 	SetEntityCoords(GetPlayerPed(-1), spawn.x, spawn.y, spawn.z + 0.5, 0.0, 0.0, 0.0, false)
-	SetEntityVisible(GetPlayerPed(-1), true, 1)
-	SetEntityInvincible(GetPlayerPed(-1), 0)
-	IzioFreezePlayer(PlayerId(), false)
   Citizen.CreateThread(function()
-    Citizen.Wait(1000)
+    Citizen.Wait(3000)
     TriggerServerEvent("es:playerLoadedDelay")
+    TriggerEvent("pNotify:notifyFromServer", "Chargement en cours de ton skin...", "error", "topCenter", true, 8000)
+    while not(GetEntityModel(GetPlayerPed(-1)) == GetHashKey("mp_m_freemode_01")) do
+      Wait(500)
+    end
+    IzioFreezePlayer(PlayerId(), false)
+    SetEntityVisible(GetPlayerPed(-1), true, 1)
+    SetEntityInvincible(GetPlayerPed(-1), 0)
   end)
 end)
 
@@ -180,7 +184,6 @@ AddEventHandler("es:removedDirtyMoney", function(m)
 	})
 end)
 
-RegisterNetEvent("is:updateJob")
 AddEventHandler("is:updateJob", function(userJob, userRank)
   SendNUIMessage({    -- à envoyer dans essential. :/
     setJob = true,

@@ -98,6 +98,32 @@ AddEventHandler("anim:Play", function(name) -- PlayScenario(char* Scenario_name,
 
         end
 
+        if name == "medic:kneel" then
+            PlayEmote("amb@medic@standing@kneel@enter", "enter", 0, 1, 0, 0)
+            PlayEmote("amb@medic@standing@kneel@base", "base", 9, 1, 0, 1, 5.75)
+            PlayEmote("amb@medic@standing@kneel@exit", "exit", 0, 1, 0, 0)
+        end
+        if name == "medic:tendtodeath" then
+            PlayEmote("amb@medic@standing@tendtodead@enter", "enter", 0, 1, 0, 0)
+            PlayEmote("amb@medic@standing@tendtodead@base", "base", 9, 1, 0, 1, 5.75)
+            PlayEmote("amb@medic@standing@tendtodead@exit", "exit", 0, 1, 0, 0) -- or exit_flee
+        end
+        if name == "medic:timeofdeath" then
+            PlayEmote("amb@medic@standing@timeofdeath@enter", "enter", 0, 1, 0, 0)
+            PlayEmote("amb@medic@standing@timeofdeath@base", "base", 9, 1, 0, 1, 5.75)
+            PlayEmote("amb@medic@standing@timeofdeath@exit", "exit", 0, 1, 0, 0) -- exit_flee
+        end
+
+        if name == "medic:mouthtomouth" then
+            PlayEmote("mini@cpr@char_a@cpr_str", "cpr_kol", 9, 1, 0, 1, 5.75)
+        end
+
+        if name == "medic:pumpchest" then
+            PlayEmote("mini@cpr@char_a@cpr_str", "cpr_kol_idle", 0, 1, 0, 0)
+            PlayEmote("mini@cpr@char_a@cpr_str", "cpr_kol_to_cpr", 0, 1, 0, 0)
+            PlayEmote("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 9, 1, 0, 1, 5.75)
+        end
+
 
         -- ## Jobs ## ---------------------------------------------------------------------------------------------------------------
         if name == "cop:idle" then PlayScenario("WORLD_HUMAN_COP_IDLES", true, 0.4, false) end
@@ -112,6 +138,8 @@ AddEventHandler("anim:Play", function(name) -- PlayScenario(char* Scenario_name,
         if name == "player:gardening" then PlayScenario("WORLD_HUMAN_GARDENER_PLANT", true, 5, false) end
 
         if name == "player:busted_by_cop" then PlayEmote("busted", "idle_a", 9, 1, 0, 1, 0.5) end
+
+
         -- ## Jobs End ## -----------------------------------------------------------------------------------------------------------
 
         -- ## DEFAULT ACTIONS ## ----------------------------------------------------------------------------------------------------
