@@ -30,15 +30,15 @@ AddEventHandler("iJob:startLoading", function()
 	if addjobautomatic == true then
 		
 		tableTest = {
-			rank = { {name = "gérant hopital", salary = 500}, {name="stagiaire", salary = 100}, {name="interne", salary = 300}},
+			rank = { {name = "Gérant", salary = 500}, {name="Confirmé", salary = 100}, {name="Stagiaire", salary = 300}},
 			blacklist = {{p = "steamTest", dhm = "14 6 5"} },
 			lost = { {p = "steamTest2", a = 10, re = "essence", dmh = "14 6 5"}, {p = "steamTest3", a = 10, re = "essence", dmh = "14 6 5"} },
 			benefit = { {p = "steamTest2", a = 10, re = "venteTest", dmh = "14 6 5"}, {p = "steamTest3", a = 10, re = "venteTest", dmh = "14 6 5"} },
 			capital = 100000,
-			name = "médecin",
+			name = "livreur",
 			employe = { {pl = "steam:110000104bd6595", rank = "interne", displayName = "test Test"} },
 			default = {rank = "stagiaire"},
-			id = 5
+			id = 6
 		}
 
 		local encodedRank = json.encode(tableTest.rank)

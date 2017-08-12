@@ -190,7 +190,7 @@ function _internalAddMessage(transmitter, receiver, message, owner)
     print('ADD MESSAGE: ' .. transmitter .. receiver .. message .. owner)
     local tstamp = os.date("*t", os.time())
     local time = os.date(tstamp.year .. "-" .. tstamp.month .. "-" .. tstamp.day .. " " .. tstamp.hour .. ":" .. tstamp.min .. ":" .. tstamp.sec)
-    table.insert(MessagesToAdd, {transmitter = transmitter, receiver = receiver, message = message, isRead = isRead, owner = owner, time = time, id = #MessageToAdd+1})
+    table.insert(MessagesToAdd, {transmitter = transmitter, receiver = receiver, message = message, isRead = 0, owner = owner, time = time, id = #MessageToAdd+1})
     return MessagesToAdd[#MessagesToAdd]
 end
 

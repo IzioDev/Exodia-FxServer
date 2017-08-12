@@ -1,3 +1,4 @@
+local liveryList = {1,2,6,7,8,9,10,11,14,18,19,20,21,22,24,25,26,27,28,29,31,32}
 local lang = "fr"
 local config = 
   {
@@ -369,4 +370,14 @@ AddEventHandler("ijob:getItemInfosFromIdArray", function(itemIdArray)
     table.insert(processResult, allItem[itemIdArray[i]])
   end
   TriggerClientEvent("ijob:getItemInfosFromIdArray", source, processResult)
+end)
+
+RegisterServerEvent("iLivery:getItemInfosFromIdArray")
+AddEventHandler("iLivery:getItemInfosFromIdArray", function(type)
+  local source = source
+  local processResult = {}
+  for i = 1, #liveryList do
+    table.insert(processResult, allItem[liveryList[i]])
+  end
+  TriggerClientEvent("iLivery:getItemInfosFromIdArray", source, processResult, type)
 end)
