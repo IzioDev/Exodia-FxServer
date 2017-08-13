@@ -126,8 +126,12 @@ function CreateCar(carInfos) -- Create Car Object
 	end
 
 	rTable.set = function(k, v)
-		self[k] = v
-		SetChange(self)
+		if k ~= "haveChanged" then
+			self[k] = v
+			SetChange(self)
+		else
+			self[k] = v
+		end
 	end
 
 	rTable.get = function(k)
@@ -136,6 +140,139 @@ function CreateCar(carInfos) -- Create Car Object
 
     return rTable
 end
+
+function CreateJobCar(carInfos)
+	local self = {}
+    self.plate = carInfos.vehicle_plate
+    self.state = carInfos.vehicle_state
+    self.lastpos = json.decode(carInfos.lastpos)
+    self.inventory = json.decode(carInfos.inventory)
+    self.owner = carInfos.identifier
+    self.inventoryWeight = tonumber(carInfos.inventoryWeight)
+    self.lastpos = json.decode(carInfos.lastpos)
+    self.session = {}
+    self.item = allItem
+    self.vehJob = true
+
+    local rTable = {}
+    -- Inv Stuff
+    rTable.isAbleToGive = function(item, quantity)
+		for i = 1, #self.inventory do
+			if tonumber(self.inventory[i].id) == tonumber(item) then
+				if tonumber(quantity) <= tonumber(self.inventory[i].quantity) then
+					return true
+				else
+					return false
+				end
+			end
+		end
+		return false
+	end
+
+    rTable.isAbleToReceive = function(item, quantity)
+		local totalWeight = GetTotalWeight(self, tonumber(item), tonumber(quantity))
+		local fakePlusWeight = (tonumber(self.item[tonumber(item)].weight) / 1000 ) * tonumber(quantity)
+		if ( totalWeight < self.inventoryWeight ) then
+			return true
+		else
+			return false
+		end
+	end
+
+    rTable.setQuantityItem = function(itemid, quantity)
+    	local thisItemId = tonumber(itemid)
+		local thisQuantity = tonumber(quantity)
+		for i = 1, #self.inventory do
+			if self.inventory[i].itemid == tonumber(itemid) then
+				self.inventory[i].quantity = tonumber(quantity)
+				SetChange(self)
+				return 1
+			end
+		end
+		table.insert(self.inventory,
+			{
+				itemid = tonumber(thisItemId),
+				quantity = tonumber(thisQuantity)
+			}
+		)
+		SetChange(self)
+		return 2
+	end
+
+    rTable.removeQuantity = function(itemid, quantity)
+    	local thisItemId = tonumber(itemid)
+		local thisQuantity = tonumber(quantity)
+		for i = 1, #self.inventory do
+			if self.inventory[i].id == tonumber(itemid) and self.inventory[i].quantity >= tonumber(quantity) then
+				self.inventory[i].quantity = self.inventory[i].quantity - tonumber(quantity)
+				SetChange(self)
+				return 1
+			end
+		end
+	end
+
+    rTable.addQuantity = function(itemid, quantity)
+    	local thisItemId = tonumber(itemid)
+		local thisQuantity = tonumber(quantity)
+		for i = 1, #self.inventory do
+			if self.inventory[i].id == tonumber(itemid) then
+				self.inventory[i].quantity = self.inventory[i].quantity + tonumber(quantity)
+				SetChange(self)
+				return 1
+			end
+		end
+		table.insert(self.inventory,
+			{
+				id = thisItemId,
+				quantity = thisQuantity
+			}
+		)
+		SetChange(self)
+		return 2
+	end
+
+    rTable.sendDatas = function()
+    	local datasArray = {
+		weight = self.inventoryWeight, -- self.inventoryWeight
+		id = "plate:"..self.plate,
+		invType = "vehicle_inventory",
+		items = self.inventory
+		}
+
+		return json.encode(datasArray)
+	end
+	-- Session, get, set stuff
+	rTable.setSessionVar = function(key, value)
+		self.session[key] = value
+	end
+
+	rTable.getSessionVar = function(k)
+		return self.session[k]
+	end
+
+	rTable.set = function(k, v)
+		if k ~= "haveChanged" then
+			self[k] = v
+			SetChange(self)
+		else
+			self[k] = v
+		end
+	end
+
+	rTable.get = function(k)
+		return self[k]
+	end
+
+    return rTable
+end
+
+-- local carInfos = {
+--     vehicle_plate = plate,
+--     vehicle_state = "out",
+--     lastpos = json.encode({0,0,0,0}),
+--     inventory = json.encode({}),
+--     inventoryWeight = "300.0"
+--   }
 
 -- Utils Functions
 function GetTotalWeight(car, itemid, quantity)

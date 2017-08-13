@@ -222,26 +222,45 @@ AddEventHandler('BuyForVeh', function(name, vehicle, price, plate, primarycolor,
   end)
 end)
 
+AddEventHandler("tShop:registerNewVeh", function(carPlate, owner)
+  local carInfos = {
+    vehicle_plate = plate,
+    vehicle_state = "out",
+    lastpos = json.encode({0,0,0,0}),
+    inventory = json.encode({}),
+    owner = owner,
+    inventoryWeight = "300.0"
+  }
+  allVeh[carPlate] = CreateJobCar(carInfos)
+end)
+
+AddEventHandler("tShop:removeLiveryVeh", function(carPlate, owner)
+  if allVeh[carPlate] then
+    table.remove(allVeh, carPlate)
+  end
+end)
+
 ---Save Datas
 function SaveCarDatas()
   SetTimeout(saveTime, function()
     for k, v in pairs(allVeh) do
       print("Vehicle changed ? ".. tostring(v.get('haveChanged')))
       if v.get('haveChanged') then
-        print("query launched")
-        MySQL.Sync.execute("UPDATE user_vehicle SET `identifier`=@identifier, `vehicle_wheelcolor`=@vehicle_wheelcolor, `vehicle_pearlescentcolor` = @vehicle_pearlescentcolor, `vehicle_colorsecondary`=@vehicle_colorsecondary, `vehicle_colorprimary`=@vehicle_colorprimary, `vehicle_state`=@vehicle_state,`lastpos`=@lastpos, `inventory`=@inventory WHERE vehicle_plate = @vehicle_plate",{
-          ['@identifier'] = v.get('owner'),
-          ['@vehicle_wheelcolor'] = v.get('wheelcolor'),
-          ['@vehicle_pearlescentcolor'] = v.get('pearlescentcolor'),
-          ['@vehicle_colorsecondary'] = v.get('colorsecondary'),
-          ['@vehicle_colorprimary'] = v.get('colorprimary'),
-          ['@vehicle_state'] = v.get('state'),
-          ['@lastpos'] = json.encode(v.get('lastpos')),
-          ['@inventory'] = json.encode(v.get('inventory')),
-          ['@vehicle_plate'] = v.get('plate')
-          })
-        v.set("haveChanged", false)
-        print("set to false")
+        if not(v.get('vehJob')) then
+          print("query launched")
+          MySQL.Sync.execute("UPDATE user_vehicle SET `identifier`=@identifier, `vehicle_wheelcolor`=@vehicle_wheelcolor, `vehicle_pearlescentcolor` = @vehicle_pearlescentcolor, `vehicle_colorsecondary`=@vehicle_colorsecondary, `vehicle_colorprimary`=@vehicle_colorprimary, `vehicle_state`=@vehicle_state,`lastpos`=@lastpos, `inventory`=@inventory WHERE vehicle_plate = @vehicle_plate",{
+            ['@identifier'] = v.get('owner'),
+            ['@vehicle_wheelcolor'] = v.get('wheelscolor'),
+            ['@vehicle_pearlescentcolor'] = v.get('plctColor'),
+            ['@vehicle_colorsecondary'] = v.get('secondaryColor'),
+            ['@vehicle_colorprimary'] = v.get('primaryColor'),
+            ['@vehicle_state'] = v.get('state'),
+            ['@lastpos'] = json.encode(v.get('lastpos')),
+            ['@inventory'] = json.encode(v.get('inventory')),
+            ['@vehicle_plate'] = v.get('plate')
+            })
+          v.set("haveChanged", false)
+        end
       end
     end
     SaveCarDatas()
@@ -320,10 +339,14 @@ AddEventHandler("iGarage:playerGotAGarage", function(result, plate)
       if user.getOtherInGameInfos('garage') == true then
         if plate ~= nil then
           if allVeh[plate] then
-            allVeh[plate].set('state', 'in')
-            local cars = GetAllVehicleFromAPlayerWithInState(user.get('identifier'))
-            user.notify("Tu viens de rentrer un véhicule dans ton garage.", "success", "topCenter", true, 5000)
-            TriggerClientEvent("iGarage:returnPlayerGotAGarage", source, user.getOtherInGameInfos('garage'), result, cars)
+            if allVeh[plate].get('vehJob') then
+              user.notify("Tu ne va quand même pas rentrer le véhicule de ton patron ici ?.", "error", "topCenter", true, 5000)
+            else
+              allVeh[plate].set('state', 'in')
+              local cars = GetAllVehicleFromAPlayerWithInState(user.get('identifier'))
+              user.notify("Tu viens de rentrer un véhicule dans ton garage.", "success", "topCenter", true, 5000)
+              TriggerClientEvent("iGarage:returnPlayerGotAGarage", source, user.getOtherInGameInfos('garage'), result, cars)
+            end
           else
             if not(user.getSessionVar("notifiedFromConcierge")) or (os.time() - user.getSessionVar("notifiedFromConcierge") > 5) then
               user.notify("Et moi j'veux pas d'enmmerdes avec les keuffs, dégage de là, les véhicules volés c'est pas ici!</br> <strong>Le concierge</strong>", "error", "topCenter", true, 5000)

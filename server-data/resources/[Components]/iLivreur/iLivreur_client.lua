@@ -138,9 +138,11 @@ function RunDeliveryThread()
 					if result.approvisionnement then
 						if isInService and Menu.hidden then
 							DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour " ..result.displayedMessageInZone.haveService)
-
+							Menu.hidden = not Menu.hidden
+							ClearMenu()
+							GetResultItemInfos(result.items)
 						else
-							DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour " ..result.displayedMessageInZone.havntService)
+							DisplayHelpText(result.displayedMessageInZone.havntService)
 						end
 					end
 				end
@@ -152,6 +154,10 @@ function RunDeliveryThread()
 			end
 		end
 	end)
+end
+
+function GetResultItemInfos(itemIdArray)
+	TriggerServerEvent("iLivreur:getItemInfosFromIdArray", itemIdArray, "magasin")
 end
 
 function DisplayHelpText(str)
@@ -193,15 +199,13 @@ AddEventHandler("iLivery:getItemInfosFromIdArray", function(result, typeI)
 	if typeI == "mission" then
 		local MissionPoints = GenerateItem(result)
 		local messageToSend = GenerateMessage(MissionPoints)
-		local tstamp = os.date("*t", os.time())
-    	local time = os.date(tstamp.year .. "-" .. tstamp.month .. "-" .. tstamp.day .. " " .. tstamp.hour .. ":" .. tstamp.min .. ":" .. tstamp.sec)
 		TriggerEvent("gcPhone:receiveMessage", {
 				transmitter = "Mon patron", 
 				receiver = "test", 
 				message = messageToSend, 
-				isRead = , 
+				isRead = 0, 
 				owner = 0, 
-				time = time
+				time = "Bouge ton cul"
 			})
 		StartMission(MissionPoints)
 	elseif typeI == "magasin" then
@@ -226,17 +230,35 @@ function StartMission(MissionPoints)
 		end
 		TriggerEvent("pNotify:notifyFromServer", "Vas livrer les personnes aux points indiqués sur la carte, le plus rapide sera le mieux payé. </br> Tu as les indications de ton boss par SMS.", "success", "topCenter", true, 5000)
 		missionStarted = true
+		local MissionInfos = {time = GetGameTimer(), totalValue = GetTotalValue(MissionPoints), totalShortestDistance = GetShortestDistance(MissionPoints)[2], shortestTravel = GetShortestDistance(MissionPoints)[1]}
 		while missionStarted and #MissionPoints ~= 0 do
 			Wait(200)
 			local x,y,z = table.unpack(GetEntityCoords(GetPlayerPed(-1), true))
 			for i = 1, #MissionPoints do
 				if GetDistanceBetweenCoords(x, y, z, MissionPoints[i].point.x, MissionPoints[i].point.y, MissionPoints[i].point.z, true) <= 3.0 then
 					if GotTheseItems(MissionPoints[i].foods) then
+						local messageToPrint = GetMessageForOneMissionPoints(MissionPoints[i])
 						SetBlipAsMissionCreatorBlip(MissionPoints[i].blipId, false)
 						Citizen.InvokeNative(0x86A652570E5F25DD, Citizen.PointerValueIntInitialized(MissionPoints[i].blipId))
+						if #MissionPoints ~= 1 then
+							TriggerEvent("pNotify:notifyFromServer", "Tu viens de livrer : </br>" .. messageToPrint .. "</br> Passe à la suite!", "topCenter", true, 4000)
+						else
+							TriggerEvent("pNotify:notifyFromServer", "Tu viens de livrer : </br>" .. messageToPrint .. "</br> <strong> tu vas recevoir ta paye une fois rendu au centre de livraison.", "topCenter", true, 10000)
+							StartEndMission(MissionInfos)
+						end
+						if not(MissionPounts[i].pouboire) then
+							if math.random(1,5) == 3 then
+								TriggerServerEvent("iLivreur:pourboire", math.random(12, 66))
+							end
+						else
+							TriggerServerEvent("iLivreur:pourboire", math.random(12, 66))
+						end
+						TriggerServerEvent("iLivreur:removeObjectsArray", MissionPoints[i].foods)
+						table.remove(MissionPoints, i)
 					else
 						local messageToPrint = GetMessageForOneMissionPoints(MissionPoints[i])
-						TriggerEvent("pNotify:notifyFromServer", "Tu n'as pas les items qu'il te faut : </br>" .. messageToPrint, "topCenter", true, 3000)
+						TriggerEvent("pNotify:notifyFromServer", "Tu n'as pas les objets de livraison qu'il te faut : </br>" .. messageToPrint, "topCenter", true, 5000)
+						Citizen.Wait(5000)
 					end
 				end
 			end
@@ -244,8 +266,102 @@ function StartMission(MissionPoints)
 	end)
 end
 
+function StartEndMission(MissionInfos)
+	local blip = AddBlipForCoord(tonumber(pointQg.x), tonumber(pointQg.y), tonumber(pointQg.z))
+	SetBlipSprite(blip, pointQg.blipSprite)
+	SetBlipColour(blip, pointQg.blipColor)
+	BeginTextCommandSetBlipName("STRING")
+	AddTextComponentString("QG Livreur")
+	EndTextCommandSetBlipName(blip)
+	SetBlipAsShortRange(blip,true)
+	SetBlipAsMissionCreatorBlip(blip,true)
+	SetBlipRoute(blip, true)
+	SetBlipRouteColour(blip, pointQg.blipColor)
+	while true do
+		local x,y,z = table.unpack(GetEntityCoords(GetPlayerPed(-1), true))
+		Wait(500)
+		if GetDistanceBetweenCoords(pointQg.x, pointQg.y, pointQg.z, x, y, z, true) <= 5.0 then
+			SetBlipAsMissionCreatorBlip(blip, false)
+			Citizen.InvokeNative(0x86A652570E5F25DD, Citizen.PointerValueIntInitialized(blip))
+			TriggerServerEvent("iLivreur:endedMission", MissionInfos, GetGameTimer())
+		end
+	end
+end
+
+function GetTotalValue(MissionPoints)
+	local total = 0
+	for i = 1, #MissionPoints do
+		for j = 1, #MissionPoints[i].foods do
+			total = total + MissionPoints[i].foods[j].price
+		end
+	end
+	return total
+end
+
+function GetShortestDistance(MissionPoints)
+	local basicDistance, theShortestPoint = GetShortestDistanceFromPed(MissionPoints)
+	local Trajet = {}
+	Trajet[1] = theShortestPoint
+	table.remove(MissionPoints, theShortestPoint)
+	local numberLoop = #MissionPoints
+	while #Trajet ~= numberLoop do
+		local min = 99999
+		local actualPoint = 0
+		for i = 1, #MissionPoints do
+			if i ~= Trajet[#Trajet] then
+				local point = MissionPoints[Trajet[#Trajet]].point
+				if GetDistanceBetweenCoords(point.x, point.y, point.z, MissionPoints[i].point.x, MissionPoints[i].point.y, MissionPoints[i].point.z, true) < min then
+					min = GetDistanceBetweenCoords(point.x, point.y, point.z, MissionPoints[i].point.x, MissionPoints[i].point.y, MissionPoints[i].point.z, true)
+					actualPoint = i
+				end
+			end
+		end
+		Trajet[#Trajet+1] = min
+		table.remove(MissionPoints, actualPoint)
+	end
+	local distance = basicDistance
+	for i = 2, #Trajet do
+		distance = distance + CalculateTravelDistanceBetweenPoints(MissionPoints[Trajet[i-1]].point.x, MissionPoints[Trajet[i-1]].point.y, MissionPoints[Trajet[i-1]].point.z, MissionPoints[Trajet[i]].point.x, MissionPoints[Trajet[i]].point.y, MissionPoints[Trajet[i]].point.z)
+	end
+	return {Trajet, distance}
+end
+
+function GetShortestDistanceFromPed(MissionPoints)
+	local x,y,z = table.unpack(GetEntityCoords(GetPlayerPed(-1), true))
+	local min = 90000.0
+	local actual = 0
+	for i = 1, #MissionPoints do
+		if CalculateTravelDistanceBetweenPoints(x, y, z, MissionPoints[i].point.x, MissionPoints[i].point.y, MissionPoints[i].point.z) <= min then
+			min = CalculateTravelDistanceBetweenPoints(x, y, z, MissionPoints[i].point.x, MissionPoints[i].point.y, MissionPoints[i].point.z)
+			actual = i
+		end
+	end
+	return min, actual
+end
+
 function GotTheseItems(foods) -- Todo
-	return false
+	local foodList = {}
+	local myBool = nil
+	for i = 1, #foods do
+		local founded = false
+		if #foodList ~= 0 then
+			for j = 1, #foodList do
+				if foodList[j].id == foods[i].item.id then
+					foodList[j].quantity = foodList[j].quantity + foods[i].quantity
+					founded = true
+				end
+			end
+			if not(founded) then
+				table.insert(foodList, {id = foods[i].item.id, quantity = foods[i].quantity})
+			end
+		else
+			table.insert(foodList, {id = foods[i].item.id, quantity = foods[i].quantity})
+		end
+	end
+	TiggerEvent("inv:gotItemsAndQuantity", foodList, function(bool)
+		myBool = bool
+	end)
+	return myBool
 end
 
 -- function IsGottingItems(items)
@@ -312,8 +428,9 @@ function GenerateItem(result)
 end
 
 function LaunchMenu(Items)
+	TriggerEvent("pNotify:notifyFromServer")
 	ClearMenu()
-	MenuTitle = "Magasin d outils"
+	MenuTitle = "Approvisionnement livreur"
 	for i = 1, #Items do
 		Menu.addButton(Items[i].name .. " : " .. Items[i].price.."$", "ItemsInfos", {Items,i})
 	end
@@ -333,6 +450,7 @@ end
 function BuyItem(item)
 	TriggerServerEvent('inv:buyItemByItemId', item.id)
 	Menu.hidden = not(Menu.hidden)
+	ClearMenu()
 end
 
 function ShowQg(pointQg)
@@ -398,7 +516,7 @@ function OpenGarage(result, currentVehi)
 				end
 			end)
 		else
-			TriggerEvent("pNotify:notifyFromServer", "Contacter Izio iMedic_client.lua Entity doesn't exist.", "error", "topCenter", true, 5000)
+			TriggerEvent("pNotify:notifyFromServer", "Contacter Izio iLivreur_client.lua Entity doesn't exist.", "error", "topCenter", true, 5000)
 			currentVeh = nil
 			ClearMenu()
 		end
@@ -447,14 +565,14 @@ function SpawnVeh(args)
 	-- NetworkRegisterEntityAsNetworked(VehToNet(medicVeh)) NotWorking in this manifest ? 
 	TaskWarpPedIntoVehicle(playerPed, deliveryVeh, -1)
 	SetEntityAsMissionEntity(deliveryVeh, true, true)
-	local plateText = "DE".. math.random(100,999)
+	local plateText = "LI".. math.random(100,999)
 	local a, b, c = Generate3Char()
 	plateText = plateText .. a .. b .. c
 	SetVehicleNumberPlateText(deliveryVeh, plateText)
 
 	Menu.hidden = true
 	CloseMenu("test")
-	TriggerServerEvent("iLivreur:spawnVehGarage", carPrice)
+	TriggerServerEvent("iLivreur:spawnVehGarage", carPrice, plateText)
 	currentVeh = deliveryVeh
 	timeVeh = GetGameTimer()
 end

@@ -86,10 +86,6 @@ end
 function givep(arg)
   prompt(function(quantity)
     TriggerServerEvent("inventory:give", steamid, "steam:", GetClosestPlayer(2.1), arg[1], quantity)
-    print(GetClosestPlayer(2.1))
-    print(arg[1])
-    print(quantity)
-    print(steamid)
   end)
 end
 
@@ -155,6 +151,7 @@ end)
 
 
 AddEventHandler("inventory:result", function(jsonDATA)
+
     inventory = json.decode(jsonDATA)
     if openInventoryID ~= inventory.id then
         return false
@@ -317,6 +314,24 @@ AddEventHandler("inv:gotThisItemById", function(item, bool)
   else
     bool("\nError processing gotThisItemById : We don't have the SteamID\n")
     return
+  end
+end)
+
+AddEventHandler("inv:gotItemsAndQuantity", function(itemInfos, bool)
+  local countValidated = 0
+  for i = 1, #items do
+    for j = 1, #inventoryList[steamid].items do
+      if items.id == tonumber(inventoryList[steamid].items[j].id) then
+        if inventoryList[steamid].items[j].quantity >= items.quantity then
+          countValidated = countValidated + 1
+        end
+      end
+    end
+  end
+  if countValidated == #itemInfos then
+    bool(true)
+  else
+    bool(false)
   end
 end)
 
