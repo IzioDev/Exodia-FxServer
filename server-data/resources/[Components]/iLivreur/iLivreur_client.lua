@@ -10,6 +10,7 @@ local qgDisplayed = false
 local currentVeh = nil
 local vehFromGarage = nil
 local timeVeh = nil
+local missionStarted = false
 
 local DeliveryPoints = {
 	{x = -561.57, y = -131.9, z = 38.44},
@@ -190,7 +191,8 @@ end
 RegisterNetEvent("iLivery:getItemInfosFromIdArray")
 AddEventHandler("iLivery:getItemInfosFromIdArray", function(result, typeI)
 	if typeI == "mission" then
-		GenerateItem(result)
+		local MissionPoints = GenerateItem(result)
+		local messageToSend = GenerateMessage(MissionPoints)
 		local tstamp = os.date("*t", os.time())
     	local time = os.date(tstamp.year .. "-" .. tstamp.month .. "-" .. tstamp.day .. " " .. tstamp.hour .. ":" .. tstamp.min .. ":" .. tstamp.sec)
 		TriggerEvent("gcPhone:receiveMessage", {
@@ -201,10 +203,99 @@ AddEventHandler("iLivery:getItemInfosFromIdArray", function(result, typeI)
 				owner = 0, 
 				time = time
 			})
+		StartMission(MissionPoints)
 	elseif typeI == "magasin" then
 		LaunchMenu(result)
 	end
 end)
+
+function StartMission(MissionPoints)
+	Citizen.CreateThread(function()
+		for i = 1, #MissionPoints do
+			local blip = AddBlipForCoord(tonumber(MissionPoints[i].point.x), tonumber(MissionPoints[i].point.y), tonumber(MissionPoints[i].point.z))
+			SetBlipSprite(blip, 5)
+			SetBlipColour(blip, 4)
+			BeginTextCommandSetBlipName("STRING")
+			AddTextComponentString("Point" .. i)
+			EndTextCommandSetBlipName(blip)
+			SetBlipAsShortRange(blip,true)
+			SetBlipAsMissionCreatorBlip(blip,true)
+			SetBlipRoute(blip, true)
+			SetBlipRouteColour(blip, 6)
+			MissionPoints[i].blipId = blip 
+		end
+		TriggerEvent("pNotify:notifyFromServer", "Vas livrer les personnes aux points indiqués sur la carte, le plus rapide sera le mieux payé. </br> Tu as les indications de ton boss par SMS.", "success", "topCenter", true, 5000)
+		missionStarted = true
+		while missionStarted and #MissionPoints ~= 0 do
+			Wait(200)
+			local x,y,z = table.unpack(GetEntityCoords(GetPlayerPed(-1), true))
+			for i = 1, #MissionPoints do
+				if GetDistanceBetweenCoords(x, y, z, MissionPoints[i].point.x, MissionPoints[i].point.y, MissionPoints[i].point.z, true) <= 3.0 then
+					if GotTheseItems(MissionPoints[i].foods) then
+						SetBlipAsMissionCreatorBlip(MissionPoints[i].blipId, false)
+						Citizen.InvokeNative(0x86A652570E5F25DD, Citizen.PointerValueIntInitialized(MissionPoints[i].blipId))
+					else
+						local messageToPrint = GetMessageForOneMissionPoints(MissionPoints[i])
+						TriggerEvent("pNotify:notifyFromServer", "Tu n'as pas les items qu'il te faut : </br>" .. messageToPrint, "topCenter", true, 3000)
+					end
+				end
+			end
+		end
+	end)
+end
+
+function GotTheseItems(foods) -- Todo
+	return false
+end
+
+-- function IsGottingItems(items)
+-- 	local myBool
+-- 	TriggerEvent("inv:gotThisItemsById", items, function(bool)
+--     	myBool = bool
+-- 	end)
+-- 	if type(myBool) == "string" then
+-- 		print("ERROR STEAM ID INVENTORY")
+-- 		return
+-- 	end
+-- 	return myBool
+-- end
+
+function GetMessageForOneMissionPoints(missionPoint)
+	local toBeReturned = ""
+	for i = 1, #missionPoint.foods do
+		toBeReturned = toBeReturned .. missionPoint.foods[i].quantity .. " " .. missionPoint.foods[i].item.name .. " et "
+	end
+	return toBeReturned
+end
+
+function GenerateMessage(MissionPoints)
+	local messageToSend = "Vas chercher au point de livraison: "
+	local allItem = {}
+	for i = 1, #MissionPoints do
+		for j = 1, #MissionPoints[i].foods do
+			local founded = false
+			if #allItem ~= 0 then
+				for k = 1, #allItem do
+					if MissionPoints[i].foods[j].item.id == allItem[k].item.id then
+						allItem[k].quantity = allItem[k].quantity + MissionPoints[i].foods[j].quantity
+						founded = true
+					end
+				end
+				if not(founded) then
+					table.insert(allItem, {item = MissionPoints[i].foods[j].item, quantity = MissionPoints[i].foods[j].quantity})
+				end
+			else
+				table.insert(allItem, {item = MissionPoints[i].foods[j].item, quantity = MissionPoints[i].foods[j].quantity})
+			end
+		end
+	end
+
+	for i=1, #allItem do
+		messageToSend = messageToSend .. allItem[i].quantity .. " " .. allItem[i].item.name .. ", "
+	end
+	messageToSend = messageToSend .. "."
+	return messageToSend
+end
 
 function GenerateItem(result)
 	local MissionPoints = {}
@@ -213,7 +304,7 @@ function GenerateItem(result)
 		local numberFood = math.random(1, 3)
 		local foods = {}
 		for j = 1, #numberFood do
-			table.insert(foods, result[math.random(1, #result)])
+			table.insert(foods, {item = result[math.random(1, #result)], quantity = math.random(1,5) })
 		end
 		table.insert(MissionPoints, {point = DeliveryPoints[math.random(1, #DeliveryPoints)], foods = foods})
 	end
