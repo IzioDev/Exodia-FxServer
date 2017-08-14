@@ -336,7 +336,7 @@ function SpawnVeh(args)
 	local playerCoords = GetEntityCoords(playerPed)
 	local playerHeading = GetEntityHeading(playerPed)
 	local closestVeh = nil
-	local coords = playerCoords
+	local x,y,z = table.unpack(playerCoords)
 	local policevehicle = nil
 	for i = 1, #args.point do
 		RequestCollisionAtCoord(args.point[i].x, args.point[i].y, args.point[i].z)

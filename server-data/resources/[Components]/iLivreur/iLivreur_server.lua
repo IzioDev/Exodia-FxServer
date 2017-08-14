@@ -25,7 +25,7 @@ AddEventHandler("iLivreur:spawnVehGarage", function(carPrice, carPlate)
 				medicJob.addLost(user, carPrice, "prise de véhicule de fonction.")
 				user.setSessionVar('caution', carPrice)
 				user.notify("Le gérant te prete un véhicule. Si tu ne le ramène pas, il te demandera de payer la moitié du prix du véhicule. Prends en soin!", "error", "topCenter", true, 5000)
-				TriggerEvent("tShop:registerNewVehForLivery", carPlate, user.get('identifier'), 300.0)
+				TriggerEvent("tShop:registerNewVeh", carPlate, user.get('identifier'), 25.0)
 			end
 		end)
 	end)
@@ -40,16 +40,16 @@ AddEventHandler("iLivreur:retreiveCaution", function(carPrice)
 			medicJob.addBenefit(user, user.getSessionVar('caution'), "Ajout du véhicule au garage.")
 			user.setSessionVar("caution", nil)
 			user.notify("Tu viens de ramener le véhicule au garage.", "success", "topCenter", true, 5000)
-			TriggerEvent("tShop:removeLiveryVeh", carPlate)
+			TriggerEvent("tShop:removeVeh", carPlate)
 		end)
 	end)
 end)
 
 AddEventHandler("is:playerDropped", function(user)
-	if user.get('job') == "médecin" then
+	if user.get('job') == "livreur" then
 		if user.getSessionVar("caution") ~= nil then
 			user.removeBank(user.getSessionVar("caution")/2)
-			TriggerEvent("tShop:removeLiveryVeh", carPlate)
+			TriggerEvent("tShop:removeVeh", carPlate)
 		end
 	end
 end)
@@ -82,8 +82,8 @@ end)
 RegisterServerEvent("iLivreur:endedMission")
 AddEventHandler("iLivreur:endedMission", function(MissionInfos, nowTime)
 	local source = source
-	local pallier = [0.75, 1 , 1.48, 1.87]
-	local multiplicator = [1.15, 1.25, 1.45, 1.84]
+	local pallier = {0.75, 1 , 1.48, 1.87}
+	local multiplicator = {1.15, 1.25, 1.45, 1.84}
 	local timeHePut = time - MissionInfos.time
 	local distance = MissionInfos.totalShortestDistance
 	local ratio = distance / timeHePut
@@ -96,4 +96,12 @@ AddEventHandler("iLivreur:endedMission", function(MissionInfos, nowTime)
 	local givenMoney = math.ceil(MissionInfos.totalValue * multiplicator[thisPallier])
 	user.addBank(givenMoney)
 	user.notify("Voilà ta paye: " .. givenMoney .. "$, par contre, bouges ton cul la prochaine fois, surtout si c'est toi Hqdez!", "success", "topCenter", true, 5000)
+end)
+
+RegisterServerEvent("iLivreur:syncServiceWithServer")
+AddEventHandler("iLivreur:syncServiceWithServer", function(isInService)
+	local source = source
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		user.setSessionVar("inService", isInService)
+	end)
 end)

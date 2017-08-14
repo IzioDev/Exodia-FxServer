@@ -222,19 +222,19 @@ AddEventHandler('BuyForVeh', function(name, vehicle, price, plate, primarycolor,
   end)
 end)
 
-AddEventHandler("tShop:registerNewVeh", function(carPlate, owner)
+AddEventHandler("tShop:registerNewVeh", function(carPlate, owner, inventoryWeight)
   local carInfos = {
     vehicle_plate = plate,
     vehicle_state = "out",
     lastpos = json.encode({0,0,0,0}),
     inventory = json.encode({}),
     owner = owner,
-    inventoryWeight = "300.0"
+    inventoryWeight = inventoryWeight
   }
   allVeh[carPlate] = CreateJobCar(carInfos)
 end)
 
-AddEventHandler("tShop:removeLiveryVeh", function(carPlate, owner)
+AddEventHandler("tShop:removeVeh", function(carPlate, owner)
   if allVeh[carPlate] then
     table.remove(allVeh, carPlate)
   end
