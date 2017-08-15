@@ -138,7 +138,7 @@ Citizen.CreateThread(function()
 			end
 
 			if isInZone ~= nil and isInZone and IsControlJustPressed(1, 38) then
-
+				guiOpened = true
 				DisableAllControlActions(1)
 				SetNuiFocus(true, true)
 				SendNUIMessage({
@@ -146,7 +146,7 @@ Citizen.CreateThread(function()
 				})
 
 			elseif guiOpened and not(isInZone) then
-
+				guiOpened = false
 				SendNUIMessage({
 				 	action = "close"
 				})
@@ -308,10 +308,19 @@ function RunHarvestThread(bool)
 										--CheckHarvestProcessOperation(result)
 										TriggerEvent("ijob:checkClientHarvest", result)
 									else
-										TriggerEvent("pNotify:notifyFromServer", "Vous devez avoir votre outil pour faire cette action", "error", "centerLeft", true, 5000)
+										TriggerEvent("pNotify:notifyFromServer", "Vous devez avoir votre outil pour faire cette action", "error", "topCenter", true, 5000)
+										return
 									end
+								else
+									TriggerEvent("ijob:checkClientHarvest", result)
 								end
-							else
+							elseif (result.treatment) then
+
+								if result.tool and not(IsGottingItem(result.tool)) then 
+									TriggerEvent("pNotify:notifyFromServer", "Vous devez avoir votre outil pour faire cette action", "error", "topCenter", true, 5000)
+									return
+								end
+
 								trust = 0
 								for i = 1, #result.need do
 									if IsGottingItem(result.need[i]) then
@@ -321,8 +330,10 @@ function RunHarvestThread(bool)
 								if trust == #result.need then
 									TriggerEvent("CheckProcessOperation", result)
 								else
-									TriggerEvent("pNotify:notifyFromServer", "Vous devez avoir des matériaux pour cette cette action", "error", "centerLeft", true, 5000)
+									TriggerEvent("pNotify:notifyFromServer", "Vous devez avoir des matériaux pour cette cette action", "error", "topCenter", true, 5000)
 								end
+							elseif (result.selling) then
+
 							end
 						end
 					elseif result == nil and launchedlegit then
@@ -451,22 +462,31 @@ AddEventHandler("ijob:checkClientHarvest", function(result) -- on a check s'il a
 		DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour stopper ")
 		if IsControlJustPressed(1, 38) then
 			launchedlegit = nil
-			break
-			CancelEvent()
 			return
 		end
 		if not(inWaiting) and launchedlegit then
+			if result.need then
+				if not(IsGottingItems(result.need)) then
+					launchedlegit = nil
+					prokedlegit = true
+				end
+			end
 			inWaiting = true
-			TriggerEvent("anim:Play", "player:pickup_01")
+			TriggerEvent("anim:Play", result.annimation)
 			SetTimeout(result.time ,function()
 				if not(prokedlegit) then
 					TriggerServerEvent("iJob:checkHarvest", result)
 				end
+				Citizen.Wait(500)
 				inWaiting = false
 			end)
 		end
 	end
 end)
+
+function IsGottingItems(items)
+
+end
 
 RegisterNetEvent("ijob:stopHarvest")
 AddEventHandler("ijob:stopHarvest", function()
@@ -498,7 +518,7 @@ end
 function IsGottingItems(items)
 	local myBool
 	TriggerEvent("inv:gotThisItemsById", items, function(bool)
-    	myBool = bool
+    	myBool = bool 
 	end)
 	if type(myBool) == "string" then
 		print("ERROR STEAM ID INVENTORY")

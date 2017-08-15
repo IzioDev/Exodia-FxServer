@@ -32,6 +32,7 @@ end)
 
 AddEventHandler("inventory:change", function(data)
 
+  data = json.decode(data)
   if steamid == nil then -- ok
     steamid = data.id
   end

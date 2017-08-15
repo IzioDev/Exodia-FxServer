@@ -290,40 +290,21 @@ RegisterServerEvent("iJob:checkHarvest")
 AddEventHandler("iJob:checkHarvest", function(result)
 	local source = source -- Thanks FXS
 	local job
+	local lucky
 	TriggerEvent("es:getPlayerFromId", source, function(user)
 
 		if not(IsHarvestJob(user.get('job'))) then
-			user.notify("Tu n'as pas ce métier.", "error", "centerLeft", true, 5000)
+			user.notify("Tu n'as pas ce métier.", "error", "topCenter", true, 5000)
 			CancelEvent()
 			return
 		end
 
-		local item = {}
-		local quantity = {}
-		local lucky = false
-		local randomHarvest = math.random(1, 100)
-
-		if randomHarvest < 2 then -- 2% de chance d'avoir un item rare
-			item = result.receive.rare
-		elseif randomHarvest < 17 then -- 15% de change d'avoir deux item normaux
-			item = result.receive.normal
-			lucky = true
-		else -- et 83% de chance d'avoir jsute un item normal
-			item = result.receive.normal
-		end
-	
-		for i=1, #item do
-			if lucky then
-				quantity[i] = 2
-			else
-				quantity[i] = 1
-			end
-		end
+		local finalItemsArray, totalQuantity = GenerateLucky(result) -- TODO
 
 		job = string.lower(user.get('job')) --
-		local resultFromHarvest = allJob[job].harvest(result.displayMessageInZone, quantity, false)
+		local resultFromHarvest = allJob[job].harvest(result.displayMessageInZone, totalQuantity, false)
 		if resultFromHarvest then
-			ProcessHarvest(source, result, item, quantity)
+			ProcessHarvest(source, result, finalItemsArray)
 		else
 			TriggerClientEvent("ijob:stopHarvest", source)
 			user.notify("Tu ne peux pas récolter, la zone de récolte est vide. Attends un peu", "error", "centerLeft", true, 5000)
@@ -332,6 +313,33 @@ AddEventHandler("iJob:checkHarvest", function(result)
 	end)
 
 end)
+
+function GenerateLucky(result)
+	local finalItems = {}
+	local quantity = 0
+	for i = 1, #result.receive.normal do
+		local luck = math.random(1,100)
+		if luck <= 2 then
+			if result.receive.rare then
+				local picker = math.random(1, #result.receive.rare)
+				table.insert(finalItems, result.receive.rare[picker])
+				quantity = quantity + result.receive.rare[picker].quantity * 5
+			else
+				table.insert(finaelItems, {id = result.receive.normal[i].id, quantity = result.receive.normal[i].quantity * 2})
+				quantity = quantity + result.receive.normal[i].quantity * 2
+			end
+
+		elseif luck <= 15 then
+			table.insert(finaelItems, {id = result.receive.normal[i].id, quantity = result.receive.normal[i].quantity * 2})
+			quantity = quantity + result.receive.normal[i].quantity * 2
+		
+		elseif luck <= 100 then
+			table.insert(finaelItems, {id = result.receive.normal[i].id, quantity = result.receive.normal[i].quantity})
+			quantity = quantity + result.receive.normal[i].quantity
+		end
+	end
+	return finalItems, quantity
+end
 
 RegisterServerEvent("ijob:process")
 AddEventHandler("ijob:process", function(result)
@@ -371,23 +379,33 @@ function IsHarvestJob(job)
 	end
 end
 
-function ProcessHarvest(source, result, item, quantity) -- create = true / false
+function ProcessHarvest(source, result, allItems) -- create = true / false
 	TriggerEvent("es:getPlayerFromId", source, function(user)
-
+		local item, quantity = ConvertToBeTreated(allItems)
 		local bool = user.isAbleToReceiveItems(item , quantity) -- deux array
 		if bool then
 			user.addQuantityArray(item, quantity)
 			local itemInfos = user.get('item')
-			local test = GetMessage(item, quantity, itemInfos)
-			user.notify("Tu viens de récolter" .. test .. ".", "success", "centerLeft", true, 5000)
-			allJob[user.get('job')].harvest(result.displayMessageInZone, {100}, true)
-			TriggerClientEvent("inventory:change", source, json.decode(user.sendDatas()))
+			local generatedMessage = GetMessage(item, quantity, itemInfos)
+			user.notify("Tu viens de récolter" .. generatedMessage .. ".", "success", "topCenter", true, 5000)
+			allJob[user.get('job')].harvest(result.displayMessageInZone, quantity, true)
+			user.refreshInventory()
+			TriggerClientEvent("inventory:change", source, user.sendDatas())
 		else
-			user.notify("Tu n'as pas assez de place dans ton inventaire", "error", "centerLeft", true, 5000)
-			TriggerClientEvent("anim:Play", source, "stopAll")
+			user.notify("Tu n'as pas assez de place dans ton inventaire", "error", "topCenter", true, 5000)
 			TriggerClientEvent("ijob:stopHarvest", source)
 		end
 	end)
+end
+
+function ConvertToBeTreated(allItems)
+	local items = {}
+	local quantity = {}
+	for i = 1, #allItems do 
+		table.insert(items, allItems[i].id)
+		table.insert(quantity, allItems[i].quantity)
+	end
+	return items, quantity
 end
 
 function ProcessOther(source, result, item, quantity)
