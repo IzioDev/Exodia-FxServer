@@ -102,6 +102,13 @@ RegisterServerEvent("iLivreur:syncServiceWithServer")
 AddEventHandler("iLivreur:syncServiceWithServer", function(isInService)
 	local source = source
 	TriggerEvent("es:getPlayerFromId", source, function(user)
+		local var = nil
+		if isInServer then
+			var = "prendre"
+		else
+			var = "quitter"
+		end
+		user.notify("Tu viens de "..var.. " ton service.", "success", "topCenter", true, 5000)
 		user.setSessionVar("inService", isInService)
 	end)
 end)

@@ -63,6 +63,21 @@ AddEventHandler("is:playerDropped", function(user)
 	end
 end)
 
+RegisterServerEvent("iPompiste:syncServiceWithServer")
+AddEventHandler("iPompiste:syncServiceWithServer", function(isInService)
+	local source = source
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		local var = nil
+		if isInServer then
+			var = "prendre"
+		else
+			var = "quitter"
+		end
+		user.notify("Tu viens de "..var.. " ton service.", "success", "topCenter", true, 5000)
+		user.setSessionVar("inService", isInService)
+	end)
+end)
+
 -- RegisterServerEvent("iLivreur:removeObjectsArray")
 -- AddEventHandler("iLivreur:removeObjectsArray", function(items)
 -- 	local source = source

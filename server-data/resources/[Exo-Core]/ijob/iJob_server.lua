@@ -106,7 +106,6 @@ AddEventHandler("iJob:startLoading", function()
 			end
 		end
 	end
-	UpdateJob()
 	saveJobIfChanged()
 
 end)
@@ -122,19 +121,16 @@ function LoadJob(test, test2)
 
 end
 
-function UpdateJob()
-	SetTimeout(3000, function()
-		TriggerEvent("es:getPlayers", function(Users)
-			for k,v in pairs(Users) do
-				if v ~= nil then
-					print(v.get('source') .. " " .. v.get('job') .. " " .. v.get('rank'))
-					TriggerClientEvent("ijob:updateJob", v.get('source'), v.get('job'), v.get('rank'))
-					TriggerClientEvent("ijob:addBlip", v.get('source'), allJob[v.get('job')].getBlip(), true)
-				end
-			end
-		end)
+RegisterServerEvent("ijob:retreiveIfRestart")
+AddEventHandler("ijob:retreiveIfRestart", function()
+	local source = source
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		if user ~= nil then
+			TriggerClientEvent("ijob:updateJob", user.get('source'), user.get('job'), user.get('rank'))
+			TriggerClientEvent("ijob:addBlip", user.get('source'), allJob[user.get('job')].getBlip(), true)
+		end
 	end)
-end
+end)
 
 AddEventHandler("es:playerLoaded", function(source)
 	TriggerEvent("es:getPlayerFromId", source, function(user)
@@ -453,10 +449,11 @@ AddEventHandler('ijob:changeJobPoleEmplois', function(job)
 				user.notify("Tu viens de quitter le métier de <span style='color:yellow' > " ..job.. "</span>, attends encode un peu.", "error", "leftCenter", true, 5000)
 			else
 				if result == "hireFirst" then
-					user.notify("Tu ne peux pas faire ça, tu es <span style='color:yellow' > ".. user.get('job') .. "</span> quitte d'abord ton emploie.", "error", "centerLeft", true, 5000)
+					user.notify("Tu ne peux pas faire ça, tu es <span style='color:yellow' > ".. user.get('job') .. "</span> quitte d'abord ton emploie (/demission).", "error", "centerLeft", true, 5000)
 				else
 					user.notify("Bienvenue chez les <span style='color:yellow' > "..job.. "</span> contact ton patron, il te donnera les infos dont tu as besoin.", "success", "topCenter", true, 5000)
 					TriggerClientEvent("ijob:addBlip", user.get('source'), allJob[user.get('job')].getBlip(), true)
+					TriggerClientEvent("ijob:updateJob", user.get('source'), user.get('job'), user.get('rank'))
 				end
 			end
 		end

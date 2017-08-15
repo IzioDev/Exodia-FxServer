@@ -129,7 +129,7 @@ end)
 
 
 Citizen.CreateThread(function()
-	DisableControlAction(1, 38, false)
+	TriggerServerEvent("ijob:retreiveIfRestart")
 	while true do
 		Wait(10)
 		TriggerEvent("izone:isPlayerInZone", "poleemploi", function(isInZone) ----------------- POLE EMPLOIS
@@ -287,11 +287,14 @@ function RunHarvestThread(bool)
 						Wait(0)
 						displayedMessage = "."
 						for i=1, 3 do
-							DisplayHelpText("Veuillez attendre 5 secondes avant de relancer"..displayedMessage)
-							Wait(500)
+							local nowTime = GetGameTimer()
+							while GetGameTimer() < nowTime + 500 do
+								Wait(0)
+								DisplayHelpText("Veuillez attendre 5 secondes avant de relancer"..displayedMessage)
+							end
 							displayedMessage = displayedMessage .. "."
 						end
-					end---
+					end
 					launchedlegit = false
 				end
 				TriggerEvent("izone:getResultFromPlayerInAnyJobZone", userJob, function(result)
@@ -299,18 +302,19 @@ function RunHarvestThread(bool)
 					if result ~= nil and not(launchedlegit) then -- on est soit dans une zone de récolte/traitement/vente de notre job.
 						DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour commencer ".. result.displayMessageInZone)
 						if IsControlJustPressed(1, 38) then
-							if (result.tool) then
-								if IsGottingItem(result.tool) then -- on à l'item
-									--CheckHarvestProcessOperation(result)
-									TriggerEvent("ijob:checkClientHarvest", result)
-								else
-									TriggerEvent("pNotify:notifyFromServer", "Vous devez avoir votre outil pour faire cette action", "error", "centerLeft", true, 5000)
+							if (result.harvest) then
+								if result.tool then
+									if IsGottingItem(result.tool) then -- on à l'item
+										--CheckHarvestProcessOperation(result)
+										TriggerEvent("ijob:checkClientHarvest", result)
+									else
+										TriggerEvent("pNotify:notifyFromServer", "Vous devez avoir votre outil pour faire cette action", "error", "centerLeft", true, 5000)
+									end
 								end
 							else
 								trust = 0
 								for i = 1, #result.need do
 									if IsGottingItem(result.need[i]) then
-										print("ok")
 										trust = trust + 1
 									end
 								end
@@ -352,7 +356,7 @@ AddEventHandler("CheckProcessOperation", function(result)
 		end
 		if not(inWaiting) and launchedlegit then 
 			inWaiting = true
-			TriggerEvent("anim:Play", "player:pickup_01")
+			TriggerEvent("anim:Play", result.annimation)
 			SetTimeout(result.time ,function()
 				if not(prokedlegit) then
 					trust = 0

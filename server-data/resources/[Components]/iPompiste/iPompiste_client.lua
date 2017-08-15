@@ -50,10 +50,10 @@ local DeliveryPoints = {
 	{x = -1206.35, y = -1554.54, z = 4.38}
 }
 
-local blipDelivery = {blipColor = 15, blipSprite = 24}
-local blipService = {x = -1312.02,y = -1335.95, z = 4.66}
+-- local blipDelivery = {blipColor = 15, blipSprite = 24}
+-- local blipService = {x = -1312.02,y = -1335.95, z = 4.66}
 
-local pointQg = {x = 245.01, y = 369.01, z = 106.01, blipSprite = 34, blipColor = 2, blipName = "Point de livraison."}
+-- local pointQg = {x = 245.01, y = 369.01, z = 106.01, blipSprite = 34, blipColor = 2, blipName = "Point de livraison."}
 
 -- local mainButtonList = { 
 -- 	["main"] = {
@@ -93,6 +93,7 @@ function RunPompisteThread()
 			end
 			TriggerEvent("izone:getResultFromPlayerInAnyJobZone", userJob, function(result)
 				if result ~= nil then
+
 					if result.garage then
 						if isInService and not(IsPedInAnyVehicle(GetPlayerPed(-1), 0)) then
 							if currentVeh == nil then
@@ -161,6 +162,7 @@ function RunPompisteThread()
 							TriggerEvent("iPompiste:swichService", isInService, result)
 						end
 					end
+
 				end
 			end)
 			-- if IsControlJustPressed(1, 288) then
@@ -180,11 +182,24 @@ end
 
 AddEventHandler("iPompiste:swichService", function(inService, result)
 	if inService then
-
+		TriggerServerEvent("skin:retrieveOnExitMenu")
+		isInService = false
 	else
-
+		local Sexe = "Female"
+		if (GetEntityModel(GetPlayerPed(-1)) == GetHashKey("mp_m_freemode_01")) then
+			Sexe = "Male"
+		end
+		SetPedComponentVariation(GetPlayerPed(-1), 9, result.uniform[userRank][Sexe].diff, result.uniform[userRank][Sexe].diffColor, 2)
+		SetPedComponentVariation(GetPlayerPed(-1), 8,  result.uniform[userRank][Sexe].tshirt_1, result.uniform[userRank][Sexe].tshirt_2, 2)   -- Tshirt
+		SetPedComponentVariation(GetPlayerPed(-1), 11, result.uniform[userRank][Sexe].torso_1, result.uniform[userRank][Sexe].torso_2, 2)     -- torso parts
+		SetPedComponentVariation(GetPlayerPed(-1), 10, result.uniform[userRank][Sexe].decals_1, result.uniform[userRank][Sexe].decals_2, 2)   -- decals
+		SetPedComponentVariation(GetPlayerPed(-1), 4, result.uniform[userRank][Sexe].pants_1, result.uniform[userRank][Sexe].pants_2, 2)      -- pants
+		SetPedComponentVariation(GetPlayerPed(-1), 6, result.uniform[userRank][Sexe].shoes, result.uniform[userRank][Sexe].shoes_2, 2)  	  -- Shoes
+		SetPedPropIndex(GetPlayerPed(-1), 1, result.uniform[userRank][Sexe].glasses_1, 0, 2)
+		isInService = true
 	end
-	isInService = not(isInService)
+
+	TriggerServerEvent("iPompiste:syncServiceWithServer", isInService)
 end)
 
 function SpawnTrailer(result)
@@ -252,6 +267,112 @@ function CloseMenu(fake)
 	ClearMenu()
 	Menu.hidden = true
 	currentMenu = nil
+end
+
+function OpenGarage(result, currentVehi)
+	if currentVehi == nil then
+		ClearMenu()
+		MenuTitle = "Garage " .. userRank
+		this = result.carInfos[userRank]
+		if #this == 0 then
+			TriggerEvent("pNotify:notifyFromServer", "Vous n'avez pas la permission de faire cela.", "error", "topCenter", true, 5000)
+			return
+		end
+		for i = 1, #this do
+			Menu.addButton(this[i].name .. ":" .. this[i].price .. "$", "SpawnVeh", {point = result.spawnPoints, car = this[i].carHash, price = this[i].price, livery = this[i].livery})
+		end
+		vehFromGarage = result.nom
+		Menu.hidden = false
+		currentMenu = "main"
+	else
+		if DoesEntityExist(currentVehi) then
+			local x,y,z = table.unpack(GetEntityCoords(currentVehi, true))
+			TriggerEvent("izone:isPointInZone", x, y, vehFromGarage, function(isVehInZone)
+				if isVehInZone then
+					Citizen.InvokeNative(0xEA386986E786A54F, Citizen.PointerValueIntInitialized(currentVeh))
+					if GetVehicleEngineHealth(currentVehi) >= 100 then
+						TriggerServerEvent("police:retreiveCaution")
+					else
+						TriggerEvent("pNotify:notifyFromServer", "Ton véhicule de fonction est endommagé. La caution va etre salée.", "error", "topCenter", true, 5000)
+					end
+					currentVeh = nil
+					ClearMenu()
+				else
+					print(GetVehicleEngineHealth(currentVehi))
+					if GetVehicleEngineHealth(currentVehi) >= 100 then
+						TriggerEvent("pNotify:notifyFromServer", "Ton véhicule n'est pas devant le garage d'où tu as prit le véhicule.", "error", "topCenter", true, 5000)
+					else
+						TriggerEvent("pNotify:notifyFromServer", "Ton véhicule de fonction est endommagé. La caution va etre salée.", "error", "topCenter", true, 5000)
+					end
+				end
+			end)
+		else
+			TriggerEvent("pNotify:notifyFromServer", "Contacter Izio iLivreur_client.lua Entity doesn't exist.", "error", "topCenter", true, 5000)
+			currentVeh = nil
+			ClearMenu()
+		end
+	end
+end
+
+function SpawnVeh(args)
+	local points = args.point
+	local carHash = args.car
+	local carPrice = args.price
+
+	local car = tonumber(args.car)
+	local playerPed = GetPlayerPed(-1)
+	RequestModel(car)
+	while not HasModelLoaded(car) do
+			Citizen.Wait(0)
+	end
+	local playerCoords = GetEntityCoords(playerPed)
+	local playerHeading = GetEntityHeading(playerPed)
+	local closestVeh = nil
+	local x,y,z = table.unpack(playerCoords)
+	local pompisteVeh = nil
+	for i = 1, #args.point do
+		RequestCollisionAtCoord(args.point[i].x, args.point[i].y, args.point[i].z)
+		closestVeh = GetClosestVehicle(x, y, z, 2.0, 0, 70)
+		if closestVeh ~= nil then
+			pompisteVeh = CreateVehicle(car, args.point[i].x, args.point[i].y, args.point[i].z, args.point[i].heading, true, false)
+			break
+		end
+	end
+	if pompisteVeh == nil then
+		pompisteVeh = CreateVehicle(car, playerCoords, 90.0, true, false)
+	end
+	SetVehicleMod(pompisteVeh, 11, 2)
+	SetVehicleMod(pompisteVeh, 12, 2)
+	SetVehicleMod(pompisteVeh, 13, 2)
+	SetVehicleEnginePowerMultiplier(pompisteVeh, 35.0)
+	SetVehicleOnGroundProperly(pompisteVeh)
+	SetVehicleHasBeenOwnedByPlayer(pompisteVeh,true)
+	SetVehicleDirtLevel(pompisteVeh, 0)
+	if args.livery then
+		SetVehicleLivery(pompisteVeh, args.livery)
+	end
+	local netid = NetworkGetNetworkIdFromEntity(pompisteVeh)
+	SetNetworkIdCanMigrate(netid, true)
+	-- NetworkRegisterEntityAsNetworked(VehToNet(medicVeh)) NotWorking in this manifest ? 
+	TaskWarpPedIntoVehicle(playerPed, pompisteVeh, -1)
+	SetEntityAsMissionEntity(pompisteVeh, true, true)
+	local plateText = "PO".. math.random(100,999)
+	local a, b, c = Generate3Char()
+	plateText = plateText .. a .. b .. c
+	SetVehicleNumberPlateText(pompisteVeh, plateText)
+
+	Menu.hidden = true
+	TriggerServerEvent("iPompiste:spawnVehGarage", carPrice, plateText)
+	currentVeh = pompisteVeh
+	timeVeh = GetGameTimer()
+end
+
+function Generate3Char()
+	local a = math.random(1,26)
+	local b = math.random(1,26)
+	local c = math.random(1,26)
+	local alphabet = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}
+	return alphabet[a], alphabet[b], alphabet[c]
 end
 
 -- function StartLivery(fake)
@@ -530,109 +651,3 @@ end
 -- 		end
 -- 	end)
 -- end
-
-function OpenGarage(result, currentVehi)
-	if currentVehi == nil then
-		ClearMenu()
-		MenuTitle = "Garage " .. userRank
-		this = result.carInfos[userRank]
-		if #this == 0 then
-			TriggerEvent("pNotify:notifyFromServer", "Vous n'avez pas la permission de faire cela.", "error", "topCenter", true, 5000)
-			return
-		end
-		for i = 1, #this do
-			Menu.addButton(this[i].name .. ":" .. this[i].price .. "$", "SpawnVeh", {point = result.spawnPoints, car = this[i].carHash, price = this[i].price, livery = this[i].livery})
-		end
-		vehFromGarage = result.nom
-		Menu.hidden = false
-		currentMenu = "main"
-	else
-		if DoesEntityExist(currentVehi) then
-			local x,y,z = table.unpack(GetEntityCoords(currentVehi, true))
-			TriggerEvent("izone:isPointInZone", x, y, vehFromGarage, function(isVehInZone)
-				if isVehInZone then
-					Citizen.InvokeNative(0xEA386986E786A54F, Citizen.PointerValueIntInitialized(currentVeh))
-					if GetVehicleEngineHealth(currentVehi) >= 100 then
-						TriggerServerEvent("police:retreiveCaution")
-					else
-						TriggerEvent("pNotify:notifyFromServer", "Ton véhicule de fonction est endommagé. La caution va etre salée.", "error", "topCenter", true, 5000)
-					end
-					currentVeh = nil
-					ClearMenu()
-				else
-					print(GetVehicleEngineHealth(currentVehi))
-					if GetVehicleEngineHealth(currentVehi) >= 100 then
-						TriggerEvent("pNotify:notifyFromServer", "Ton véhicule n'est pas devant le garage d'où tu as prit le véhicule.", "error", "topCenter", true, 5000)
-					else
-						TriggerEvent("pNotify:notifyFromServer", "Ton véhicule de fonction est endommagé. La caution va etre salée.", "error", "topCenter", true, 5000)
-					end
-				end
-			end)
-		else
-			TriggerEvent("pNotify:notifyFromServer", "Contacter Izio iLivreur_client.lua Entity doesn't exist.", "error", "topCenter", true, 5000)
-			currentVeh = nil
-			ClearMenu()
-		end
-	end
-end
-
-function SpawnVeh(args)
-	local points = args.point
-	local carHash = args.car
-	local carPrice = args.price
-
-	local car = tonumber(args.car)
-	local playerPed = GetPlayerPed(-1)
-	RequestModel(car)
-	while not HasModelLoaded(car) do
-			Citizen.Wait(0)
-	end
-	local playerCoords = GetEntityCoords(playerPed)
-	local playerHeading = GetEntityHeading(playerPed)
-	local closestVeh = nil
-	local x,y,z = table.unpack(playerCoords)
-	local pompisteVeh = nil
-	for i = 1, #args.point do
-		RequestCollisionAtCoord(args.point[i].x, args.point[i].y, args.point[i].z)
-		closestVeh = GetClosestVehicle(x, y, z, 2.0, 0, 70)
-		if closestVeh ~= nil then
-			pompisteVeh = CreateVehicle(car, args.point[i].x, args.point[i].y, args.point[i].z, args.point[i].heading, true, false)
-			break
-		end
-	end
-	if pompisteVeh == nil then
-		pompisteVeh = CreateVehicle(car, playerCoords, 90.0, true, false)
-	end
-	SetVehicleMod(pompisteVeh, 11, 2)
-	SetVehicleMod(pompisteVeh, 12, 2)
-	SetVehicleMod(pompisteVeh, 13, 2)
-	SetVehicleEnginePowerMultiplier(pompisteVeh, 35.0)
-	SetVehicleOnGroundProperly(pompisteVeh)
-	SetVehicleHasBeenOwnedByPlayer(pompisteVeh,true)
-	SetVehicleDirtLevel(pompisteVeh, 0)
-	if args.livery then
-		SetVehicleLivery(pompisteVeh, args.livery)
-	end
-	local netid = NetworkGetNetworkIdFromEntity(pompisteVeh)
-	SetNetworkIdCanMigrate(netid, true)
-	-- NetworkRegisterEntityAsNetworked(VehToNet(medicVeh)) NotWorking in this manifest ? 
-	TaskWarpPedIntoVehicle(playerPed, pompisteVeh, -1)
-	SetEntityAsMissionEntity(pompisteVeh, true, true)
-	local plateText = "PO".. math.random(100,999)
-	local a, b, c = Generate3Char()
-	plateText = plateText .. a .. b .. c
-	SetVehicleNumberPlateText(pompisteVeh, plateText)
-
-	Menu.hidden = true
-	TriggerServerEvent("iPompiste:spawnVehGarage", carPrice, plateText)
-	currentVeh = pompisteVeh
-	timeVeh = GetGameTimer()
-end
-
-function Generate3Char()
-	local a = math.random(1,26)
-	local b = math.random(1,26)
-	local c = math.random(1,26)
-	local alphabet = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}
-	return alphabet[a], alphabet[b], alphabet[c]
-end

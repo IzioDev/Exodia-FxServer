@@ -44,16 +44,16 @@ end)
 AddEventHandler("inventory:retrieveItemRestart", function() -- Support restart with restart-manager
   local result = MySQL.Sync.fetchAll("SELECT * FROM item", {})
   allItem = result
+end)
 
-  SetTimeout(1000, function()
-    TriggerEvent("es:getPlayers", function(Users)
-      for k,v in pairs(Users) do
-        if v ~= nil then
-          TriggerClientEvent("inventory:change", v.get('source'), json.decode(v.sendDatas())) -- error here
-          TriggerClientEvent("inventory:getData", v.get('source'), allItem)
-        end
-      end
-    end)
+RegisterServerEvent("inventory:retreiveIfRestart")
+AddEventHandler("inventory:retreiveIfRestart", function()
+  local source = source
+  TriggerEvent("es:getPlayerFromId", source, function(user)
+    if user ~= nil then
+      TriggerClientEvent("inventory:change", user.get('source'), json.decode(user.sendDatas())) -- error here
+      TriggerClientEvent("inventory:getData", user.get('source'), allItem)
+    end
   end)
 end)
 
@@ -116,39 +116,39 @@ AddEventHandler("inventory:give", function(from, target, targetId,item, quantity
                                                     -- On ajoute la quantité
       if fromInvType == "personal" and fromInvType == toInvType then -- kikoo spotted
         TriggerClientEvent("inventory:change", targetId, json.decode(toInv.sendDatas()))
-        toInv.notify(config[lang].giveItem .. quantity .. " " .. allItem[tonumber(item)].name .. config[lang].by  .. fromInv.get('displayName') .. "</span>", "success", "centerLeft", true, 5000)
-        fromInv.notify(config[lang].giveItem .. quantity .. " " .. allItem[tonumber(item)].name .. config[lang].by  .. toInv.get('displayName') .. "</span>", "warning", "centerLeft", true, 5000) 
+        toInv.notify(config[lang].giveItem .. quantity .. " " .. allItem[tonumber(item)].name .. config[lang].by  .. fromInv.get('displayName') .. "</span>", "success", "topCenter", true, 5000)
+        fromInv.notify(config[lang].giveItem .. quantity .. " " .. allItem[tonumber(item)].name .. config[lang].by  .. toInv.get('displayName') .. "</span>", "success", "topCenter", true, 5000) 
         CancelEvent()
       end
 
       if fromInvType == "personal" and (toInvType == "car" or toInvType == "chest") then
-        fromInv.notify(config[lang].deposit .. quantity .. " " .. allItem[tonumber(item)].name .. " to the " .. toInvType .."!</span>", "info", "centerLeft", true, 5000)
+        fromInv.notify(config[lang].deposit .. quantity .. " " .. allItem[tonumber(item)].name .. " to the " .. toInvType .."!</span>", "success", "topCenter", true, 5000)
         CancelEvent()
       end
 
       if (fromInvType == "car" or fromInvType == "chest") and toInvType == "personal" then
-        fromInv.notify(config[lang].withdraw .. quantity .. " " .. allItem[tonumber(item)].name .. "!</span>", "info", "centerLeft", true, 5000)
+        fromInv.notify(config[lang].withdraw .. quantity .. " " .. allItem[tonumber(item)].name .. "!</span>", "success", "topCenter", true, 5000)
         CancelEvent()
       end
 
       if toInvType == "personal" then
         TriggerClientEvent("inventory:change", targetId, json.decode(toInv.sendDatas())) -- on actualise ses données si c'est un joueur
-        toInv.notify(config[lang].giveItem .. quantity .. " " .. allItem[tonumber(item)].name .. "!</span>", "success", "centerLeft", true, 5000)           -- on le notify
+        toInv.notify(config[lang].giveItem .. quantity .. " " .. allItem[tonumber(item)].name .. "!</span>", "success", "topCenter", true, 5000)           -- on le notify
       elseif toInvType == "car" then                                                     -- sinon si c'est une voiture
         TriggerClientEvent("inventory:change", source, json.decode(toInv.sendDatas()))   -- on actualise les données de l'inventaire de la voiture à l'envoyeur
       end
       if fromInvType == "personal" then
-        fromInv.notify(config[lang].giveItemG .. quantity .. " " .. allItem[tonumber(item)].name .. "!</span>", "success", "centerLeft", true, 5000) 
+        fromInv.notify(config[lang].giveItemG .. quantity .. " " .. allItem[tonumber(item)].name .. "!</span>", "success", "topCenter", true, 5000) 
       end
     else
       if toInvType == "personal" then
-        toInv.notify(config[lang].noSpace, "error", "centerLeft", true, 5000)
+        toInv.notify(config[lang].noSpace, "error", "topCenter", true, 5000)
       end
     end
     
   else
     if fromInvType == "personal" then
-      fromInv.notify(config[lang].notEnoughItem, "error", "centerLeft", true, 5000)
+      fromInv.notify(config[lang].notEnoughItem, "error", "topCenter", true, 5000)
     end
   end
 
@@ -180,7 +180,7 @@ AddEventHandler("inventory:drop", function(id, item, quantity)
     inv.removeQuantity(item, quantity) -- à tester sinon IF
     TriggerClientEvent("inventory:change", source, json.decode(inv.sendDatas()))
     if InvType == "personal" then
-      inv.notify(config[lang].dropItem .. quantity .. " " .. allItem[tonumber(item)].name .. "!</span>", "info", "centerLeft", true, 5000)
+      inv.notify(config[lang].dropItem .. quantity .. " " .. allItem[tonumber(item)].name .. "!</span>", "success", "topCenter", true, 5000)
     end
   else
     if InvType == "personal" then 
@@ -215,12 +215,12 @@ AddEventHandler("inventory:add", function(id, item, quantity)
   if isAbleToReceive then
     inv.addQuantity(item, quantity)
     if InvType == "personal" then
-      inv.notify(config[lang].giveItem .. quantity .. " " .. allItem[tonumber(item)].name .. "!</span>", "success", "centerLeft", true, 5000)
+      inv.notify(config[lang].giveItem .. quantity .. " " .. allItem[tonumber(item)].name .. "!</span>", "success", "topCenter", true, 5000)
     end
     TriggerClientEvent("inventory:change", source, json.decode(inv.sendDatas()))
   else
     if InvType == "personal" then
-      inv.notify(config[lang].noSpace, "error", "centerLeft", true, 5000)
+      inv.notify(config[lang].noSpace, "error", "topCenter", true, 5000)
     end
   end
 end)
@@ -232,20 +232,20 @@ AddEventHandler("personalInventory:add", function(id, item, quantity)
     local isAbleToReceive = user.isAbleToReceive(item, quantity)
     if isAbleToReceive then
       user.addQuantity(item, quantity)
-      user.notify(config[lang].giveItem .. quantity .. " " .. allItem[tonumber(item)].name .. "!</span>", "success", "centerLeft", true, 5000)
+      user.notify(config[lang].giveItem .. quantity .. " " .. allItem[tonumber(item)].name .. "!</span>", "success", "topCenter", true, 5000)
     else
-      user.notify(config[lang].noSpace, "error", "centerLeft", true, 5000)
+      user.notify(config[lang].noSpace, "error", "topCenter", true, 5000)
       --TriggerEvent("inventory:notAbleToReceive")
     end
   end)
 end)
 
 
-AddEventHandler("inventory:use", function(item)
+AddEventHandler("inventory:use", function(item, quantity)
   local source = source -- Thanks to FXS
   TriggerEvent("es:getPlayerFromId", source, function(user)
-    user.removeQuantity(tonumber(item), 1)
-    user.notify(config[lang].useItem .. allItem[tonumber(item)].name .. "! </span>", "info", "centerLeft", true, 5000)
+    user.removeQuantity(tonumber(item), quantity)
+    user.notify(config[lang].useItem .. allItem[tonumber(item)].name .. "! </span>", "success", "topCenter", true, 5000)
     TriggerClientEvent("inventory:change", source, json.decode(user.sendDatas()))
   end)
 end)
@@ -263,8 +263,10 @@ AddEventHandler("inventory:ask", function(id)
       if car ~= nil then
         invToReturn = car.sendDatas()
       else
-        invToRetrun = nil
+        invToReturn = nil
       end
+      print(invToReturn)
+      print(json.encode(car))
     end)
   elseif invType == "chest" then
     invToReturn = nil
@@ -286,12 +288,12 @@ AddEventHandler("inv:buyItemByItemId", function(itemId)
         user.addQuantity(itemId, 1)
         user.removeMoney(allItem[tonumber(itemId)].price)
         TriggerClientEvent("inventory:change", source, json.decode(user.sendDatas()))
-        user.notify("Tu viens d'acheter <span style='color:green' >" .. "1" .. "</span><span style='color:blue' > " .. allItem[tonumber(itemId)].name .. "!</span>", "success", "centerLeft", true, 5000)
+        user.notify("Tu viens d'acheter <span style='color:green' >" .. "1" .. "</span><span style='color:blue' > " .. allItem[tonumber(itemId)].name .. "!</span>", "success", "topCenter", true, 5000)
       else
-        user.notify("Tu n'as pas assez d'argent", "error", "centerLeft", true, 5000)
+        user.notify("Tu n'as pas assez d'argent", "error", "topCenter", true, 5000)
       end
     else
-      user.notify(config[lang].noSpace, "error", "centerLeft", true, 5000)
+      user.notify(config[lang].noSpace, "error", "topCenter", true, 5000)
     end
   end)
 end)

@@ -24,6 +24,7 @@ local inventoryList = {}
 local ItemData = {}
 local openInventoryID = nil
 local steamid = nil
+
 AddEventHandler("inventory:getData", function(data)
   itemData = data
 end)
@@ -35,23 +36,23 @@ AddEventHandler("inventory:change", function(data)
     steamid = data.id
   end
 --
-  print("CELA NE PROQUE PAS TOUT LE TEMPS")
   inventoryList[data.id] = data
-  if openInventoryID == data.id then
-    ClearMenu()
-    while inventoryMenu() == false do
-      Wait(0)
-      ClearMenu()
-      inventoryMenu()
-    end
-  end
+
+  inventoryMenu(data.id, data)
+
 --
 end)
 
-function inventoryMenu()
+function inventoryMenu(idInv, Inventory)
+  if Menu.hidden then
     ClearMenu()
-    MenuTitle = openInventoryID
-    for ind, value in pairs(inventoryList[openInventoryID].items) do
+    currentMenu = nil
+  else
+    ClearMenu()
+    currentMenu = "mainMenu"
+    MenuTitle = idInv
+
+    for ind, value in pairs(Inventory.items) do
         if (value.quantity > 0) then
           if value.name == nil then
             return false
@@ -59,103 +60,116 @@ function inventoryMenu()
           if value.name == "???" then
             value.name = "404 > ID: " .. value.id
           end
-            Menu.addButton(tostring(value.name) .. " : " .. tostring(value.quantity), "ItemMenu", {value.id})
+            Menu.addButton(tostring(value.name) .. " : " .. tostring(value.quantity), "ItemMenu", {itemId = value.id, invType = Iventory.invType, inv = Inventory})
         end
     end
     return true
 end
 
-function ItemMenu(val)
-    local itemId = val[1]
-    ClearMenu()
-    MenuTitle="Details :"
-    Menu.addButton("Utiliser", "use", {itemId})
-    Menu.addButton("Ajouter", "add", {itemId})
-    Menu.addButton("Donner (joueur)", "givep", {itemId})
-    Menu.addButton("Donner (voiture)", "givec", {itemId})
-    Menu.addButton("Jeter", "drop", {itemId})
-    Menu.addButton("Go Back", "back", {})
+function ItemMenu(args)
+  local x,y,z = table.unpack(GetEntityCoords(GetPlayerPed(-1), true))
+  currentMenu = "subMenu"
+  local itemId = args.itemId
+  ClearMenu()
+  MenuTitle="Actions :"
+  if invType == "vehicle_inventory" then
+    -- Menu.addButton("Utiliser", "use", {itemId = itemId, id = val, invType = invType})
+    -- Menu.addButton("Ajouter", "add", {itemId})
+    Menu.addButton("Prendre du coffre", "takec", {itemId = itemId, invId = "plate:"..GetVehicleNumberPlateText(GetClosestVehicle(x, y, z, 3.0, 0, 70))})
+    -- Menu.addButton("Donner (voiture)", "givec", {itemId})
+    Menu.addButton("Jeter", "drop", {itemId = itemId, invType = invType})
+    Menu.addButton("Retour", "back", {inv = args.inv, invType = invType})
+  elseif invType == "personal_inventory" then
+    Menu.addButton("Utiliser", "use", {itemId = itemId, invType = invType})
+    -- Menu.addButton("Ajouter", "add", {itemId})
+    Menu.addButton("Donner", "givep", {itemId = itemId, invType = invType})
+    if DoesEntityExist(GetClosestVehicle(x, y, z, 3.0, 0, 70)) then
+      Menu.addButton("Déposer dans un coffre", "givec", {itemId = itemId, invId = "plate:"..GetVehicleNumberPlateText(GetClosestVehicle(x, y, z, 3.0, 0, 70))})
+    end
+    Menu.addButton("Jeter", "drop", {itemId = itemId, invType = invType})
+    Menu.addButton("Retour", "back", {inv = args.inv, invType = invType})
+  end
 end
 
 function add(arg)
   prompt(function(quantity)
-    TriggerServerEvent("inventory:add", steamid, tonumber(arg[1]), quantity)
+    TriggerServerEvent("inventory:add", steamid, tonumber(args.itemId), quantity)
   end)
 end
 
-function givep(arg)
+function givep(args)
   prompt(function(quantity)
-    TriggerServerEvent("inventory:give", steamid, "steam:", GetClosestPlayer(2.1), arg[1], quantity)
+    TriggerServerEvent("inventory:give", steamid, "steam:", GetClosestPlayer(2.1), args.itemId, quantity)
   end)
 end
 
-function givec(arg)
+function takec(args)
   prompt(function(quantity)
-    invID = GetClosestVehicleInventoryID(5.2)
-    if invID ~= false then
-      TriggerServerEvent("inventory:give", steamid, invID, invID, arg[1], quantity)
+    TriggerServerEvent("inventory:give", args.invId, "steam:", GetPlayerServerId(GetPlayerPed(-1)), args.itemId, quantity)
+  end)
+end
+
+function givec(args)
+  prompt(function(quantity)
+      TriggerServerEvent("inventory:give", steamid, args.invId, "OSEF", args.itemId, quantity)
+  end)
+end
+
+function drop(args)
+  prompt(function(quantity)
+    if args.invType == "personal_inventory" then
+      TriggerServerEvent("inventory:drop", steamid, tonumber(args.itemId), quantity)
+    elseif args.invType == "vehicle_inventory" then
+      TriggerServerEvent("inventory:drop", GetVehicleNumberPlateText(GetClosestVehicle(x, y, z, 3.0, 0, 70)), tonumber(args.itemId), quantity)
     end
   end)
 end
 
-function drop(arg)
+function use(args)
   prompt(function(quantity)
-    TriggerServerEvent("inventory:drop", steamid, tonumber(arg[1]), quantity)
+    TriggerServerEvent("inventory:use", tonumber(args.itemId), 1)
   end)
 end
 
-function use(arg)
-  TriggerServerEvent("inventory:use", tonumber(arg[1]), 1)
-  while inventoryMenu() == false do
-    Wait(0)
-    ClearMenu()
-    inventoryMenu()
-  end
-end
-
-function back(arg)
-  while inventoryMenu() == false do
-    Wait(0)
-    ClearMenu()
-    inventoryMenu()
-  end
+function back(args)
+  inventoryMenu(args.inv, args.invType)
 end
 
 
-Citizen.CreateThread(function()
+-- Citizen.CreateThread(function()
 
-  while true do
+--   while true do
 
-    Wait(0)
-    Menu.renderGUI()
+--     Wait(0)
 
-   if IsControlJustReleased(1, 311) then
-        Menu.hidden = not Menu.hidden -- Hide/Show the menu
-        ClearMenu()
-        MenuTitle="Items: "
-        if openInventoryID ~= nil then
-          while inventoryMenu() == false do
-            Wait(0)
-            ClearMenu()
-            inventoryMenu()
-          end
+--    if IsControlJustReleased(1, 311) then
+--         Menu.hidden = not Menu.hidden -- Hide/Show the menu
+--         ClearMenu()
+--         MenuTitle="Items: "
+--         if openInventoryID ~= nil then
+--           while inventoryMenu() == false do
+--             Wait(0)
+--             ClearMenu()
+--             inventoryMenu()
+--           end
 
-        end
-    end
+--         end
+--     end
 
 
-  end
-end)
+--   end
+-- end)
 
 
 
 
 AddEventHandler("inventory:result", function(jsonDATA)
-
+    print(jsonDATA)
     inventory = json.decode(jsonDATA)
-    if openInventoryID ~= inventory.id then
-        return false
-    end
+    openInventoryID = inventory.id
+    -- if openInventoryID ~= inventory.id then
+    --     return false
+    -- end
 
     if inventory.weight == nil then
         inventory.weight = -1
@@ -178,6 +192,10 @@ AddEventHandler("inventory:result", function(jsonDATA)
     inventory.actualWeight = inventory.actualWeight / 1000 --> convert g in kg
 
     inventoryList[openInventoryID] = inventory
+
+    inventoryMenu(inventory.id, inventory)
+
+    Menu.hidden = not Menu.hidden
     --loadDataInGUI(inventory)
     --setVisible(true)
 end)
@@ -231,9 +249,11 @@ end
 
 askedInventory = nil
 Citizen.CreateThread(function()
-
+  TriggerServerEvent("inventory:retreiveIfRestart")
   while true do
-    Citizen.Wait(1)
+    Citizen.Wait(0)
+
+    Menu.renderGUI()
 
   --[[   if IsControlJustReleased(1, 173) then -- down
       SendNUIMessage({request = "inventory", action = "down"})
@@ -261,12 +281,12 @@ Citizen.CreateThread(function()
         if askedInventory ~= steamid then
           askedInventory =  steamid
         end
-        openInventoryID = steamid
-        print("clicked")
-        TriggerServerEvent("inventory:ask", openInventoryID)
+        TriggerServerEvent("inventory:ask", askedInventory)
       else -- alors on a un veh
-        openInventoryID = "plate:".. GetVehicleNumberPlateText(GetClosestVehicle(GetEntityCoords(GetPlayerPed(-1), true), 3.0, 0, 70))
-        TriggerServerEvent("inventory:ask", openInventoryID)
+        --OpenChoiceMenu() TODO if the rest works
+        --openInventoryID = "plate:".. GetVehicleNumberPlateText(GetClosestVehicle(GetEntityCoords(GetPlayerPed(-1), true), 3.0, 0, 70))
+        TriggerServerEvent("inventory:ask", "plate:".. GetVehicleNumberPlateText(GetClosestVehicle(GetEntityCoords(GetPlayerPed(-1), true), 3.0, 0, 70)))
+        print("on vient de demander l'inv d'une caisse")
       end
 
     elseif IsControlJustReleased(1,32) then
@@ -274,6 +294,15 @@ Citizen.CreateThread(function()
       --   askedInventory =  steamid
       -- end
       -- TriggerServerEvent("inventory:add", askedInventory, 1, 1)
+    elseif IsControlPressed(1, 177) then
+      if currentMenu == "mainMenu" and not(Menu.hidden) then
+        currentMenu = nil
+        ClearMenu()
+        Menu.hidden = true
+      elseif currentMenu == "subMenu" and not(Menu.hidden) then
+        currentMenu = "mainMenu"
+
+      end
     end
   end
 end)
