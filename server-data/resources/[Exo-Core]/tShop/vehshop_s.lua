@@ -224,7 +224,7 @@ end)
 
 AddEventHandler("tShop:registerNewVeh", function(carPlate, owner, inventoryWeight)
   local carInfos = {
-    vehicle_plate = plate,
+    vehicle_plate = carPlate,
     vehicle_state = "out",
     lastpos = json.encode({0,0,0,0}),
     inventory = json.encode({}),

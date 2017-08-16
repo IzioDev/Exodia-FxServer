@@ -5,12 +5,13 @@
 local userJob
 local userRank
 local active = false
-local isInService = false
+local isInService = true
 local qgDisplayed = false
 local currentVeh = nil
 local vehFromGarage = nil
 local timeVeh = nil
 local missionStarted = false
+local currentMenu = nil
 
 local DeliveryPoints = {
 	{x = -561.57, y = -131.9, z = 38.44},
@@ -57,7 +58,8 @@ local mainButtonList = {
 	["main"] = {
 		title = "Livreur",
 		buttons = {
-			{name = "Démarer des livraisons", targetFunction = "StartLivery", targetArrayParam = {} },
+			{name = "Démarer les livraisons", requirment = true, mission = false,targetFunction = "StartLivery", targetArrayParam = {1,2,6,7,8,9,10,11,14,18,19,20,21,22,24,25,26,27,28,29,31,32} },
+			{name = "Stopper les livraisons", requirment = true, mission = true,targetFunction = "StopLivery", targetArrayParam = {} },
 			{name = "Afficher le point de livraison", targetFunction = "ShowQg", targetArrayParam = pointQg },
 			{name = "Fermer le menu", targetFunction = "CloseMenu", targetArrayParam = {}}
 		}
@@ -67,8 +69,8 @@ local mainButtonList = {
 AddEventHandler("is:updateJob", function(jobName, rank)
 	userJob = jobName
 	userRank = rank
+	print(userJob)
 	if (userJob == "livreur") and not(active) then
-		print("test")
 		active = true
 		RunDeliveryThread()
 	else
@@ -82,7 +84,6 @@ function RunDeliveryThread()
 			Wait(0)
 			Menu.renderGUI()
 			if not(Menu.hidden) and isInService then
-				Menu.renderGUI()
 				if IsPedInAnyVehicle(GetPlayerPed(-1), false) then
 					CloseMenu("OSEF")
 				end
@@ -136,20 +137,28 @@ function RunDeliveryThread()
 					end
 
 					if result.approvisionnement then
-						if isInService and Menu.hidden then
-							DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour " ..result.displayedMessageInZone.haveService)
-							Menu.hidden = not Menu.hidden
-							ClearMenu()
-							GetResultItemInfos(result.items)
+						if isInService then
+							DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour accèder au " ..result.displayedMessageInZone)
+							if IsControlJustPressed(1, 38) then
+								ClearMenu()
+								GetResultItemInfos(result.items)
+							end
 						else
-							DisplayHelpText(result.displayedMessageInZone.havntService)
+							DisplayHelpText(result.messageHavntService)
 						end
+					end
+				else
+					if currentMenu == "magasin" and not(Menu.hidden) then
+						ClearMenu()
+						Menu.hidden = true
 					end
 				end
 			end)
 			if IsControlJustPressed(1, 288) then
 				if not(IsPedInAnyVehicle(GetPlayerPed(-1), false)) then
-					OpenMenu(mainButtonList["main"])
+					if Menu.hidden then
+						OpenMenu(mainButtonList["main"])
+					end
 				end
 			end
 		end
@@ -173,16 +182,23 @@ AddEventHandler("iLivreur:swichService", function(inService, result)
 
 	end
 	isInService = not(isInService)
-	TriggerServerEvent("iLivreur:syncServiceWithServer", isInService)
 end)
 
 function OpenMenu(menu)
+	print("how much ? ")
 	ClearMenu()
 	MenuTitle = menu.title
 	for i = 1, #menu.buttons do
-		Menu.addButton(menu.buttons[i].name, menu.buttons[i].targetFunction, menu.buttons[i].targetArrayParam)
+		if menu.button[i].requirment then
+			if (menu.button[i].mission == missionStarted) then
+				Menu.addButton(menu.buttons[i].name, menu.buttons[i].targetFunction, menu.buttons[i].targetArrayParam)
+			end
+		else
+			Menu.addButton(menu.buttons[i].name, menu.buttons[i].targetFunction, menu.buttons[i].targetArrayParam)
+		end
 	end
 	Menu.hidden = false
+	currentMenu = "main"
 end
 
 function CloseMenu(fake)
@@ -191,13 +207,18 @@ function CloseMenu(fake)
 	currentMenu = nil
 end
 
-function StartLivery(fake)
-	TriggerServerEvent("iLivery:GenerateNeeds", "mission")
+function StartLivery(itemArray)
+	TriggerServerEvent("iLivreur:getItemInfosFromIdArray", itemArray, "mission")
+end
+
+function StopLivery(fake)
+	missionStarted = false
 end
 
 RegisterNetEvent("iLivery:getItemInfosFromIdArray")
 AddEventHandler("iLivery:getItemInfosFromIdArray", function(result, typeI)
 	if typeI == "mission" then
+		print("okaytch")
 		local MissionPoints = GenerateItem(result)
 		local messageToSend = GenerateMessage(MissionPoints)
 		TriggerEvent("gcPhone:receiveMessage", {
@@ -218,7 +239,7 @@ function StartMission(MissionPoints)
 	Citizen.CreateThread(function()
 		for i = 1, #MissionPoints do
 			local blip = AddBlipForCoord(tonumber(MissionPoints[i].point.x), tonumber(MissionPoints[i].point.y), tonumber(MissionPoints[i].point.z))
-			SetBlipSprite(blip, 5)
+			SetBlipSprite(blip, 280)
 			SetBlipColour(blip, 4)
 			BeginTextCommandSetBlipName("STRING")
 			AddTextComponentString("Point" .. i)
@@ -232,6 +253,7 @@ function StartMission(MissionPoints)
 		TriggerEvent("pNotify:notifyFromServer", "Vas livrer les personnes aux points indiqués sur la carte, le plus rapide sera le mieux payé. </br> Tu as les indications de ton boss par SMS.", "success", "topCenter", true, 5000)
 		missionStarted = true
 		local MissionInfos = {time = GetGameTimer(), totalValue = GetTotalValue(MissionPoints), totalShortestDistance = GetShortestDistance(MissionPoints)[2], shortestTravel = GetShortestDistance(MissionPoints)[1]}
+		print("shortest distance : " .. MissionInfos.totalShortestDistance)
 		while missionStarted and #MissionPoints ~= 0 do
 			Wait(200)
 			local x,y,z = table.unpack(GetEntityCoords(GetPlayerPed(-1), true))
@@ -242,9 +264,9 @@ function StartMission(MissionPoints)
 						SetBlipAsMissionCreatorBlip(MissionPoints[i].blipId, false)
 						Citizen.InvokeNative(0x86A652570E5F25DD, Citizen.PointerValueIntInitialized(MissionPoints[i].blipId))
 						if #MissionPoints ~= 1 then
-							TriggerEvent("pNotify:notifyFromServer", "Tu viens de livrer : </br>" .. messageToPrint .. "</br> Passe à la suite!", "topCenter", true, 4000)
+							TriggerEvent("pNotify:notifyFromServer", "Tu viens de livrer : </br>" .. messageToPrint .. "</br> Passe à la suite!", "success", "topCenter", true, 4000)
 						else
-							TriggerEvent("pNotify:notifyFromServer", "Tu viens de livrer : </br>" .. messageToPrint .. "</br> <strong> tu vas recevoir ta paye une fois rendu au centre de livraison.", "topCenter", true, 10000)
+							TriggerEvent("pNotify:notifyFromServer", "Tu viens de livrer : </br>" .. messageToPrint .. "</br> <strong> tu vas recevoir ta paye une fois rendu au centre de livraison.", "success", "topCenter", true, 10000)
 							StartEndMission(MissionInfos)
 						end
 						if not(MissionPounts[i].pouboire) then
@@ -257,11 +279,18 @@ function StartMission(MissionPoints)
 						TriggerServerEvent("iLivreur:removeObjectsArray", MissionPoints[i].foods)
 						table.remove(MissionPoints, i)
 					else
+						print(json.encode(MissionPoints[i].foods))
 						local messageToPrint = GetMessageForOneMissionPoints(MissionPoints[i])
-						TriggerEvent("pNotify:notifyFromServer", "Tu n'as pas les objets de livraison qu'il te faut : </br>" .. messageToPrint, "topCenter", true, 5000)
+						TriggerEvent("pNotify:notifyFromServer", "Tu n'as pas les objets de livraison qu'il te faut : </br>" .. messageToPrint, "error","topCenter", true, 5000)
 						Citizen.Wait(5000)
 					end
 				end
+			end
+		end
+		if not(missionStarted) then
+			for i = 1, #MissionPoints do
+				SetBlipAsMissionCreatorBlip(MissionPoints[i].blipId, false)
+				Citizen.InvokeNative(0x86A652570E5F25DD, Citizen.PointerValueIntInitialized(MissionPoints[i].blipId))
 			end
 		end
 	end)
@@ -285,6 +314,7 @@ function StartEndMission(MissionInfos)
 			SetBlipAsMissionCreatorBlip(blip, false)
 			Citizen.InvokeNative(0x86A652570E5F25DD, Citizen.PointerValueIntInitialized(blip))
 			TriggerServerEvent("iLivreur:endedMission", MissionInfos, GetGameTimer())
+			missionStarted = false
 		end
 	end
 end
@@ -293,7 +323,7 @@ function GetTotalValue(MissionPoints)
 	local total = 0
 	for i = 1, #MissionPoints do
 		for j = 1, #MissionPoints[i].foods do
-			total = total + MissionPoints[i].foods[j].price
+			total = total + MissionPoints[i].foods[j].item.price
 		end
 	end
 	return total
@@ -301,24 +331,27 @@ end
 
 function GetShortestDistance(MissionPoints)
 	local basicDistance, theShortestPoint = GetShortestDistanceFromPed(MissionPoints)
-	local Trajet = {}
-	Trajet[1] = theShortestPoint
-	table.remove(MissionPoints, theShortestPoint)
+	local Trajet = {theShortestPoint}
 	local numberLoop = #MissionPoints
+	print("taille trajet " .. #Trajet)
 	while #Trajet ~= numberLoop do
+		Wait(0)
 		local min = 99999
 		local actualPoint = 0
 		for i = 1, #MissionPoints do
 			if i ~= Trajet[#Trajet] then
+				print(json.encode(Trajet))
+				print(json.encode(MissionPoints[Trajet[#Trajet]]))
 				local point = MissionPoints[Trajet[#Trajet]].point
-				if GetDistanceBetweenCoords(point.x, point.y, point.z, MissionPoints[i].point.x, MissionPoints[i].point.y, MissionPoints[i].point.z, true) < min then
+				if GetDistanceBetweenCoords(point.x, point.y, point.z, MissionPoints[i].point.x, MissionPoints[i].point.y, MissionPoints[i].point.z, true) < min and i ~= Trajet[#Trajet] then
 					min = GetDistanceBetweenCoords(point.x, point.y, point.z, MissionPoints[i].point.x, MissionPoints[i].point.y, MissionPoints[i].point.z, true)
 					actualPoint = i
 				end
 			end
 		end
-		Trajet[#Trajet+1] = min
-		table.remove(MissionPoints, actualPoint)
+		print(json.encode(Trajet))
+		Trajet[#Trajet+1] = actualPoint
+		print(json.encode(Trajet))
 	end
 	local distance = basicDistance
 	for i = 2, #Trajet do
@@ -359,7 +392,7 @@ function GotTheseItems(foods) -- Todo
 			table.insert(foodList, {id = foods[i].item.id, quantity = foods[i].quantity})
 		end
 	end
-	TiggerEvent("inv:gotItemsAndQuantity", foodList, function(bool)
+	TriggerEvent("inv:gotItemsAndQuantity", foodList, function(bool)
 		myBool = bool
 	end)
 	return myBool
@@ -380,7 +413,11 @@ end
 function GetMessageForOneMissionPoints(missionPoint)
 	local toBeReturned = ""
 	for i = 1, #missionPoint.foods do
-		toBeReturned = toBeReturned .. missionPoint.foods[i].quantity .. " " .. missionPoint.foods[i].item.name .. " et "
+		if i ~= #missionPoint.foods then
+			toBeReturned = toBeReturned .. missionPoint.foods[i].quantity .. " " .. missionPoint.foods[i].item.name .. " et "
+		else
+			toBeReturned = toBeReturned .. missionPoint.foods[i].quantity .. " " .. missionPoint.foods[i].item.name .. "."
+		end
 	end
 	return toBeReturned
 end
@@ -408,7 +445,11 @@ function GenerateMessage(MissionPoints)
 	end
 
 	for i=1, #allItem do
-		messageToSend = messageToSend .. allItem[i].quantity .. " " .. allItem[i].item.name .. ", "
+		if i ~= #allItem then
+			messageToSend = messageToSend .. allItem[i].quantity .. " " .. allItem[i].item.name .. ", "
+		else
+			messageToSend = messageToSend .. allItem[i].quantity .. " " .. allItem[i].item.name .. "."
+		end
 	end
 	messageToSend = messageToSend .. "."
 	return messageToSend
@@ -420,21 +461,24 @@ function GenerateItem(result)
 	for i =1, nombrePoints do
 		local numberFood = math.random(1, 3)
 		local foods = {}
-		for j = 1, #numberFood do
+		for j = 1, numberFood do
 			table.insert(foods, {item = result[math.random(1, #result)], quantity = math.random(1,5) })
 		end
+		print("point " ..i .. " : " .. json.encode(foods))
 		table.insert(MissionPoints, {point = DeliveryPoints[math.random(1, #DeliveryPoints)], foods = foods})
 	end
 	return MissionPoints
 end
 
 function LaunchMenu(Items)
-	TriggerEvent("pNotify:notifyFromServer")
+	-- TriggerEvent("pNotify:notifyFromServer")
 	ClearMenu()
 	MenuTitle = "Approvisionnement livreur"
 	for i = 1, #Items do
 		Menu.addButton(Items[i].name .. " : " .. Items[i].price.."$", "ItemsInfos", {Items,i})
 	end
+	Menu.hidden = false
+	currentMenu = "magasin"
 end
 
 function ItemsInfos(Result)
@@ -449,12 +493,32 @@ function ItemsInfos(Result)
 end
 
 function BuyItem(item)
-	TriggerServerEvent('inv:buyItemByItemId', item.id)
+	prompt(function(amount)
+		if amount ~= nil and tonumber(amount) > 0 then
+			print(amount)
+			TriggerServerEvent('inv:buyItemByItemId', item.id, tonumber(amount))
+		end
+	end)
 	Menu.hidden = not(Menu.hidden)
 	ClearMenu()
 end
 
+function prompt(callback)
+    DisplayOnscreenKeyboard(true, "FMMC_KEY_TIP8", "", "", "", "", "", 120)
+    while (UpdateOnscreenKeyboard() == 0) do
+      DisableAllControlActions(0)
+      Wait(0)
+    end
+    if (GetOnscreenKeyboardResult()) then
+      quantity =  math.abs(tonumber(GetOnscreenKeyboardResult()))
+      callback(quantity)
+    end
+
+end
+
+
 function ShowQg(pointQg)
+	print("start funct")
 	local blip = AddBlipForCoord(tonumber(pointQg.x), tonumber(pointQg.y), tonumber(pointQg.z))
 	SetBlipSprite(blip, pointQg.blipSprite)
 	SetBlipColour(blip, pointQg.blipColor)
@@ -465,6 +529,7 @@ function ShowQg(pointQg)
 	SetBlipAsMissionCreatorBlip(blip,true)
 	SetBlipRoute(blip, true)
 	SetBlipRouteColour(blip, pointQg.blipColor)
+	print("bliped ?")
 	local nowTime = GetGameTimer()
 	Citizen.CreateThread(function()
 		while GetGameTimer() <= nowTime + 420000 do -- timer en fonction de la distance.
@@ -538,7 +603,7 @@ function SpawnVeh(args)
 	local playerCoords = GetEntityCoords(playerPed)
 	local playerHeading = GetEntityHeading(playerPed)
 	local closestVeh = nil
-	local x,y,z = table.unpack(playerCoords)
+	local coords = playerCoords
 	local deliveryVeh = nil
 	for i = 1, #args.point do
 		RequestCollisionAtCoord(args.point[i].x, args.point[i].y, args.point[i].z)

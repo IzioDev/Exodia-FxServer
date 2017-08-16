@@ -20,13 +20,15 @@ AddEventHandler("iLivreur:spawnVehGarage", function(carPrice, carPlate)
 	local source = source
 	TriggerEvent("es:getPlayerFromId", source, function(user)
 		TriggerEvent("ijob:getJobFromName", user.get('job'), function(medicJob)
-			if not(user.getSessionVar('caution', carPrice)) then
+			-- if not(user.getSessionVar('caution', carPrice)) then
 				medicJob.removeCapital(carPrice)
 				medicJob.addLost(user, carPrice, "prise de véhicule de fonction.")
 				user.setSessionVar('caution', carPrice)
 				user.notify("Le gérant te prete un véhicule. Si tu ne le ramène pas, il te demandera de payer la moitié du prix du véhicule. Prends en soin!", "error", "topCenter", true, 5000)
+				print(carPlate)
+				print("WTF")
 				TriggerEvent("tShop:registerNewVeh", carPlate, user.get('identifier'), 25.0)
-			end
+			-- end
 		end)
 	end)
 end)
@@ -62,7 +64,7 @@ AddEventHandler("iLivreur:removeObjectsArray", function(items)
 		local quantity = {}
 		for i = 1, #items do
 			table.insert(item, items[i].item.id)
-			table.insert(item, items[i].quantity)
+			table.insert(quantity, items[i].quantity)
 		end
 		user.removeQuantityArray(item, quantity)
 		user.refreshInventory()
@@ -102,13 +104,6 @@ RegisterServerEvent("iLivreur:syncServiceWithServer")
 AddEventHandler("iLivreur:syncServiceWithServer", function(isInService)
 	local source = source
 	TriggerEvent("es:getPlayerFromId", source, function(user)
-		local var = nil
-		if isInServer then
-			var = "prendre"
-		else
-			var = "quitter"
-		end
-		user.notify("Tu viens de "..var.. " ton service.", "success", "topCenter", true, 5000)
 		user.setSessionVar("inService", isInService)
 	end)
 end)

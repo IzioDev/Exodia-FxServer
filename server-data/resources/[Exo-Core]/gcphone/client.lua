@@ -103,14 +103,18 @@ function sendMessage(num, message)
 end
 
 function deleteMessage(msgId)
-  Citizen.Trace('deleteMessage' .. msgId)
-  TriggerServerEvent('gcPhone:deleteMessage', msgId)
-  for k, v in ipairs(messages) do 
-    if v.id == msgId then
-      table.remove(messages, k)
-      SendNUIMessage({event = 'updateMessages', messages = messages})
-      return
+  if msgId ~= nil then
+    Citizen.Trace('deleteMessage' .. msgId)
+    TriggerServerEvent('gcPhone:deleteMessage', msgId)
+    for k, v in ipairs(messages) do 
+      if v.id == msgId then
+        table.remove(messages, k)
+        SendNUIMessage({event = 'updateMessages', messages = messages})
+        return
+      end
     end
+  else
+    
   end
 end
 

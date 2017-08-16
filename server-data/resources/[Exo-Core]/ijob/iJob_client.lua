@@ -485,7 +485,11 @@ AddEventHandler("ijob:checkClientHarvest", function(result) -- on a check s'il a
 end)
 
 function IsGottingItems(items)
-
+	local myBool = false
+	TiggerEvent("inv:gotItemsAndQuantity", items, function(bool)
+		myBool = bool
+	end)
+	return myBool
 end
 
 RegisterNetEvent("ijob:stopHarvest")
@@ -557,7 +561,11 @@ function ItemsInfos(Result)
 end
 
 function BuyItem(item)
-	TriggerServerEvent('inv:buyItemByItemId', item.id)
+	prompt(function(amount)
+		if amount ~= nil and tonumber(amount) > 0 then
+			TriggerServerEvent('inv:buyItemByItemId', item.id, tonumber(amount))
+		end
+	end)
 	Menu.hidden = not(Menu.hidden)
 end
 

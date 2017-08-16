@@ -51,7 +51,7 @@ AddEventHandler("inventory:retreiveIfRestart", function()
   local source = source
   TriggerEvent("es:getPlayerFromId", source, function(user)
     if user ~= nil then
-      TriggerClientEvent("inventory:change", user.get('source'), json.decode(user.sendDatas())) -- error here
+      TriggerClientEvent("inventory:change", user.get('source'), user.sendDatas()) -- error here
       TriggerClientEvent("inventory:getData", user.get('source'), allItem)
     end
   end)
@@ -67,7 +67,7 @@ end)
 AddEventHandler("es:playerLoaded", function(source)
   local source = source -- Thanks to FXS
   TriggerEvent("es:getPlayerFromId", source, function(user)
-    TriggerClientEvent("inventory:change", source, json.decode(user.sendDatas()))
+    TriggerClientEvent("inventory:change", source, user.sendDatas())
     TriggerClientEvent("inventory:getData", source, allItem)
   end)
 end)
@@ -111,11 +111,11 @@ AddEventHandler("inventory:give", function(from, target, targetId,item, quantity
   if isAbleToGive then                                                                   -- si l'envoyeur peut donner
     if isAbleToReceive then                                                              -- si le receveur peut recevoir
       fromInv.removeQuantity(item, quantity)                                             -- on enleve la quantity 
-      TriggerClientEvent("inventory:change", source, json.decode(fromInv.sendDatas()))   -- on actualise ses données
+      TriggerClientEvent("inventory:change", source, fromInv.sendDatas())   -- on actualise ses données
       toInv.addQuantity(item, quantity)    
                                                     -- On ajoute la quantité
       if fromInvType == "personal" and fromInvType == toInvType then -- kikoo spotted
-        TriggerClientEvent("inventory:change", targetId, json.decode(toInv.sendDatas()))
+        TriggerClientEvent("inventory:change", targetId, toInv.sendDatas())
         toInv.notify(config[lang].giveItem .. quantity .. " " .. allItem[tonumber(item)].name .. config[lang].by  .. fromInv.get('displayName') .. "</span>", "success", "topCenter", true, 5000)
         fromInv.notify(config[lang].giveItem .. quantity .. " " .. allItem[tonumber(item)].name .. config[lang].by  .. toInv.get('displayName') .. "</span>", "success", "topCenter", true, 5000) 
         CancelEvent()
@@ -127,15 +127,15 @@ AddEventHandler("inventory:give", function(from, target, targetId,item, quantity
       end
 
       if (fromInvType == "car" or fromInvType == "chest") and toInvType == "personal" then
-        fromInv.notify(config[lang].withdraw .. quantity .. " " .. allItem[tonumber(item)].name .. "!</span>", "success", "topCenter", true, 5000)
+        toInv.notify(config[lang].withdraw .. quantity .. " " .. allItem[tonumber(item)].name .. "!</span>", "success", "topCenter", true, 5000)
         CancelEvent()
       end
 
       if toInvType == "personal" then
-        TriggerClientEvent("inventory:change", targetId, json.decode(toInv.sendDatas())) -- on actualise ses données si c'est un joueur
+        TriggerClientEvent("inventory:change", targetId, toInv.sendDatas()) -- on actualise ses données si c'est un joueur
         toInv.notify(config[lang].giveItem .. quantity .. " " .. allItem[tonumber(item)].name .. "!</span>", "success", "topCenter", true, 5000)           -- on le notify
       elseif toInvType == "car" then                                                     -- sinon si c'est une voiture
-        TriggerClientEvent("inventory:change", source, json.decode(toInv.sendDatas()))   -- on actualise les données de l'inventaire de la voiture à l'envoyeur
+        TriggerClientEvent("inventory:change", source, toInv.sendDatas())   -- on actualise les données de l'inventaire de la voiture à l'envoyeur
       end
       if fromInvType == "personal" then
         fromInv.notify(config[lang].giveItemG .. quantity .. " " .. allItem[tonumber(item)].name .. "!</span>", "success", "topCenter", true, 5000) 
@@ -263,10 +263,10 @@ AddEventHandler("inventory:ask", function(id)
       if car ~= nil then
         invToReturn = car.sendDatas()
       else
-        invToReturn = nil
+        TriggerEvent("es:getPlayerFromId", source, function(user)
+          invToReturn = user.sendDatas()
+        end)
       end
-      print(invToReturn)
-      print(json.encode(car))
     end)
   elseif invType == "chest" then
     invToReturn = nil
@@ -279,16 +279,16 @@ AddEventHandler("inventory:ask", function(id)
 end)
 
 
-AddEventHandler("inv:buyItemByItemId", function(itemId)
+AddEventHandler("inv:buyItemByItemId", function(itemId, amount)
   local source = tonumber(source) -- thanks FXS
   TriggerEvent("es:getPlayerFromId", source, function(user)
-    local isAbleToReceive = user.isAbleToReceive(itemId, 1)
+    local isAbleToReceive = user.isAbleToReceive(itemId, amount)
     if isAbleToReceive then
       if user.get('money') >= tonumber(allItem[tonumber(itemId)].price) then
-        user.addQuantity(itemId, 1)
+        user.addQuantity(itemId, amount)
         user.removeMoney(allItem[tonumber(itemId)].price)
         TriggerClientEvent("inventory:change", source, json.decode(user.sendDatas()))
-        user.notify("Tu viens d'acheter <span style='color:green' >" .. "1" .. "</span><span style='color:blue' > " .. allItem[tonumber(itemId)].name .. "!</span>", "success", "topCenter", true, 5000)
+        user.notify("Tu viens d'acheter <span style='color:green' >" .. amount .. "</span><span style='color:blue' > " .. allItem[tonumber(itemId)].name .. "!</span>", "success", "topCenter", true, 5000)
       else
         user.notify("Tu n'as pas assez d'argent", "error", "topCenter", true, 5000)
       end
@@ -305,6 +305,8 @@ function GetInventoryType(id)
   result = stringsplit(id, ":")
   if result[1] == "steam" then
     invType = "personal"
+  elseif result[1] == "ip" then
+    invType = "personal"
   elseif result[1] == "plate" then
     invType = "car"
   elseif result[1] == "chest" then
@@ -312,7 +314,11 @@ function GetInventoryType(id)
   else
     print("Error GetInventoryType inventory/server.lua")
   end
-  return result[2], invType
+  if result[1] == 'ip' then
+    return result[1]..":"..result[2], invType
+  else
+    return result[2], invType
+  end
 end
 
 function stringsplit(inputstr, sep)
@@ -374,8 +380,8 @@ AddEventHandler("ijob:getItemInfosFromIdArray", function(itemIdArray)
   TriggerClientEvent("ijob:getItemInfosFromIdArray", source, processResult)
 end)
 
-RegisterServerEvent("iLivery:getItemInfosFromIdArray")
-AddEventHandler("iLivery:getItemInfosFromIdArray", function(type)
+RegisterServerEvent("iLivreur:getItemInfosFromIdArray")
+AddEventHandler("iLivreur:getItemInfosFromIdArray", function(liveryList, type)
   local source = source
   local processResult = {}
   for i = 1, #liveryList do
