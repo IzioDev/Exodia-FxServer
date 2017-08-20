@@ -3,7 +3,7 @@
 -- Proprietary and confidential
 -- Written by Romain Billot <romainbillot3009@gmail.com>, Jully 2017
 
-allItem = nil -- init allItem datas
+allItem = nil -- int allItem datas
 defaultInvWeight = 3
 AddEventHandler('onMySQLReady', function ()
 	local result = MySQL.Sync.fetchAll("SELECT * FROM item")
@@ -36,7 +36,7 @@ function CreateUser(source, Issential)
 	self.firstName = DecodedIdentity.firstName
 	self.lastName = DecodedIdentity.lastName
 	self.age = DecodedIdentity.age
-	self.phoneNumber = DecodedIdentity.phoneNumber
+	self.phoneNumber = Issential.phone_number
 	self.playTime = tonumber(DecodedIdentity.playTime)
 	self.sessionPlayTime = 0
 	self.sex = tonumber(DecodedSkin.sex)
@@ -333,6 +333,14 @@ function CreateUser(source, Issential)
 
 	rTable.getOtherInGameInfos = function(k)
 		return self.otherInGameInfos[k]
+	end
+
+	rTable.setIdentity = function(k, v)
+		self.identity[k] = v
+	end
+
+	rTable.getIdentity = function(k)
+		return self.identity[k]
 	end
 
 	rTable.set = function(k, v)

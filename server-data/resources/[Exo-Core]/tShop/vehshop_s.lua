@@ -15,7 +15,7 @@ AddEventHandler('onMySQLReady', function ()
     if not(result[i].inventory) or result[i].inventory == nil then
       result[i].inventory = json.encode({})
     end
-    allVeh[result[i].vehicle_plate] = CreateCar(result[i])
+    allVeh[result[i].vehicle_plate] = CreateCar(result[i], false)
   end
 end)
 
@@ -25,7 +25,7 @@ AddEventHandler("onVehRestart", function()
     if not(result[i].inventory) or result[i].inventory == nil then
       result[i].inventory = json.encode({})
     end
-    allVeh[result[i].vehicle_plate] = CreateCar(result[i])
+    allVeh[result[i].vehicle_plate] = CreateCar(result[i], false)
   end
 
   SaveCarDatas()
@@ -58,8 +58,6 @@ end)
 AddEventHandler("car:getAllPlayerCars", function(player, car)
   local carsResult = {}
   for k,v in pairs(allVeh) do
-    print(v.get("owner"))
-    print(player)
     if v.get("owner") == player then
       table.insert(carsResult, v)
     end
@@ -68,6 +66,20 @@ AddEventHandler("car:getAllPlayerCars", function(player, car)
     car(carsResult)
   else
     car(nil)
+  end
+end)
+
+AddEventHandler("car:getPlayerJobCar", function(player, returnedCar)
+  local car = nil
+  for k,v in pairs(allVeh) do
+    print("owner : " ..v.get('owner').. " / plate : " .. v.get("plate") .. " / vehJob : " .. tostring(v.get("vehJob")))
+    if v.get("owner") == player and v.get("vehJob") then
+      returnedCar(v)
+      return
+    end
+  end
+  if car == nil then
+    returnedCar(car)
   end
 end)
 
@@ -218,20 +230,23 @@ AddEventHandler('BuyForVeh', function(name, vehicle, price, plate, primarycolor,
       inventoryWeight = "300.0"
     }
 
-    allVeh[plate] = CreateCar(carInfos)
+    allVeh[plate] = CreateCar(carInfos, false)
   end)
 end)
 
 AddEventHandler("tShop:registerNewVeh", function(carPlate, owner, inventoryWeight)
-  local carInfos = {
-    vehicle_plate = carPlate,
-    vehicle_state = "out",
-    lastpos = json.encode({0,0,0,0}),
-    inventory = json.encode({}),
-    owner = owner,
-    inventoryWeight = inventoryWeight
-  }
-  allVeh[carPlate] = CreateJobCar(carInfos)
+  if not(allVeh[carPlate]) then
+    local carInfos = {
+      vehicle_plate = carPlate,
+      vehicle_state = "out",
+      lastpos = json.encode({0,0,0,0}),
+      inventory = json.encode({}),
+      identifier = owner,
+      inventoryWeight = inventoryWeight
+    }
+    print("vehicle job created")
+    allVeh[carPlate] = CreateCar(carInfos, true)
+  end
 end)
 
 AddEventHandler("tShop:removeVeh", function(carPlate, owner)

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>LSPD</title>
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+	<link href="css/panel.css" rel="stylesheet">
+  </head>
+  <body>
+  
+<!-- PAGE D'ACCUEIL iCops -->
+<div id="panel">
+	<div class="logo">
+		<a href="#"><img src="http://exodia-rp.fr:81/server/images/panel_lspd/LSPD.png" alt="LSPD"/></a>
+		<h1>LOS SANTOS POLICE DEPARTMENT</h1>
+	</div>
+		
+	<div class="container">
+		<div class="row">
+			<div class="col-sm-6">
+				<div class="panel panel-info" style="text-align:center">
+					<div class="panel-heading">Accéder à la base de données des citoyens</div>
+					<div class="panel-body"><button type="button" id="boutonCitoyens" class="btn btn-info">SE CONNECTER</button></a></div>
+				</div>
+			</div>
+			<div class="col-sm-6">
+				<div class="panel panel-warning" style="text-align:center">
+					<div class="panel-heading">Accéder à la base de données des véhicules</div>
+					<div class="panel-body"><button type="button" id="boutonVehicules" class="btn btn-warning">SE CONNECTER</button></a></div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+</div>
+<!-- FIN DE PAGE D'ACCUEIL iCops -->
+
+
+<!-- DÉBUT DE LA PAGE DES CITOYENS iCops -->
+<div id="citoyens">
+		<div class="logo">
+			<a href="#"><img src="http://exodia-rp.fr:81/server/images/panel_lspd/LSPD.png" alt="LSPD"/></a>
+				<h1>LOS SANTOS POLICE DEPARTMENT</h1>
+		</div>
+<!-- DÉBUT DE LA PARTIE RECHERCHE CITOYENS iCops -->
+	<div class="container">
+		<div class="panel panel-info">
+			<div class="panel-heading" style="text-align:center">Consulter la base de donnée des citoyens</div>
+			<div class="panel-body resultValidated">
+				<form class="form-inline" style="text-align:center">
+					<div class="form-group">
+						<label for="name">Veuillez saisir le matricule du citoyen: </label>
+						<input type="name" class="form-control" id="citizenMatricule">
+					</div>
+					<button type="button" class="btn btn-info" id="sendCitizenMatricule">Rechercher</button> <!-- data-toggle="modal" data-target="#citoyenResultats" -->
+				</form>
+			</div>
+		</div>
+<!-- FIN DE LA PARTIE RECHERCHE CITOYENS iCops -->
+
+	  <hr>
+	  
+<!-- DÉBUT DE LA PARTIE AJOUTER UN CITOYENS A LA BDD iCops -->
+	<div id="addCitoyen">
+	  <div class="panel panel-info">
+		  <div class="panel-heading" style="text-align:center">Créer une nouvelle fiche citoyen</div>
+		  <div class="panel-body">
+			<form class="form-horizontal" action="">
+			  <div class="form-group">
+				<label class="control-label col-sm-4" for="lastname">Nom du citoyen:</label>
+				<div class="col-sm-8">
+				  <input type="text" class="form-control" id="lastname" name="lastname">
+				</div>
+			  </div>
+			  <div class="form-group">
+				<label class="control-label col-sm-4" for="matricule">Matricule du citoyen:</label>
+				<div class="col-sm-8">
+				  <input type="text" class="form-control" id="matricule" name="matricule">
+				</div>
+			  </div>
+			  <div class="form-group">
+				<label class="control-label col-sm-4" for="firstname">Prénom du citoyen:</label>
+				<div class="col-sm-8">
+				  <input type="text" class="form-control" id="firstname" name="firstname">
+				</div>
+			  </div>
+			  <div class="form-group">
+				<label class="control-label col-sm-4" for="age">Âge du citoyen:</label>
+				<div class="col-sm-8">
+				  <input type="number" class="form-control" id="age" name="age">
+				</div>
+			  </div>
+			  <div class="form-group">
+				<label class="control-label col-sm-4" for="adress">Adresse du domicile du citoyen:</label>
+				<div class="col-sm-8">
+				  <input type="text" class="form-control" id="adress" name="adress">
+				</div>
+			  </div>
+			  <div class="form-group">
+				<label class="control-label col-sm-4" for="phoneNumber">Numéro de téléphone du citoyen:</label>
+				<div class="col-sm-8">
+				  <input type="text" class="form-control" id="phoneNumber" name="phoneNumber">
+				</div>
+			  </div>
+			  <div class="form-group">
+				<label class="control-label col-sm-4" for="permis">Permis du citoyen:</label>
+				<div class="col-sm-8">
+				  <input type="text" class="form-control" id="permis" name="permis">
+				</div>
+			  </div>
+			  <div class="form-group">
+				<label class="control-label col-sm-4" for="criminalRecord">Casier judiciaire (si nécessaire):</label>
+				<div class="col-sm-8">
+				  <textarea  type="text" class="form-control" id="criminalRecord" name="criminalRecord"></textarea>
+				</div>
+			  </div>
+			  <div class="form-group">        
+				<div class="col-sm-12" style="text-align:right">
+				  <input id="sendAddCitoyen" class="btn btn-info" type="submit" value="CRÉER LA FICHE">
+				</div>
+			  </div>
+			</form>
+		</div>
+	  </div>
+	</div>
+<!-- FIN DE LA PARTIE AJOUTER UN CITOYEN A LA BDD iCops -->
+
+<!-- DÉBUT DE LA PARTIE RÉSULTAT DE RECHERCHE D'UN VÉHICULE A LA BDD iCops -->
+	<div id="citoyenResultats" class="modal fade" role="dialog">
+		  <div class="modal-dialog">
+
+			<!-- Modal content-->
+			<div class="modal-content">
+			  <div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+				<h4 class="modal-title">Résultat de la recherche</h4>
+			  </div>
+			  <div class="modal-body">
+				<p>Prénom: <span id='citizenFirstName'> </span></p>
+				<p>Nom: <span id='citizenLastName'> </span></p>
+				<p>Age: <span id='citizenAge'> </span></p>
+				<p>Numéro de téléphone: <span id='citizenPhoneNumber'> </span></p>
+				<p>Permis: <span id='citizenPermis'> </span></p>
+				<p>Adresse: <span id='citizenAdress'> </span></p>
+				<p>Matricule: <span id='citizenMatricule'> </span></p>
+				<p>Date de création: <span id='creationDate'> </span></p>
+				<p>Nombre de délits: <span id='citizenNumberRecords'> </span></p>
+				<p>Note: <span id='citizenCriminalRecord'> </span></p>
+			  </div>
+			  <div class="modal-footer">
+			  	<button type="button" class="btn btn-info" data-dismiss="modal" id="getRecords">Acceder aux délits</button>
+			  	<button type="button" class="btn btn-success" data-dismiss="modal" id="accessModalNote">Ajouter un délit</button>
+				<button type="button" class="btn btn-default" data-dismiss="modal" id="resetSelector">Fermer</button>
+			  </div>
+			</div>
+
+		  </div>
+	</div>
+<!-- Naviguer dans les notes (délits) -->
+	<div id="citizenRecords" class="modal fade" role="dialog">
+		<div class="modal-dialog">
+			<div class="modal-content">
+			  	<div class="modal-header">
+			  		<ul class='resultNav'>
+			  			<p id='actualCreator'> </p>
+			  			<p id='actualNote'> </p>
+
+						<li class='resultNav'>
+							<a class='btn btn-info btn-small' id="previousNote">Précédent</a>
+						</li>
+						<li class='resultNav'>
+							<p id='numberResult'>0/0</p>
+						</li>
+						<li class='resultNav'>
+							<a class='btn btn-info btn-small' id="nextNote">Suivant</a>
+						</li>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-default" data-dismiss="modal" id="resetSelector">Fermer</button>
+			  			</div>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</div>
+<!-- Ajouter une note (délits) -->
+	<div id="addCitizenNote" class="modal fade" role="dialog">
+		<div class="modal-dialog">
+			<div class="modal-content">
+			  	<div class="modal-header">
+			  		<form class="form-horizontal" action="">
+			  			<div class="form-group">
+							<label class="control-label col-sm-4" for="citizenNote">Note:</label>
+							<div class="col-sm-8">
+				  				<input type="text" class="form-control" id="citizenNote" name="citizenNote">
+							</div>
+			  			</div>
+					</form>
+					<div class="modal-footer">
+						<a class='btn btn-info btn-small' href="#" id="sendCitizenNote">Envoyer</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- FIN DE LA PARTIE RÉSULTAT DE RECHERCHE D'UN VÉHICULE A LA BDD iCops -->
+</div>
+<!-- FIN DE LA PAGE DES VÉHICULES iCops -->
+
+
+
+
+
+
+
+<!-- DÉBUT DE LA PAGE DES VÉHICULES iCops -->
+<div id="vehicules">
+		<div class="logo">
+			<a href="#"><img src="http://exodia-rp.fr:81/server/images/panel_lspd/LSPD.png" alt="LSPD"/></a>
+				<h1>LOS SANTOS POLICE DEPARTMENT</h1>
+		</div>
+<!-- DÉBUT DE LA PARTIE RECHERCHE VÉHICULES iCops -->
+	<div class="container">
+		<div class="panel panel-warning">
+			<div class="panel-heading" style="text-align:center">Consulter la base de donnée des véhicules</div>
+			<div class="panel-body">
+					<form class="form-inline" style="text-align:center">
+					  <div class="form-group">
+						<label for="name">Veuillez saisir le n° de plaque d'immatriculation du véhicule: </label>
+						<input type="name" class="form-control" id="carPlate">
+					  </div>
+					  <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#vehicules_resultats" id="sendCarPlate">Rechercher</button>
+					</form>
+
+			</div>
+		</div>
+<!-- FIN DE LA PARTIE RECHERCHE VÉHICULES iCops -->
+	  <hr>
+<!-- DÉBUT DE LA PARTIE AJOUTER UN VÉHICULE A LA BDD iCops -->
+<div id="addVehicule">
+	  <div class="panel panel-warning">
+		  <div class="panel-heading" style="text-align:center">Créer une nouvelle fiche véhicule</div>
+		  <div class="panel-body">
+			<form class="form-horizontal" action="">
+			  <div class="form-group">
+				  <label class="control-label col-sm-4" for="carManufacturer">Marque du véhicule:</label>
+				  <div class="col-sm-8">
+					  <select class="form-control input-md">
+						  <option value="Albany">Albany</option>
+						  <option value="Annis">Annis</option>
+						  <option value="Benefactor">Benefactor</option>
+						  <option value="Bollokan">Bollokan</option>
+						  <option value="Bravado">Bravado</option>
+						  <option value="Brute">Brute</option>
+						  <option value="Classique">Classique</option>
+						  <option value="Declasse">Declasse</option>
+						  <option value="Dewbauchee">Dewbauchee</option>
+						  <option value="Dinka">Dinka</option>
+						  <option value="Dundreary">Dundreary</option>
+						  <option value="Emperor">Emperor</option>
+						  <option value="Enus">Enus</option>
+						  <option value="Grotti">Grotti</option>
+						  <option value="Hvy">HVY</option>
+						  <option value="Imponte">Imponte</option>
+						  <option value="Invetero">Invetero</option>
+						  <option value="Jobuilt">Jobuilt</option>
+						  <option value="Karin">Karin</option>
+						  <option value="Maibatsu">Maibatsu Corporation</option>
+						  <option value="Mammoth">Mammoth</option>
+						  <option value="Mtl">MTL</option>
+						  <option value="Obey">Obey</option>
+						  <option value="Ocelot">Ocelot</option>
+						  <option value="Pegassi">Pegassi</option>
+						  <option value="Pfister">Pfister</option>
+						  <option value="Schyster">Schyster</option>
+						  <option value="Shitzu">Shitzu</option>
+						  <option value="Ubermacht">Übermacht</option>
+						  <option value="Vapid">Vapid</option>
+						  <option value="Vulcar">Vulcar</option>
+						  <option value="Washington">Washington</option>
+						  <option value="WMC">Western Motorcycle Company</option>
+						  <option value="Willard">Willard</option>
+						  <option value="Zirconium">Zirconium</option>
+					  </select>
+				  </div>
+			  </div>
+			  <div class="form-group">
+				<label class="control-label col-sm-4" for="carModel">Modèle du véhicule:</label>
+				<div class="col-sm-8">
+				  <input type="text" class="form-control" id="carModel" name="carModel">
+				</div>
+			  </div>
+			  <div class="form-group">
+				<label class="control-label col-sm-4" for="carColor">Couleur du véhicule:</label>
+				<div class="col-sm-8">
+				  <input type="text" class="form-control" id="carColor" name="carColor">
+				</div>
+			  </div>
+			  <div class="form-group">
+				<label class="control-label col-sm-4" for="carDate">Date de la première mise en service du véhicule:</label>
+				<div class="col-sm-8">
+				  <input type="date" class="form-control" id="carDate" name="carDate">
+				</div>
+			  </div>
+			  <div class="form-group">
+				<label class="control-label col-sm-4" for="carPlates">N° de plaque d'immatriculation du véhicule:</label>
+				<div class="col-sm-8">
+				  <input type="text" class="form-control" id="carPlates" name="carPlates">
+				</div>
+			  </div>
+			  <div class="form-group">
+				<label class="control-label col-sm-4" for="carOwner">Nom & Prénom du propriétaire du véhicule:</label>
+				<div class="col-sm-8">
+				  <input type="text" class="form-control" id="carOwner" name="carOwner">
+				</div>
+			  </div>
+			  <div class="form-group">
+				<label class="control-label col-sm-4" for="carAdress">Adresse de la carte grise du véhicule:</label>
+				<div class="col-sm-8">
+				  <input type="text" class="form-control" id="carAdress" name="carAdress">
+				</div>
+			  </div>
+			  <div class="form-group">
+				<label class="control-label col-sm-4" for="carOthers">Autres (si nécessaire):</label>
+				<div class="col-sm-8">
+				  <textarea type="text" class="form-control" id="carOthers" name="carOthers"></textarea>
+				</div>
+			  </div>
+			  <div class="form-group">        
+				<div class="col-sm-12" style="text-align:right">
+				  <input id="sendAddCar" class="btn btn-warning" type="submit" value="CRÉER LA FICHE">
+				</div>
+			  </div>
+			</form>
+
+		</div>
+	  </div>
+</div>
+<!-- FIN DE LA PARTIE AJOUTER UN VÉHICULE A LA BDD iCops -->
+
+<!-- DÉBUT DE LA PARTIE RÉSULTAT DE RECHERCHE D'UN VÉHICULE A LA BDD iCops -->
+	<div id="resultatsVehicule" class="modal fade" role="dialog">
+		  <div class="modal-dialog">
+
+			<!-- Modal content-->
+			<div class="modal-content">
+			  <div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal">&times;</button>
+				<h4 class="modal-title">Résultat de la recherche</h4>
+			  </div>
+			  <div class="modal-body">
+				<p>Marque du véhicule: <span id='resultCarManufacturer'> </span></p>
+				<p>Modèle du véhicule: <span id='resultCarModel'> </span></p>
+				<p>Couleur du véhicule: <span id='resultCarColor'> </span></p>
+				<p>Date de la première mise en service du véhicule: <span id='resultCarTime'> </span></p>
+				<p>N° de plaque d'immatriculation du véhicule: <span id='resultCarPlate'> </span></p>
+				<p>Nom & Prénom du propriétaire du véhicule: <span id='resultCarOwner'> </span></p>
+				<p>Adresse de la carte grise du véhicule: <span id='resultCarAdress'> </span></p>
+				<p>Autres: <span id='resultCarOther'> </span></p>
+			  </div>
+			  <div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">Fermer</button>
+			  </div>
+			</div>
+
+		  </div>
+	</div>
+<!-- FIN DE LA PARTIE RÉSULTAT DE RECHERCHE D'UN VÉHICULE A LA BDD iCops -->
+</div>
+<!-- FIN DE LA PAGE DES VÉHICULES iCops -->
+
+		
+		
+		<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+		<!-- Include all compiled plugins (below), or include individual files as needed -->
+		<script src="js/bootstrap.min.js"></script>
+		<!-- On charge le fichier script.js de iCops-->
+		<script src="js/script.js"></script>
+
+  </body>
+</html>

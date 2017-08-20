@@ -15,6 +15,7 @@ local officerDrag = nil
 local currentVeh = nil
 local timeVeh = nil
 local officerDrag = nil
+local guiOpened = false
 local subButtonList = { 
 	["annimations"] = {
 		title = "Annimations",
@@ -75,10 +76,73 @@ AddEventHandler("is:updateJob", function(jobName, rank)
 	end
 end)
 
+RegisterNUICallback('close', function(data, cb)
+	SetNuiFocus(false, false)
+	SendNUIMessage({
+		action = "close"
+	})
+	guiOpened = false
+	cb("closed Gui : iCops")
+end)
+
+RegisterNUICallback('addCar', function(data, cb)
+	SetNuiFocus(false, false)
+	SendNUIMessage({
+		action = "close"
+	})
+	guiOpened = false
+	cb("closed Gui with sending car: iCops")
+	TriggerServerEvent("iCops:registerNewCar", data)
+end)
+
+RegisterNUICallback('addCitoyen', function(data, cb)
+	SetNuiFocus(false, false)
+	SendNUIMessage({
+		action = "close"
+	})
+	guiOpened = false
+	cb("closed Gui with adding note: iCops")
+	TriggerServerEvent("iCops:registerNewCitizen", data)
+end)
+
+RegisterNUICallback('addCitizenNote', function(data, cb)
+	TriggerServerEvent("iCops:addNoteToCitizen", data)
+end)
+
+RegisterNUICallback('askForCitizenSearch', function(data, cb)
+	TriggerServerEvent("iCops:askForCitizenSearch", data)
+end) 
+
+RegisterNUICallback('askForCarSearch', function(data, cb)
+	print("asked")
+	TriggerServerEvent("iCops:askForCarSearch", data)
+end) 
+
+RegisterNetEvent("iCops:returnCarSearch")
+AddEventHandler("iCops:returnCarSearch", function(result)
+	print(json.encode(result))
+	SendNUIMessage({
+		action = "returnResult",
+		datas = result,
+		type = "vehicle"
+	})
+end)
+
+RegisterNetEvent("iCops:returnCitizenSearch")
+AddEventHandler("iCops:returnCitizenSearch", function(result)
+	print(json.encode(result))
+	SendNUIMessage({
+		action = "returnResult",
+		datas = result,
+		type = "citizen"
+	})
+end)
+
 function RunCopThread()
 	Citizen.CreateThread(function() -- Thread Cop
+		SetNuiFocus(0,0)
 		while true do
-			Wait(15)
+			Wait(10)
 			if not(active) then
 				return
 			end
@@ -87,7 +151,18 @@ function RunCopThread()
 					local actualVeh = GetVehiclePedIsIn(GetPlayerPed(-1), false)
 					local a,b = string.find(GetVehicleNumberPlateText(actualVeh), "PO")
 					if a then
-						-- On peut ouvrir le menu HTML
+						if not(guiOpened) then
+							SetNuiFocus(true, true)
+							SendNUIMessage({
+								action = "open"
+							})
+						else
+							SetNuiFocus(false, false)
+							SendNUIMessage({
+								action = "close"
+							})
+						end
+						guiOpened = not(guiOpened)
 					end
 				else -- Sinon menu action
 					Menu.hidden = not(Menu.hidden)
@@ -159,6 +234,22 @@ function RunCopThread()
 								end
 							end
 						end
+					elseif result.computer then
+						DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour " ..result.displayedMessageInZone)
+						if IsControlJustPressed(1, 38) then
+							if not(guiOpened) then
+								SetNuiFocus(true, true)
+								SendNUIMessage({
+									action = "open"
+								})
+							else
+								SetNuiFocus(false, false)
+								SendNUIMessage({
+									action = "close"
+								})
+							end
+							guiOpened = not(guiOpened)
+						end
 					end
 				end
 			end)
@@ -188,7 +279,7 @@ AddEventHandler("police:swichService", function(service, result)
 		if (GetEntityModel(GetPlayerPed(-1)) == GetHashKey("mp_m_freemode_01")) then
 			Sexe = "Male"
 		end
-		SetPedComponentVariation(GetPlayerPed(-1), 9, result.uniform[userRank][Sexe].diff, result.uniform[userRank][Sexe].diffColor, 2)
+		SetPedComponentVariation(GetPlayerPed(-1), 9, result.uniform[userRank][Sexe].diff, 7, 8)
 		SetPedComponentVariation(GetPlayerPed(-1), 8,  result.uniform[userRank][Sexe].tshirt_1, result.uniform[userRank][Sexe].tshirt_2, 2)   -- Tshirt
 		SetPedComponentVariation(GetPlayerPed(-1), 11, result.uniform[userRank][Sexe].torso_1, result.uniform[userRank][Sexe].torso_2, 2)     -- torso parts
 		SetPedComponentVariation(GetPlayerPed(-1), 10, result.uniform[userRank][Sexe].decals_1, result.uniform[userRank][Sexe].decals_2, 2)   -- decals
@@ -365,7 +456,7 @@ function SpawnVeh(args)
 	local plateText = "PO".. math.random(100,999)
 	local a, b, c = Generate3Char()
 	plateText = plateText .. a .. b .. c
-	SetVehicleNumberPlateText(medicVeh, plateText)
+	SetVehicleNumberPlateText(policevehicle, plateText)
 
 	Menu.hidden = true
 	TriggerServerEvent("police:spawnVehGarage", carPrice)

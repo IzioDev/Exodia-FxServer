@@ -17,10 +17,11 @@ local pourboireMessages = {
 
 RegisterServerEvent("iLivreur:spawnVehGarage")
 AddEventHandler("iLivreur:spawnVehGarage", function(carPrice, carPlate)
+	print("triggered spawn veh")
 	local source = source
 	TriggerEvent("es:getPlayerFromId", source, function(user)
 		TriggerEvent("ijob:getJobFromName", user.get('job'), function(medicJob)
-			-- if not(user.getSessionVar('caution', carPrice)) then
+			if not(user.getSessionVar('caution')) then
 				medicJob.removeCapital(carPrice)
 				medicJob.addLost(user, carPrice, "prise de véhicule de fonction.")
 				user.setSessionVar('caution', carPrice)
@@ -28,7 +29,7 @@ AddEventHandler("iLivreur:spawnVehGarage", function(carPrice, carPlate)
 				print(carPlate)
 				print("WTF")
 				TriggerEvent("tShop:registerNewVeh", carPlate, user.get('identifier'), 25.0)
-			-- end
+			end
 		end)
 	end)
 end)
@@ -71,6 +72,45 @@ AddEventHandler("iLivreur:removeObjectsArray", function(items)
 	end)
 end)
 
+RegisterServerEvent("iLivery:takeOrder")
+AddEventHandler("iLivery:takeOrder", function(MissionPoints)
+	local source = source
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		TriggerEvent("car:getPlayerJobCar", user.get("identifier"), function(car)
+			if car ~= nil then
+				local items = {}
+				local quantity = {}
+				for i = 1, #MissionPoints do
+					for j = 1, #MissionPoints[i].foods do
+						table.insert(items, MissionPoints[i].foods[j].item.id)
+						table.insert(quantity, MissionPoints[i].foods[j].quantity)
+					end
+				end
+				if car.isAbleToReceiveItems(items, quantity) then
+					local totalPrice = 0
+					for i = 1, #MissionPoints do
+						for j = 1, #MissionPoints[i].foods do
+							totalPrice = totalPrice + MissionPoints[i].foods[j].item.price * MissionPoints[i].foods[j].quantity
+						end
+					end
+					if user.get('money') >= totalPrice then
+						user.removeMoney(totalPrice)
+						car.addQuantityArray(items, quantity)
+						user.notify("Je t'ai tout mis dedans pour 200$ pour la commande et " .. totalPrice .. "$ pour les biens.", "success", "topCenter", true, 5000)
+						TriggerClientEvent("iLivreur:getReturnedInfosForOrder", user.get('source'), true)
+					else
+						user.notify("Tu n'as pas : " .. totalPrice .. "$ sur toi. </br> <strong>Le stagiaire</strong>", "error", "topCenter", true, 5000)
+					end
+				else
+					user.notify("Oh, ton véhicule est déjà bien chargé, vide le un peu avant. </br><strong>Le stagiaire</strong>", "error", "topCenter", true, 5000)
+				end
+			else
+				user.notify("Oh, je ne vois pas ton véhicule, tu es sûr qu'il est ici? </br><strong>Le stagiaire</strong>", "error", "topCenter", true, 5000)
+			end
+		end)
+	end)
+end)
+
 RegisterServerEvent("iLivreur:pourboire")
 AddEventHandler("iLivreur:pourboire", function(pourboire)
 	local source = source
@@ -86,7 +126,7 @@ AddEventHandler("iLivreur:endedMission", function(MissionInfos, nowTime)
 	local source = source
 	local pallier = {0.75, 1 , 1.48, 1.87}
 	local multiplicator = {1.15, 1.25, 1.45, 1.84}
-	local timeHePut = time - MissionInfos.time
+	local timeHePut = nowTime - MissionInfos.time
 	local distance = MissionInfos.totalShortestDistance
 	local ratio = distance / timeHePut
 	local thisPallier = 0

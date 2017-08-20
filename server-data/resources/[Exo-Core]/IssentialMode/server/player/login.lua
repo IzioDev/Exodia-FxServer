@@ -119,7 +119,7 @@ function RegisterANewChar(identifier, source, firstname, lastname, age, ok)
 	    ['@rank'] = " ",
 	    ['@job'] = settings.defaultSettings.unEmployed,
 	    ['@inventory'] = json.encode({}),
-	    ['@identity'] = json.encode({firstName = firstname, lastName = lastname, age = age, phoneNumber = "NOOBI", playTime = "0", accountNumber = "0", lastSeen = lastSeen}),
+	    ['@identity'] = json.encode({firstName = firstname, lastName = lastname, age = age, phoneNumber = "NOOBI", playTime = "0", accountNumber = "0", lastSeen = lastSeen, matricule = GenerateMatricule()}),
 	    ['@skin'] = json.encode(defaultSkin),
 	    ['@lastpos'] = json.encode({x = -1038.99, y = -2740.23, z = 13.86}),
 	    ['@bank'] = 250,
@@ -128,6 +128,19 @@ function RegisterANewChar(identifier, source, firstname, lastname, age, ok)
 	    	})
 	})
  	LoadUserFromPicking(firstname, lastname, age, false, source, ok)
+end
+
+function GenerateMatricule()
+	local matricule = nil
+	local a = math.random(1,26)
+	local b = math.random(1,26)
+	local c = math.random(1,26)
+	local d = math.random(1,26)
+	local e = math.random(1,26)
+	local alphabet = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}
+	matricule = alphabet[a] .. alphabet[b] .. alphabet[c] .. "-" .. math.random(1,9) .. math.random(1,9) .. math.random(1,9) .. "-" .. alphabet[d] .. alphabet[e]
+
+	return matricule
 end
 
 function getPlayerFromId(id)
@@ -170,7 +183,7 @@ function registerUser(identifier, source)
 		    ['@rank'] = " ",
 		    ['@job'] = "Chomeur",
 		    ['@inventory'] = json.encode({}),
-		    ['@identity'] = json.encode({firstName = "Ana", lastName = "Nass", age = "20", phoneNumber = "NOOBI", playTime = "0", accountNumber = "0", lastSeen = lastSeen}),
+		    ['@identity'] = json.encode({firstName = "Ana", lastName = "Nass", age = "20", phoneNumber = "NOOBI", playTime = "0", accountNumber = "0", lastSeen = lastSeen, matricule = GenerateMatricule()}),
 		    ['@skin'] = json.encode(defaultSkin),
 		    ['@lastpos'] = json.encode({x = -1038.99, y = -2740.23, z = 13.86}),
 		    ['@bank'] = 250,
@@ -326,7 +339,7 @@ function savePlayerDatas()
 			if users ~= nil then
 				for k,v in pairs(users) do
 					if v ~= nil then -- Pas sûr que cela soit nécéssaire
-						v:incrementPlayTime()
+						v.incrementPlayTime()
 						if v.get('haveChanged') == true then
 							v.set('haveChanged', false)
 							MySQL.Sync.execute("UPDATE users SET `otherInGameInfos`=@otherInGameInfos, `money`=@value, `dirty_money`=@v2, `job`=@v3, `rank`=@v4, `identity`=@v5, `inventory`=@v6, `lastpos`=@v7 WHERE identifier = @identifier AND id = @id",{

@@ -3,10 +3,37 @@
 -- Proprietary and confidential
 -- Written by Romain Billot <romainbillot3009@gmail.com>, Jully 2017
 
+local Records = {}
+
 RegisterServerEvent("print:serverArray")
 RegisterServerEvent("police:armurerieToServer")
 RegisterServerEvent("police:retrieveArmurerieToServer")
 RegisterServerEvent("police:refreshService")
+
+AddEventHandler("onMySQLReady", function()
+	TriggerEvent("iCops:startLoading")
+end)
+AddEventHandler("iCops:loadingAfterRestart", function()
+	TriggerEvent("iCops:startLoading")
+end)
+
+AddEventHandler("iCops:startLoading", function()
+	local result = MySQL.Sync.fetchAll("SELECT * FROM records WHERE access=@j1 or access=@j2",{
+			["@j1"] = "LSPD",
+			["@j2"] = "LSSD"
+		})
+	for i=1, #result do
+		table.insert(Records,
+		{
+			creator = result[i].creator,
+			access = result[i].access,
+			infos = json.decode(result[i].infos),
+			new = false,
+			id = result[i].id,
+			note = json.decode(result[i].note)
+		})
+	end
+end)
 
 AddEventHandler("print:serverArray", function(toPrint)
 	print(json.encode(toPrint))
@@ -334,3 +361,164 @@ AddEventHandler("police:dragRequest", function(psid, isDragged)
 		end)
 	end)
 end)
+
+----------Partie UI:
+RegisterServerEvent("iCops:registerNewCar")
+AddEventHandler("iCops:registerNewCar", function(data)
+	local source = source
+	local nowTime = os.time()
+	data.type = "vehicle"
+	data.time = nowTime
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		for i = 1, #Records do
+			if data.matricule == Records[i].infos.matricule and user.get('job') == Records[i].access and Records[i].infos.type == data.type then
+				user.notify("Il y a déjà un casier de crée pour cette voiture", "error", "topCenter", true, 5000)
+				return
+			end
+		end
+		table.insert(Records, 
+		{
+			creator = user.get('identifier'),
+			access = user.get('job'),
+			infos = data,
+			new = true,
+			id = #Records + 1,
+			note = {}
+		})
+		user.notify("Tu viens d'enregistrer un véhicule.", "success", "topCenter", true, 5000)
+	end)
+-- carManufacturer
+-- carModel
+-- carColor
+-- carDate
+-- carPlate
+-- carOwner
+-- carAdress
+-- carOthers
+ 	
+end)
+
+RegisterServerEvent("iCops:registerNewCitizen")
+AddEventHandler("iCops:registerNewCitizen", function(data)
+	local source = source
+	local nowTime = os.time()
+	data.type = "citizen"
+	data.time = nowTime
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		for i = 1, #Records do
+			print(data.matricule)
+			print(Records[i].infos.matricule)
+			if data.matricule == Records[i].infos.matricule and user.get('job') == Records[i].access and Records[i].infos.type == data.type then
+				user.notify("Il y a déjà un casier de crée pour ce citoyen", "error", "topCenter", true, 5000)
+				return
+			end
+		end
+		table.insert(Records, 
+		{
+			creator = user.get('identifier'),
+			access = user.get('job'),
+			infos = data,
+			new = true,
+			id = #Records + 1,
+			note = {}
+		})
+		user.notify("Tu viens d'ajouter un nouveau casier.", "success", "topCenter", true, 5000)
+	end)
+-- lastname
+-- firstname
+-- age
+-- adress
+-- phoneNumber
+-- permis
+-- criminalRecord
+ 	
+end)
+
+RegisterServerEvent("iCops:askForCitizenSearch")
+AddEventHandler("iCops:askForCitizenSearch", function(data)
+	local source = source
+	local returnedResult = {}
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		for k,v in pairs(Records) do
+			if v.infos.matricule == data.matricule and v.infos.type == "citizen" and user.get('job') == v.access then
+				table.insert(returnedResult, v)
+			end
+		end
+	end)
+	if #returnedResult == 0 then
+		returnedResult = nil
+	end
+	TriggerClientEvent("iCops:returnCitizenSearch", source, returnedResult[1])
+end)
+
+RegisterServerEvent("iCops:askForCarSearch")
+AddEventHandler("iCops:askForCarSearch", function(data)
+	local source = source
+	local returnedResult = {}
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		for k,v in pairs(Records) do
+			if v.infos.plate == data.plate and v.infos.type == "vehicle" and user.get('job') == v.access then
+				table.insert(returnedResult, v)
+			end
+		end
+	end)
+	if #returnedResult == 0 then
+		returnedResult = nil
+	else
+		returnedResult = returnedResult[1]
+	end
+	print(json.encode(returnedResult))
+	TriggerClientEvent("iCops:returnCarSearch", source, returnedResult)
+end)
+
+RegisterServerEvent("iCops:addNoteToCitizen")
+AddEventHandler("iCops:addNoteToCitizen", function(data)
+	local source = source
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		for i = 1, #Records do
+			print(data.id)
+			print(Records[i].id)
+			if Records[i].id == data.id then
+				table.insert(Records[i].note, {text = data.data, creator = user.get('displayName'), time = os.time()})
+				Records[i].haveChanged = true
+				user.notify("Tu viens d'ajouter une note au casier.", "success", "topCenter", true, 5000)
+				break
+			end
+		end
+	end)
+end)
+
+function SaveRecords()
+	SetTimeout(1000000, function()
+		for k,v in pairs(Records) do
+			if v.new then
+				MySQL.Sync.execute("INSERT INTO records (`creator`, `infos`, `access`, `id`, `note`) VALUES (@creator, @infos, @access, @id, @note)",{
+					["@creator"] = v.creator,
+					["@infos"] = json.encode(v.infos),
+					["@access"] = v.access,
+					["@id"] = v.id,
+					["@note"] = json.encode(v.note)
+				})
+				v.new = false
+			end
+		end
+		SaveRecords()
+	end)
+end
+SaveRecords()
+
+function SaveNote()
+	SetTimeout(1000000, function()
+		for k,v in pairs(Records) do
+			if v.haveChanged then
+				MySQL.Sync.execute("UPDATE records SET `note`=@note WHERE id=@id ",{
+					["@note"] = json.encode(v.note),
+					["@id"] = v.id
+				})
+				v.new = false
+			end
+		end
+		SaveNote()
+	end)
+end
+SaveNote()

@@ -117,18 +117,18 @@ AddEventHandler("inventory:give", function(from, target, targetId,item, quantity
       if fromInvType == "personal" and fromInvType == toInvType then -- kikoo spotted
         TriggerClientEvent("inventory:change", targetId, toInv.sendDatas())
         toInv.notify(config[lang].giveItem .. quantity .. " " .. allItem[tonumber(item)].name .. config[lang].by  .. fromInv.get('displayName') .. "</span>", "success", "topCenter", true, 5000)
-        fromInv.notify(config[lang].giveItem .. quantity .. " " .. allItem[tonumber(item)].name .. config[lang].by  .. toInv.get('displayName') .. "</span>", "success", "topCenter", true, 5000) 
-        CancelEvent()
+        fromInv.notify(config[lang].giveItemG .. quantity .. " " .. allItem[tonumber(item)].name .. " à "  .. toInv.get('displayName') .. "</span>", "success", "topCenter", true, 5000) 
+        return
       end
 
       if fromInvType == "personal" and (toInvType == "car" or toInvType == "chest") then
-        fromInv.notify(config[lang].deposit .. quantity .. " " .. allItem[tonumber(item)].name .. " to the " .. toInvType .."!</span>", "success", "topCenter", true, 5000)
-        CancelEvent()
+        fromInv.notify(config[lang].deposit .. quantity .. " " .. allItem[tonumber(item)].name .. " dans le véhicule!</span>", "success", "topCenter", true, 5000)
+        return
       end
 
       if (fromInvType == "car" or fromInvType == "chest") and toInvType == "personal" then
         toInv.notify(config[lang].withdraw .. quantity .. " " .. allItem[tonumber(item)].name .. "!</span>", "success", "topCenter", true, 5000)
-        CancelEvent()
+        return
       end
 
       if toInvType == "personal" then
@@ -289,6 +289,7 @@ AddEventHandler("inv:buyItemByItemId", function(itemId, amount)
         user.removeMoney(allItem[tonumber(itemId)].price)
         TriggerClientEvent("inventory:change", source, json.decode(user.sendDatas()))
         user.notify("Tu viens d'acheter <span style='color:green' >" .. amount .. "</span><span style='color:blue' > " .. allItem[tonumber(itemId)].name .. "!</span>", "success", "topCenter", true, 5000)
+        user.refreshInventory()
       else
         user.notify("Tu n'as pas assez d'argent", "error", "topCenter", true, 5000)
       end
@@ -298,6 +299,7 @@ AddEventHandler("inv:buyItemByItemId", function(itemId, amount)
   end)
 end)
 
+
 function GetInventoryType(id)
   local result = nil
   local invType
@@ -305,7 +307,7 @@ function GetInventoryType(id)
   result = stringsplit(id, ":")
   if result[1] == "steam" then
     invType = "personal"
-  elseif result[1] == "ip" then
+  elseif result[1] == "ip" or result[1] == "license" then
     invType = "personal"
   elseif result[1] == "plate" then
     invType = "car"
@@ -314,7 +316,7 @@ function GetInventoryType(id)
   else
     print("Error GetInventoryType inventory/server.lua")
   end
-  if result[1] == 'ip' then
+  if result[1] == 'ip' or result[1] == "license" then
     return result[1]..":"..result[2], invType
   else
     return result[2], invType

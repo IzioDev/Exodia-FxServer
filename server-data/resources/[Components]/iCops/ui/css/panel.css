@@ -1,0 +1,60 @@
+#panel {
+	display: block;
+	background-color: blue;
+	border: 1px solid black;
+	border-radius: 10px;
+  	margin: auto;
+  	width: 70%;
+  	display : none;
+}
+
+.logo {
+	margin-left: 20px;
+	margin-top: 20px;
+	margin-bottom: 50px;
+	display : none;
+}
+
+.logo h1{
+	margin-top: -50px;
+	text-align: center;
+	color: #000000;
+	display : none;
+}
+
+.resultNav li{
+	display:inline-block;
+	list-style: none;
+}
+
+.resultNav ul{
+	margin: auto;
+}
+
+#citoyens {
+	display: none;
+	background-color: blue;
+	border: 1px solid black;
+	border-radius: 10px;
+  	margin: auto;
+  	width: 70%;
+  	display : none;
+}
+#vehicules {
+	display: none;
+	background-color: blue;
+	border: 1px solid black;
+	border-radius: 10px;
+  	margin: auto;
+  	width: 70%;
+  	display : none;
+}
+
+#vehicules_resultats {
+	
+}
+
+body
+{
+    background-color: rgba(255, 255, 255, 0.0)
+}

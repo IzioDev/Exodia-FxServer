@@ -81,13 +81,20 @@ function ItemMenu(args)
     Menu.addButton("Donner", "givep", {itemId = itemId, invType = args.invType})
     if DoesEntityExist(GetClosestVehicle(x, y, z, 3.0, 0, 70)) then
       Menu.addButton("Déposer dans un coffre", "givec", {itemId = itemId, invId = "plate:"..GetVehicleNumberPlateText(GetClosestVehicle(x, y, z, 3.0, 0, 70))})
+      Menu.addButton("Tout déposer dans le coffre", "giveAc", {invId = "plate:"..GetVehicleNumberPlateText(GetClosestVehicle(x, y, z, 3.0, 0, 70)), inv = args.inv})
     end
     Menu.addButton("Jeter", "drop", {itemId = itemId, invType = args.invType})
     Menu.addButton("Retour", "back", {inv = args.inv, invType = args.invType})
   end
 end
 
-function add(arg)
+function giveAc(args)
+  for i = 1, #args.inv.items do
+    TriggerServerEvent("inventory:give", steamid, args.invId, "OSEF", args.inv[i].items.id, args.inv[i].items.quantity)
+  end
+end
+
+function add(args)
   prompt(function(quantity)
     TriggerServerEvent("inventory:add", steamid, tonumber(args.itemId), quantity)
   end)
@@ -312,7 +319,11 @@ function prompt(callback)
       DisableAllControlActions(0)
       Wait(0)
     end
-    if (GetOnscreenKeyboardResult()) then
+    local quantity = GetOnscreenKeyboardResult()
+    if (quantity) then
+      if quantity == nil or quantity == "" or quantity == " " then
+        return
+      end
       quantity =  math.abs(tonumber(GetOnscreenKeyboardResult()))
       callback(quantity)
     end

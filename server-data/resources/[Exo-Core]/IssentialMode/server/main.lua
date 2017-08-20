@@ -11,7 +11,8 @@ StoppingManager = {
 	["iskin"] = {"iSkin:giveSkinToPlayerRestart"},
 	["iZone"] = {"onRestartZone"},
 	["ijob"] = {"iJob:loadingAfterRestart"},
-	["dbank"] = {"resart:dBank"}
+	["dbank"] = {"resart:dBank"},
+	["icops"] = {"iCops:loadingAfterRestart"}
 }
 tickRateEventManager = 40
 treating = false

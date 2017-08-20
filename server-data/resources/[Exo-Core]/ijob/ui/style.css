@@ -25,6 +25,10 @@ html {
 
 }
 
+.resultNav {
+	display:inline;
+}
+
 h1 {
   font-family: 'Open Sans', sans-serif;
   font-size: 28px;

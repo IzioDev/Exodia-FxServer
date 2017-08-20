@@ -266,7 +266,6 @@ RegisterNUICallback('close', function(data, cb)
 end)
 
 RegisterNUICallback('selectedJob', function(data, cb)
-  Citizen.Trace(json.encode(data))
   SetNuiFocus(false, false)
   EnableAllControlActions(1)
   TriggerServerEvent('ijob:changeJobPoleEmplois', data.id)
