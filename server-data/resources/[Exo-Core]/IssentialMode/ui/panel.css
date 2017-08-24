@@ -1,0 +1,33 @@
+#notifs_panel {
+	display: none;
+	position: absolute;
+	background-color: #ffffff;
+	border: 1px solid black;
+	border-radius: 10px;
+  	width: 60%;
+  	left: 20%;
+  	top: 30%;
+ }
+
+.notifs_titre {
+	margin-left: 20px;
+	margin-top: 20px;
+	margin-bottom: 20px;
+}
+
+.notifs_titre h1{
+	text-align: center;
+	color: #000000;
+}
+
+.notifs_texte p{
+	text-align: center;
+	font-size: 12px;
+	color: #ffffff;
+	padding-top: 10px;
+}
+
+body
+{
+    background-color: rgba(255, 255, 255, 0.0)
+}

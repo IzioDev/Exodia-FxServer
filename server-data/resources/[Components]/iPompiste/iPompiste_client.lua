@@ -6,7 +6,7 @@
 local userJob
 local userRank
 local active = false
-local isInService = false
+local isInService = true
 local qgDisplayed = false
 local currentVeh = nil
 local currentTrailer = nil
@@ -135,7 +135,7 @@ function RunPompisteThread()
 										SpawnTrailer(result)
 									end
 								else
-									if GetGameTimer() <= timeTrailer + 1800000 then
+									if GetGameTimer() <= timeTrailer + 180000 then
 										DisplayHelpText("Tu en a déjà prit une il y a pas longtemps. Qu'en a tu fais?!")
 									else
 										DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour prendre ta citerne.")
@@ -148,7 +148,11 @@ function RunPompisteThread()
 								DisplayHelpText("Veuillez prendre votre véhicule de fonction pour interragir.")
 							end
 						else
-							DisplayHelpText("Veuillez prendre votre service pour pouvoir interragir.")
+							if not(isInService) then
+								DisplayHelpText("Veuillez prendre votre service pour pouvoir interragir.")
+							else
+								DisplayHelpText("Veuillez monter votre véhicule de fonction pour interragir.")
+							end
 						end
 					end
 
@@ -160,6 +164,7 @@ function RunPompisteThread()
 						end
 						if IsControlJustPressed(1, 38) then
 							TriggerEvent("iPompiste:swichService", isInService, result)
+							Citizen.Wait(100)
 						end
 					end
 
@@ -173,6 +178,24 @@ function RunPompisteThread()
 		end
 	end)
 end
+
+AddEventHandler("iJob:askForpompiste", function(cb)
+	if currentTrailer == nil then
+		TriggerEvent("pNotify:notifyFromServer", "Tu n'as pas de citerne.")
+		return
+	end
+	if DoesEntityExist(currentTrailer) then
+		cb(currentTrailer)
+	else
+		TriggerEvent("pNotify:notifyFromServer", "Tu as encore cassé ta citerne?!")
+		return
+	end
+end)
+
+RegisterNetEvent("iPompiste:startMission")
+AddEventHandler("iPompiste:startMission", function(params)
+	
+end)
 
 function DisplayHelpText(str)
 	SetTextComponentFormat("STRING")

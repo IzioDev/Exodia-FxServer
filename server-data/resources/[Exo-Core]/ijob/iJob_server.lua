@@ -35,10 +35,10 @@ AddEventHandler("iJob:startLoading", function()
 			lost = { {p = "steamTest2", a = 10, re = "essence", dmh = "14 6 5"}, {p = "steamTest3", a = 10, re = "essence", dmh = "14 6 5"} },
 			benefit = { {p = "steamTest2", a = 10, re = "venteTest", dmh = "14 6 5"}, {p = "steamTest3", a = 10, re = "venteTest", dmh = "14 6 5"} },
 			capital = 100000,
-			name = "livreur",
+			name = "pompiste",
 			employe = { {pl = "steam:110000104bd6595", rank = "interne", displayName = "test Test"} },
 			default = {rank = "stagiaire"},
-			id = 6
+			id = 7
 		}
 
 		local encodedRank = json.encode(tableTest.rank)
@@ -307,35 +307,92 @@ AddEventHandler("iJob:checkHarvest", function(result)
 			ProcessHarvest(source, result, finalItemsArray)
 		else
 			TriggerClientEvent("ijob:stopHarvest", source)
-			user.notify("Tu ne peux pas récolter, la zone de récolte est vide. Attends un peu", "error", "centerLeft", true, 5000)
+			user.notify("Tu ne peux pas récolter, la zone de récolte est vide. Attends un peu", "error", "topCenter", true, 5000)
 			TriggerClientEvent("anim:Play", source, "stopAll")
 		end
 	end)
+end)
 
+RegisterServerEvent("iJob:askForItemsArray")
+AddEventHandler("iJob:askForItemsArray", function(result, plate)
+	local source = source
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		TriggerEvent("car:getPlayerJobCar", user.get('identifier'), function(car)
+			if car ~= nil then
+				local items = {}
+				local quantity = {}
+				for i = 1, #result.need do
+					table.insert(items, result.need[i].id)
+					table.insert(quantity, result.need[i].quantity)
+				end
+
+				local quantityGotten = car.howMuchItContainOfArray(items)
+
+				if car.isAbleToReceiveItems(items, quantity) then
+					TriggerClientEvent("iJob:returnFromAskForItemsArray", source, result, quantityGotten, plate)
+				else
+					user.notify("Tu n'as plus rien à revendre de ton véhicule ici.")
+					TriggerClientEvent("iJob:returnFromAskForItemsArray", source, result, nil, plate)
+				end
+
+			else
+				user.notify("Contact Izio iJiob server : nil veh for job when selling", "error", "topCenter", true, 5000)
+			end
+		end)
+	end)
+end)
+
+RegisterServerEvent("iJob:sellItemsFromVeh")
+AddEventHandler("iJob:sellItemsFromVeh", function(itemsNeeded, plate)
+	local source = source
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		TriggerEvent("car:getPlayerJobCar", user.get('identifier'), function(car)
+
+			local items = {}
+			local quantity = {}
+
+			for i = 1, #itemsNeeded do
+				table.insert(items, itemsNeeded[i].id)
+				table.insert(quantity, itemsNeeded[i].quantity)
+			end
+
+			local items = user.get('item')
+			local totalPrice = 0
+
+			for i = 1, #itemsNeeded do
+				totalPrice = totalPrice + items[itemsNeeded[i].id] * itemsNeeded[i].quantity
+			end
+
+			user.addMoney(totalPrice)
+			local message = GetMessage(items, quantity, items)
+			user.notity("Tu viens de vendre " .. message .. "pour " .. totalPrice .. "$.", "success", "topCenter", true, 5000)
+			car.removeQuantityArray(items, quantity)
+		end)
+	end)
 end)
 
 function GenerateLucky(result)
 	local finalItems = {}
-	local quantity = 0
+	local quantity = {}
 	for i = 1, #result.receive.normal do
 		local luck = math.random(1,100)
 		if luck <= 2 then
 			if result.receive.rare then
 				local picker = math.random(1, #result.receive.rare)
 				table.insert(finalItems, result.receive.rare[picker])
-				quantity = quantity + result.receive.rare[picker].quantity * 5
+				table.insert(quantity, result.receive.rare[picker].quantity * 5)
 			else
-				table.insert(finaelItems, {id = result.receive.normal[i].id, quantity = result.receive.normal[i].quantity * 2})
-				quantity = quantity + result.receive.normal[i].quantity * 2
+				table.insert(finalItems, {id = result.receive.normal[i].id, quantity = result.receive.normal[i].quantity * 2})
+				table.insert(quantity, result.receive.normal[i].quantity * 2)
 			end
 
 		elseif luck <= 15 then
-			table.insert(finaelItems, {id = result.receive.normal[i].id, quantity = result.receive.normal[i].quantity * 2})
-			quantity = quantity + result.receive.normal[i].quantity * 2
+			table.insert(finalItems, {id = result.receive.normal[i].id, quantity = result.receive.normal[i].quantity * 2})
+			table.insert(quantity, result.receive.normal[i].quantity * 2)
 		
 		elseif luck <= 100 then
-			table.insert(finaelItems, {id = result.receive.normal[i].id, quantity = result.receive.normal[i].quantity})
-			quantity = quantity + result.receive.normal[i].quantity
+			table.insert(finalItems, {id = result.receive.normal[i].id, quantity = result.receive.normal[i].quantity})
+			table.insert(quantity, result.receive.normal[i].quantity)
 		end
 	end
 	return finalItems, quantity
@@ -411,22 +468,22 @@ end
 function ProcessOther(source, result, item, quantity)
 	TriggerEvent("es:getPlayerFromId", source, function(user)
 		local quantityToRemove = {}
-			user.addQuantityArray(item, quantity)
-			for i = 1, #result.need do
-				table.insert(quantityToRemove, 1)
-			end
-			for i=1, #result.need do
-				for j=1, #usableTreatItem do
-					if result.need[i] == usableTreatItem[j] then
-						table.remove(result.need, i)
-					end
+		user.addQuantityArray(item, quantity)
+		for i = 1, #result.need do
+			table.insert(quantityToRemove, 1)
+		end
+		for i=1, #result.need do
+			for j=1, #usableTreatItem do
+				if result.need[i] == usableTreatItem[j] then
+					table.remove(result.need, i)
 				end
 			end
-			user.removeQuantityArray(result.need, quantityToRemove)
-			local itemInfos = user.get('item')
-			local test = GetMessage(item, quantity, itemInfos)
-			user.notify("Tu viens de recevoir" .. test .. ".", "success", "centerLeft", true, 5000)
-			TriggerClientEvent("inventory:change", source, json.decode(user.sendDatas()))
+		end
+		user.removeQuantityArray(result.need, quantityToRemove)
+		local itemInfos = user.get('item')
+		local message = GetMessage(item, quantity, itemInfos)
+		user.notify("Tu viens de recevoir" .. message .. ".", "success", "topCenter", true, 5000)
+		TriggerClientEvent("inventory:change", source, json.decode(user.sendDatas()))
 	end)
 end
 

@@ -298,7 +298,7 @@ function RunHarvestThread(bool)
 				end
 				TriggerEvent("izone:getResultFromPlayerInAnyJobZone", userJob, function(result)
 					-- result.nom = zoneName
-					if result ~= nil and not(launchedlegit) then -- on est soit dans une zone de récolte/traitement/vente de notre job.
+					if result ~= nil and not(launchedlegit) and result.ijob then -- on est soit dans une zone de récolte/traitement/vente de notre job.
 						DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour commencer ".. result.displayMessageInZone)
 						if IsControlJustPressed(1, 38) then
 							if (result.harvest) then
@@ -326,13 +326,37 @@ function RunHarvestThread(bool)
 										trust = trust + 1
 									end
 								end
+
 								if trust == #result.need then
 									TriggerEvent("CheckProcessOperation", result)
 								else
 									TriggerEvent("pNotify:notifyFromServer", "Vous devez avoir des matériaux pour cette cette action", "error", "topCenter", true, 5000)
 								end
+
 							elseif (result.selling) then
 
+								if result.tool then
+									if not(IsGottingItem(result.tool)) then
+										return
+									else
+										TriggerEvent("pNotify:notifyFromServer", "Tu as besoin d'un outil pour faire cette action.", "error", "topCenter", true, 5000)
+									end
+								end
+								if result.sellViaVeh then
+									TriggerEvent("iJob:askForVehJob", userJob, result)
+								else
+									trust = 0
+									for i = 1, #result.need do
+										if IsGottingItem(result.need[i]) then
+											trust = trust + 1
+										end
+									end
+									if trust == #result.need then
+										TriggerEvent("CheckProcessOperation", result)
+									else
+										TriggerEvent("pNotify:notifyFromServer", "Vous devez avoir des matériaux pour cette cette action", "error", "topCenter", true, 5000)
+									end
+								end
 							end
 						end
 					elseif result == nil and launchedlegit then
@@ -347,6 +371,24 @@ function RunHarvestThread(bool)
 	end
 end
 
+AddEventHandler("iJob:askForVehJob", function(job, result)
+	TriggerEvent("iJob:askFor".. userJob, function(vehicule)
+		local plate = GetVehicleNumberPlateText(vehicule)
+		TriggerServerEvent("iJob:askForItemsArray", result, plate)
+	end)
+end)
+
+RegisterNetEvent("iJob:returnFromAskForItemsArray")
+AddEventHandler("iJob:returnFromAskForItemsArray", function(result, array, plate)
+	if not(launchedlegit) then
+		ProccessSelling(result, quantityArray, plate)
+	elseif quantityArray == nil then
+		waitingForServer = nil
+	else
+		waitingForServer = array
+	end
+end)
+
 function CheckHarvestProcessOperation(result) -- for harvest
 	TriggerServerEvent("iJob:checkHarvest" , result)
 end
@@ -360,8 +402,6 @@ AddEventHandler("CheckProcessOperation", function(result)
 		DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour stopper ")
 		if IsControlJustPressed(1, 38) then
 			launchedlegit = nil
-			break
-			CancelEvent()
 			return
 		end
 		if not(inWaiting) and launchedlegit then 
@@ -483,6 +523,65 @@ AddEventHandler("ijob:checkClientHarvest", function(result) -- on a check s'il a
 	end
 end)
 
+function ProccessSelling(result, array, plate)
+	launchedlegit = true
+	prokedlegit = false
+	local inWaiting = false
+	while launchedlegit do
+		Wait(0)
+		DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour stopper ")
+		if IsControlJustPressed(1, 38) then
+			launchedlegit = nil
+			return
+		end
+		if not(inWaiting) and launchedlegit then
+			if result.need then
+				waitingForServer = true
+				TriggerServerEvent("iJob:askForItemsArray", result, plate) -- ok
+			end
+			print(type(waitingForServer))
+
+			while type(waitingForServer) == "boolean" do
+				Citizen.Wait(500)
+			end
+
+			if waitingForServer == nil then -- prevent the always waiting
+				launchedlegit = nil
+				prokedlegit = true
+				return
+			end
+
+			local toBeValidate = {}
+			for i = 1, #waitingForServer do
+				for j = 1, #result.need do
+					if waitingForServer[i].id == result.need[j].id then
+						if waitingForServer[i].quantity >= result.need[j].quantity then
+							table.insert(toBeValidate, 1)
+						end
+					end
+				end
+			end
+
+			if #toBeValidate ~= #result.need then
+				waitingForServer = nil
+				launchedlegit = nil
+				prokedlegit = true
+				return
+			end
+
+			inWaiting = true
+			TriggerEvent("anim:Play", result.annimation)
+			SetTimeout(result.time ,function()
+				if not(prokedlegit) then
+					TriggerServerEvent("iJob:sellItemsFromVeh", result.need, plate)
+				end
+				Citizen.Wait(500)
+				inWaiting = false
+			end)
+		end
+	end
+end
+
 function IsGottingItems(items)
 	local myBool = false
 	TiggerEvent("inv:gotItemsAndQuantity", items, function(bool)
@@ -577,4 +676,18 @@ function DisplayHelpText(str)
 	SetTextComponentFormat("STRING")
 	AddTextComponentString(str)
 	DisplayHelpTextFromStringLabel(0, 0, 1, -1)
+end
+
+function prompt(callback)
+	Citizen.CreateThread(function()
+    	DisplayOnscreenKeyboard(true, "FMMC_KEY_TIP8", "", "", "", "", "", 120)
+    	while (UpdateOnscreenKeyboard() == 0) do
+    		Wait(0)
+    	  DisableAllControlActions(0)
+    	end
+    	if (GetOnscreenKeyboardResult()) then
+    	  quantity =  math.abs(tonumber(GetOnscreenKeyboardResult()))
+    	  callback(quantity)
+    	end
+    end)
 end

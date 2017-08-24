@@ -1,3 +1,9 @@
+-- Copyright (C) Izio, Inc - All Rights Reserved
+-- Unauthorized copying of this file, via any medium is strictly prohibited
+-- Proprietary and confidential
+-- Written by Romain Billot <romainbillot3009@gmail.com>, Jully 2017
+
+
 allItem = nil
 local defaultInvWeight = 300.0 -- To change
 
@@ -87,6 +93,22 @@ function CreateCar(carInfos, vehJob) -- Create Car Object
 			return true
 		else
 			return false
+		end
+	end
+
+	rTable.howMuchItContainOfArray = function(itemsA)
+		local returnedQuantity = {}
+		for i = 1, #self.inventory do
+			for j = 1, #itemsA do
+				if self.inventory[i].id == itemsA[j].id then
+					table.insert(returnedQuantity, { quantity = self.inventory[i].quantity, id = self.inventory[i].id})
+				end
+			end
+		end
+		if #returnedQuantity == #itemsA then
+			return returnedQuantity
+		else
+			return nil
 		end
 	end
 

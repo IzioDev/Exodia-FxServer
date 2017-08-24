@@ -4,7 +4,7 @@
 -- Written by Romain Billot <romainbillot3009@gmail.com>, Jully 2017
 
 allItem = nil -- int allItem datas
-defaultInvWeight = 3
+defaultInvWeight = 8
 AddEventHandler('onMySQLReady', function ()
 	local result = MySQL.Sync.fetchAll("SELECT * FROM item")
 	allItem = result
@@ -236,7 +236,7 @@ function CreateUser(source, Issential)
 		invType = "personal_inventory",
 		items = self.inventory
 		}
-		TriggerClientEvent("inventory:change", source, datasArray)
+		TriggerClientEvent("inventory:change", source, json.encode(datasArray))
 	end
 
 	rTable.isAbleToGive = function(itemId, quantity)
@@ -283,11 +283,25 @@ function CreateUser(source, Issential)
 
 	-- Notify Stuff
 	rTable.notify = function(ntext, ntype, nlayout, nprogress, ntimeout)
-	print("notified")
 		TriggerClientEvent("pNotify:notifyFromServer", self.source , ntext, ntype, nlayout, nprogress, ntimeout)
 		-- ntext : string | ntype = alert, success, error, warning, info | 
 		-- nlayout = top, topLeft, topCenter, topRight, center, centerLeft, centerRight, bottom, bottomLeft, bottomCenter, bottomRight.
 		-- nprogress : true, false | ntimeout : number in MS.
+	end
+
+	rTable.alert = function(title, desc, params)
+		TriggerClientEvent("Issential:alertFromServer", self.source, title, desc, params)
+	end
+
+	rTable.sendSms = function(exp, message)
+		TriggerClientEvent("gcPhone:receiveMessage", self.source, {
+					transmitter = exp, 
+					receiver = "test", 
+					message = message, 
+					isRead = 0,
+					owner = 0,
+					time = "Bouge ton cul"
+				})
 	end
 
 	-- Identity Stuff

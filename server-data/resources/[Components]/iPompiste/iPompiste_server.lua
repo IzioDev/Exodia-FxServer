@@ -15,6 +15,20 @@
 -- 	"Cadeau, toujours à l'heure!",
 -- 	"J'ai faim, dégage!"
 -- }
+RegisterServerEvent("iPompiste:manageChoiceMission")
+AddEventHandler("iPompiste:manageChoiceMission", function(choice, params)
+	local source = source
+	TriggerEvent("es:getPlayerFromId", source, function(user)
+		if choice == true then
+			user.notify("Tu viens d'accepter le rechargement de la station essence, suit les indications données par SMS.", "success", "topCenter", true, 5000)
+			user.sendSms("Nicolas Laffond", "Dépèche toi de m'apporter " .. params.param1 .. " litres d'essence et " .. params.param2 .. " litre de gazoil. Je t'ai envoyé les coordonnées GPS. On se rejoint la bas rapidement.")
+			user.setSessionVar("inMission", true)
+			TriggerClientEvent("iPompiste:startMission", source, params)
+		else
+			user.notify("Tu viens de refuser l'évenement mission.", "error", "topCenter", true, 5000)
+		end
+	end)
+end)
 
 RegisterServerEvent("iPompiste:spawnVehGarage")
 AddEventHandler("iPompiste:spawnVehGarage", function(carPrice, carPlate)
@@ -68,7 +82,7 @@ AddEventHandler("iPompiste:syncServiceWithServer", function(isInService)
 	local source = source
 	TriggerEvent("es:getPlayerFromId", source, function(user)
 		local var = nil
-		if isInServer then
+		if isInService then
 			var = "prendre"
 		else
 			var = "quitter"
@@ -77,6 +91,32 @@ AddEventHandler("iPompiste:syncServiceWithServer", function(isInService)
 		user.setSessionVar("inService", isInService)
 	end)
 end)
+
+function SelectForMission()
+	SetTimeout(5000, function()
+		Wait(1000)
+		TriggerEvent("es:getPlayers", function(Users)
+			local selectedPlayer = {}
+			for k,v in pairs(Users) do
+				if v ~= nil then
+					print(v.get('job'))
+					if v.get('job') == "pompiste" and v.getSessionVar("inService") and not(v.getSessionVar("inMission")) then
+						print("on a inseré")
+						table.insert(selectedPlayer, v)
+					end
+				end
+			end
+			if #selectedPlayer ~= 0 then
+				local lucky = math.random(1, #selectedPlayer)
+				local first = math.random(20,40)
+				local second = math.random(20,40)
+				selectedPlayer[lucky].alert("Alerte: Station à sec","Mission: Aller livrer " .. first .. " essences et " .. second .. " gazoils à une station essence.",{id = "pompisteMission", param1 = first, param2 = second})
+			end
+		end)
+		SelectForMission()
+	end)
+end
+SelectForMission()
 
 -- RegisterServerEvent("iLivreur:removeObjectsArray")
 -- AddEventHandler("iLivreur:removeObjectsArray", function(items)

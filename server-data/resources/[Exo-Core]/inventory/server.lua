@@ -115,7 +115,7 @@ AddEventHandler("inventory:give", function(from, target, targetId,item, quantity
       toInv.addQuantity(item, quantity)    
                                                     -- On ajoute la quantité
       if fromInvType == "personal" and fromInvType == toInvType then -- kikoo spotted
-        TriggerClientEvent("inventory:change", targetId, toInv.sendDatas())
+        toInv.refreshInventory()
         toInv.notify(config[lang].giveItem .. quantity .. " " .. allItem[tonumber(item)].name .. config[lang].by  .. fromInv.get('displayName') .. "</span>", "success", "topCenter", true, 5000)
         fromInv.notify(config[lang].giveItemG .. quantity .. " " .. allItem[tonumber(item)].name .. " à "  .. toInv.get('displayName') .. "</span>", "success", "topCenter", true, 5000) 
         return
@@ -123,11 +123,13 @@ AddEventHandler("inventory:give", function(from, target, targetId,item, quantity
 
       if fromInvType == "personal" and (toInvType == "car" or toInvType == "chest") then
         fromInv.notify(config[lang].deposit .. quantity .. " " .. allItem[tonumber(item)].name .. " dans le véhicule!</span>", "success", "topCenter", true, 5000)
+        fromInv.refreshInventory()
         return
       end
 
       if (fromInvType == "car" or fromInvType == "chest") and toInvType == "personal" then
         toInv.notify(config[lang].withdraw .. quantity .. " " .. allItem[tonumber(item)].name .. "!</span>", "success", "topCenter", true, 5000)
+        toInv.refreshInventory()
         return
       end
 

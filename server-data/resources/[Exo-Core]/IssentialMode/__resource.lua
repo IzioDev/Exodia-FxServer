@@ -24,7 +24,11 @@ client_scripts {
 files {
 	'ui.html',
 	'pdown.ttf',
-	'bank-icon.png'
+	'bank-icon.png',
+	'ui/bootstrap.min.css',
+	'ui/bootstrap.min.css.map',
+	'ui/bootstrap.min.js',
+	'ui/panel.css'
 }
 
 server_exports {

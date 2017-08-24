@@ -31,7 +31,6 @@ end)
 
 
 AddEventHandler("inventory:change", function(data)
-
   data = json.decode(data)
   if steamid == nil then -- ok
     steamid = data.id
@@ -120,7 +119,6 @@ end
 
 function drop(args)
   prompt(function(quantity)
-    print(args.invType)
     if args.invType == "personal_inventory" then
       TriggerServerEvent("inventory:drop", steamid, tonumber(args.itemId), quantity)
     elseif args.invType == "vehicle_inventory" then
@@ -168,7 +166,6 @@ end
 
 
 AddEventHandler("inventory:result", function(jsonDATA)
-    print(jsonDATA)
     inventory = json.decode(jsonDATA)
     openInventoryID = inventory.id
     -- if openInventoryID ~= inventory.id then
@@ -285,14 +282,11 @@ Citizen.CreateThread(function()
         if askedInventory ~= steamid then
           askedInventory =  steamid
         end
-        print("personal")
         TriggerServerEvent("inventory:ask", askedInventory)
       else -- alors on a un veh
         --OpenChoiceMenu() TODO if the rest works
         --openInventoryID = "plate:".. GetVehicleNumberPlateText(GetClosestVehicle(GetEntityCoords(GetPlayerPed(-1), true), 3.0, 0, 70))
-        print("vehicle")
         TriggerServerEvent("inventory:ask", "plate:".. GetVehicleNumberPlateText(GetClosestVehicle(GetEntityCoords(GetPlayerPed(-1), true), 3.0, 0, 70)))
-        print("on vient de demander l'inv d'une caisse")
       end
 
     elseif IsControlJustReleased(1,32) then

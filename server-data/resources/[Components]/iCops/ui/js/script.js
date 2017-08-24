@@ -4,6 +4,7 @@ $(document).ready(function(){
     var selector = null
 
     function OpenMain(){
+        $('#logo').show()
         $('#panel').show();
         $('#vehicules').hide();
         $('#citoyens').hide();
@@ -13,6 +14,7 @@ $(document).ready(function(){
         $('#panel').hide();
         $('#vehicules').hide();
         $('#citoyens').hide();
+        $('#logo').hide()
     }
 
     function CheckCitizenForm(){
@@ -180,11 +182,13 @@ $(document).ready(function(){
     })
 
     $('#boutonCitoyens').click(function() {
+        $('#logo').show()
         $('#citoyens').show();
         $('#panel').hide();
         $('#vehicules').hide();
     });  
     $('#boutonVehicules').click(function() {
+        $('#logo').show()
         $('#vehicules').show();
         $('#panel').hide();
         $('#citoyens').hide();

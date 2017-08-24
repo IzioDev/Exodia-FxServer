@@ -257,6 +257,62 @@ Citizen.CreateThread(function()
         end
     end
 end)
+
+local waitingAlert = {}
+-------------- Alert NUI ---------------------
+RegisterNetEvent("Issential:alertFromServer")
+AddEventHandler("Issential:alertFromServer", function(title, desc, params)
+  table.insert(waitingAlert, {title = title, desc = desc, params = params})
+end)
+
+Citizen.CreateThread(function()
+  while true do
+    Wait(1000)
+    local isWaiting = {}
+    for i = 1, #waitingAlert do
+      if waitingAlert.isWaiting == true then
+        table.insert(isWaiting, waitingAlert)
+      end
+    end
+    if #isWaiting == 0 and #waitingAlert ~= 0 then
+      SetNuiFocus(true, true)
+      SendNUIMessage({
+          action = "openAlert",
+          title = waitingAlert[1].title,
+          desc = waitingAlert[1].desc,
+          params = waitingAlert[1].params
+        })
+      waitingAlert[1].isWaiting = true
+    end
+  end
+end)
+
+RegisterNUICallback('selected', function(data, cb)
+  SetNuiFocus(false, false)
+  table.remove(waitingAlert, 1)
+  TreatAlert(data)
+  -- data.choice
+  -- data.params
+end)
+
+RegisterNUICallback('close', function(data, cb)
+  SetNuiFocus(false, false)
+  table.remove(waitingAlert, 1)
+  data.choice = false
+  TreatAlert(data)
+  -- data.params
+end)
+
+function TreatAlert(data)
+  if data.params.event then
+    TriggerServerEvent(data.params.event, data)
+  else
+    if data.id == "pompisteMission" then
+      TriggerServerEvent("iPompiste:manageChoiceMission", data.choice, data.params)
+    end
+  end
+end
+
 ------------------------------------UI CHARACTER PART-----------------------------------
 EI = exports.interface
 
