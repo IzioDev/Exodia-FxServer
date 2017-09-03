@@ -1,8 +1,3 @@
--- Copyright (C) Izio, Inc - All Rights Reserved
--- Unauthorized copying of this file, via any medium is strictly prohibited
--- Proprietary and confidential
--- Written by Romain Billot <romainbillot3009@gmail.com>, Jully 2017
-
 local call = {
     ["LSSD"] = {},
     ["LSPD"] = {},
@@ -184,10 +179,139 @@ AddEventHandler("iService:acceptedLSPD", function(coords)
     AddBlipToListWithCoords(coords)
 end)
 
+RegisterNetEvent("iService:sendTotaxi") -- send
+AddEventHandler("iService:sendTotaxi", function(cT, fS)
+    table.insert(call["taxi"], {callType = cT, fromSource = fS})
+end)
+
+RegisterNetEvent("iService:canceltaxi") -- cancel 
+AddEventHandler("iService:canceltaxi", function(fromSource)
+    for k,v in pairs(call) do
+        for j = 1, #v do
+            if v[j].fromSource == fromSource then
+                table.remove(v, j)
+            end
+        end
+    end
+end)
+
+RegisterNetEvent("iService:timeOuttaxi") -- timeOut 
+AddEventHandler("iService:timeOuttaxi", function(fromSource)
+    for k,v in pairs(call) do
+        for j = 1, #v do
+            if v[j].fromSource == fromSource then
+                tabme.remove(v, j)
+            end
+        end
+    end
+end)
+
+RegisterNetEvent("iService:takentaxi") -- taken
+AddEventHandler("iService:takentaxi", function(fromSource)
+    for k,v in pairs(call) do
+        for j = 1, #v do
+            if v[j].fromSource == fromSource then
+                tabme.remove(v, j)
+            end
+        end
+    end
+end)
+
+RegisterNetEvent("iService:acceptedtaxi")
+AddEventHandler("iService:acceptedtaxi", function(coords)
+    AddBlipToListWithCoords(coords)
+end)
+
+RegisterNetEvent("iService:sendTomédecin") -- send
+AddEventHandler("iService:sendTomédecin", function(cT, fS)
+    table.insert(call["médecin"], {callType = cT, fromSource = fS})
+end)
+
+RegisterNetEvent("iService:cancelmédecin") -- cancel 
+AddEventHandler("iService:cancelmédecin", function(fromSource)
+    for k,v in pairs(call) do
+        for j = 1, #v do
+            if v[j].fromSource == fromSource then
+                table.remove(v, j)
+            end
+        end
+    end
+end)
+
+RegisterNetEvent("iService:timeOutmédecin") -- timeOut 
+AddEventHandler("iService:timeOutmédecin", function(fromSource)
+    for k,v in pairs(call) do
+        for j = 1, #v do
+            if v[j].fromSource == fromSource then
+                tabme.remove(v, j)
+            end
+        end
+    end
+end)
+
+RegisterNetEvent("iService:takenmédecin") -- taken
+AddEventHandler("iService:takenmédecin", function(fromSource)
+    for k,v in pairs(call) do
+        for j = 1, #v do
+            if v[j].fromSource == fromSource then
+                tabme.remove(v, j)
+            end
+        end
+    end
+end)
+
+RegisterNetEvent("iService:acceptedmédecin")
+AddEventHandler("iService:acceptedmédecin", function(coords)
+    AddBlipToListWithCoords(coords)
+end)
+
+RegisterNetEvent("iService:sendTomécanicien") -- send
+AddEventHandler("iService:sendTomécanicien", function(cT, fS)
+    table.insert(call["mécanicien"], {callType = cT, fromSource = fS})
+end)
+
+RegisterNetEvent("iService:cancelmécanicien") -- cancel 
+AddEventHandler("iService:cancelmécanicien", function(fromSource)
+    for k,v in pairs(call) do
+        for j = 1, #v do
+            if v[j].fromSource == fromSource then
+                table.remove(v, j)
+            end
+        end
+    end
+end)
+
+RegisterNetEvent("iService:timeOutmécanicien") -- timeOut 
+AddEventHandler("iService:timeOutmécanicien", function(fromSource)
+    for k,v in pairs(call) do
+        for j = 1, #v do
+            if v[j].fromSource == fromSource then
+                tabme.remove(v, j)
+            end
+        end
+    end
+end)
+
+RegisterNetEvent("iService:takenmécanicien") -- taken
+AddEventHandler("iService:takenmécanicien", function(fromSource)
+    for k,v in pairs(call) do
+        for j = 1, #v do
+            if v[j].fromSource == fromSource then
+                tabme.remove(v, j)
+            end
+        end
+    end
+end)
+
+RegisterNetEvent("iService:acceptedmécanicien")
+AddEventHandler("iService:acceptedmécanicien", function(coords)
+    AddBlipToListWithCoords(coords)
+end)
+
 -- Partie send to Server:
 
 -- Functions:
-Citizen.CreateThread(function()
+Citizen.CreateThread(function() --
     while true do
         Wait(0)
         local x,y,z = table.unpack(GetEntityCoords(GetPlayerPed(-1), true))

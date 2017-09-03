@@ -1,0 +1,106 @@
+<head>
+<!-- Chargement de JQuery -->
+    <script src="nui://game/ui/jquery.js" type="text/javascript"></script>
+<!-- JavaScript -->
+    <script>
+
+        window.onload = function(e){
+            /*Au chargement du script*/
+            var actualParams = null
+
+            function OpenAlert(item){
+                $("#notifs_panel").show();
+                actualParams = item.params
+            }
+
+            window.addEventListener('message', function(event){
+                item = event.data
+
+                $('#alertRefused').click(function(){
+
+                    ClosAlert();
+                });
+
+                $('#alertAccepted').click(function(){
+                    $.post('http://ialerte/selected', JSON.stringify({
+
+                    }));
+                    ClosAlert();
+                });
+
+                /*A la récéption d'un event SendNuiMessage*/
+                if (item.action == "open"){
+                    OpenAlert(item)
+                }
+            })
+        }
+    </script>
+
+<!-- CSS -->
+    <style>
+        #notifs_panel {
+            display: none;
+            position: absolute;
+            background-color: #ffffff;
+            border: 1px solid black;
+            border-radius: 10px;
+            width: 60%;
+            left: 20%;
+            top: 30%;
+         }
+
+        .notifs_titre {
+            margin-left: 20px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .notifs_titre h1{
+            text-align: center;
+            color: #000000;
+        }
+
+        .notifs_texte p{
+            text-align: center;
+            font-size: 12px;
+            color: #ffffff;
+            padding-top: 10px;
+        }
+
+        body
+        {
+            background-color: rgba(255, 255, 255, 0.0)
+        }
+        </style>
+
+</head>
+
+<body>    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="bootstrap.min.js"></script>
+
+    <div id="notifs_panel">
+        <div class="notifs_titre">
+            <h1 id='alertTitle'>TITRE</h1>
+        </div>
+
+        <div class="notifs_texte">
+          <div class="panel panel-danger" style="text-align:center; width:80%; margin:auto; background-color:red">
+            <p id='alertDesc'>TON TEXTE ICI</p>
+          </div>
+        </div>
+
+
+    	<div class="container">
+		    <div class="row">
+		        <div class="col-sm-6" style="text-align:center">
+		  			<div class="panel-body"><a href="#"><button type="button" id="alertAccepted" class="btn btn-success">ACCEPTER</button></a></div>
+		        </div>
+		        <div class="col-sm-6" style="text-align:center">
+		  			<div class="panel-body"><a href="#"><button type="button" id="alertRefused" class="btn btn-danger">REFUSER</button></a></div>
+		        </div>
+		    </div>
+    	</div>
+    </div>
+
+</body>

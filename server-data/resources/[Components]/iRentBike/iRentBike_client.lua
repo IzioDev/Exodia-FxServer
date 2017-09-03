@@ -55,7 +55,6 @@ function SpawnMyBike(hash)
 	local car = hash
 	local playerPed = GetPlayerPed(-1)
 	RequestModel(car)
-	print("okok")
 	while not HasModelLoaded(car) do
 			Citizen.Wait(0)
 	end

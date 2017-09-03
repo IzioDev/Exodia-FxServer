@@ -164,7 +164,7 @@ function RunPompisteThread()
 						end
 						if IsControlJustPressed(1, 38) then
 							TriggerEvent("iPompiste:swichService", isInService, result)
-							Citizen.Wait(100)
+							Wait(100)
 						end
 					end
 
