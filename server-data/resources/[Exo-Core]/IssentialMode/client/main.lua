@@ -275,7 +275,6 @@ Citizen.CreateThread(function()
       end
     end
     if #isWaiting == 0 and #waitingAlert ~= 0 then
-      SetNuiFocus(true, true)
       SendNUIMessage({
           action = "openAlert",
           title = waitingAlert[1].title,
@@ -304,12 +303,8 @@ RegisterNUICallback('close', function(data, cb)
 end)
 
 function TreatAlert(data)
-  if data.params.event then
-    TriggerServerEvent(data.params.event, data)
-  else
-    if data.id == "pompisteMission" then
-      TriggerServerEvent("iPompiste:manageChoiceMission", data.choice, data.params)
-    end
+  if data.params.id == "pompisteMission" then
+    TriggerServerEvent("iPompiste:manageChoiceMission", data.choice, data.params)
   end
 end
 

@@ -28,11 +28,11 @@
 		}
 		function OpenAlert(params){
 			nowParams = params
-			$('#notifs_panel').show();
+			$('.notifs_panel').show();
 		}
 		function CloseAlert(){
 			nowParams = null
-			$('#notifs_panel').hide();
+			$('.notifs_panel').hide();
 		}
 
 		$('#alertAccepted').click(function(){
@@ -59,7 +59,7 @@
 	        }
     	};
 
-		var moneyIcon = "€"
+		var moneyIcon = "$"
 		var nowParams = null
 
 		window.onload = function(e){
@@ -70,16 +70,16 @@
 				if(item.seticon == true)
 					moneyIcon = item.icon;
 				if(item.setmoney == true)
-					document.getElementById("cash").innerHTML = "<div>" + addCommas(item.money) + "" + moneyIcon + "</font>" + '<img id="icon" src="http://www.exodia-rp.fr:81/server/images/banking/cash-icon.png" alt=""/>';
+					document.getElementById("cash").innerHTML = "<div>" + addCommas(item.money) + "<font style='color: rgb(0, 125, 0); font-weight: 700; margin-left: 20px;'>" + moneyIcon + "</font>" ;
 				if(item.setDirty_money == true)
-					document.getElementById("dirty_cash").innerHTML = "<div>" + addCommas(item.dirty_money) + "" + moneyIcon + "</font>" + '<img id="icon" src="http://www.exodia-rp.fr:81/server/images/banking/dirtycash-icon.png" alt=""/>';
+					document.getElementById("dirty_cash").innerHTML = "<div>" + addCommas(item.dirty_money) + "<font style='color: rgb(185, 42, 42); font-weight: 700; margin-left: 20px;'>" + moneyIcon + "</font>" ;addCommas(item.dirty_money);
 				if(item.setJob == true ){
-					$( "#job" ).html( item.job + " : " + item.rank +' <img id="icon" src="http://www.exodia-rp.fr:81/server/images/banking/job-icon.png" alt=""/>');
+					$( "#job" ).text( item.job + " : " + item.rank );
 				}
 				if(item.addcash == true){
 					$(".tiny").remove();
 
-					var element = $("<div class='tiny'>+" + moneyIcon + "</font>"+addCommas(item.money)+"</div>")
+					var element = $("<div class='tiny'>+<font style='color: rgb(0, 125, 0); font-weight: 700; margin-right: 6px;'>" + moneyIcon + "</font>"+addCommas(item.money)+"</div>")
 					$("#money").append(element)
 
 					setTimeout(function(){
@@ -88,8 +88,8 @@
 				}
 				if(item.removecash == true){
 					$(".tiny").remove();
-
-					var element = $("<div class='tiny'>-" + moneyIcon + "</font>"+addCommas(item.money)+"</div>")
+					
+					var element = $("<div class='tiny'>-<font style='color: rgb(250, 0, 0); font-weight: 700; margin-right: 6px;'>" + moneyIcon + "</font>"+addCommas(item.money)+"</div>")
 					$("#money").append(element)
 
 					setTimeout(function(){
@@ -97,22 +97,22 @@
 					}, 1000)
 				}
 				if(item.updateBalance == true) {
-    			  $('.balance').html('<p id="balance">' +addGaps(event.data.balance)+'€ <img id="icon" src="http://www.exodia-rp.fr:81/server/images/banking/bank-icon.png" alt=""/> </p>');
+    			  $('.balance').html('<p id="balance">' +addGaps(event.data.balance)+'<img id="icon" src="http://www.exodia-rp.fr:81/server/images/banking/bank-icon.png" alt=""/> </p>');
     			  $('.currentBalance').html('$'+addCommas(event.data.balance));
     			  $('.username').html(event.data.player);
     			}
     			// Trigger Add Balance Popup
     			if(item.addBalance == true) {
-    			  var element = $('<p id="add-balance">' +addGaps(event.data.amount)+'<span class="pre">+</span><span class="green"> € </span></p>');
+    			  var element = $('<p id="add-balance"><span class="pre">+</span><span class="green"> $ </span>' +addGaps(event.data.amount)+'</p>');
     			  $(".transaction").append(element);
-
+			
     			  setTimeout(function(){
     			    $(element).fadeOut(600, function() { $(this).remove(); })
     			  }, 1000)
     			}
     			//Trigger Remove Balance Popup
     			if(item.removeBalance == true) {
-    			  var element = $('<p id="add-balance">' +addGaps(event.data.amount)+'<span class="pre">-</span><span class="red"> € </span></p>');
+    			  var element = $('<p id="add-balance"><span class="pre">-</span><span class="red"> $ </span>' +addGaps(event.data.amount)+'</p>');
     			  $(".transaction").append(element);
     			  setTimeout(function(){
     			    $(element).fadeOut(600, function() { $(this).remove(); })
@@ -135,7 +135,7 @@
 		}
 	</script>
 
-  <style>
+	<style>
 		@font-face {
 			font-family: pcdown;
 			src: url(pdown.ttf);
@@ -154,21 +154,29 @@
 			1px -1px 0 #000,
 			-1px 1px 0 #000,
 			 1px 1px 0 #000;
-		}
+				}
+
 		#container {
 			position: absolute;
-			right: 10;
-      text-align: right;
+			top: 20; right: 10;
 		}
 		#balance {
-		  font-family: pcdown;
-		  font-size: 30px;
+		  float:right;
+		  font-family: pdown;
+		  font-weight: 400;
+		  font-size: 2rem;
 		  color: white;
+		  padding: 4px;
 		  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+		  margin: 0;
+		  margin-right: 6px;
+		  padding: 0;
 		}
 		#add-balance {
-		  font-family: pcdown;
-		  font-size: 30px;
+		  float:right;
+		  font-family: pdown;
+		  font-weight: 400;
+		  font-size: 29px;
 		  color: white;
 		  padding: 4px;
 		  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
@@ -179,18 +187,9 @@
 		}
 		#icon {
 		  height: 21px;
-		  width: 30px;
-		  margin-left: 5px;
+		  width: auto;
+		  margin-right: 10px;
 		}
-    #dirty_cash{
-      margin-top: -20px;
-    }
-    #cash{
-      margin-top: -8px;
-    }
-    #job{
-      margin-top: -20px;
-    }
 		.green {
 		  color: rgb(0, 125, 0);
 		  font-weight: 700;
@@ -200,7 +199,7 @@
 		  color: rgb(255, 0, 0);
 		}
 		#pre {
-		  font-size: 30px;
+		  font-size: 0.8rem;
 		  margin-right: 5px;
 		}
 		.balance {
@@ -212,7 +211,6 @@
 		  display: inline-block;
 		  height: 30px;
 		  width: 100%;
-      margin-top: 10px;
 		}
 		.header {
 		  width:100%;
@@ -232,32 +230,32 @@
 </head>
 
 <body>
-	<div id="starter" style="font-family: 'pcdown'; color: white; position: absolute; left: 20%; top: 5%; width: 60%; background: rgba(40, 40, 40, 0.8)">
+	<div id="starter" style="font-family: 'roboto'; color: white; position: absolute; left: 20%; top: 5%; width: 60%; background: rgba(40, 40, 40, 0.8)">
 
 	</div>
 	<div id="container">
 		<div id="money">
+		</div>
+		<div id="cash"/>
+		</div>
 
-      <div class="balance">
-			</div>
+		<div class="balance">
+		</div>
 
-			<div id="cash"/>
-			</div>
+		<div class="transaction">
+		</div>
 
-			<div id="dirty_money"/>
-				<div id="dirty_cash"/>
-				</div>
-			</div>
-
-			<div id="job" />
-			</div>
-
-      <div class="transaction">
+		<div id="dirty_money"/>
+			<div id="dirty_cash"/>
 			</div>
 		</div>
 
+		<div id="job" />
+				
+		</div>
+	
     </div>
-
+     
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
@@ -267,25 +265,25 @@
         <div class="notifs_titre">
             <h1 id='alertTitle'>TITRE</h1>
         </div>
-
+        
         <div class="notifs_texte">
           <div class="panel panel-danger" style="text-align:center; width:80%; margin:auto; background-color:red">
             <p id='alertDesc'>TON TEXTE ICI</p>
           </div>
         </div>
-
-
+        
+        
     	<div class="container">
 		    <div class="row">
 		        <div class="col-sm-6" style="text-align:center">
-		  				<div class="panel-body"><a><button type="button" id="alertAccepted" class="btn btn-success">ACCEPTER</button></a></div>
+		  				<div class="panel-body"><a id="alertAccepted"><button type="button" class="btn btn-success">ACCEPTER</button></a></div>
 		        </div>
 		        <div class="col-sm-6" style="text-align:center">
-		  				<div class="panel-body"><a ><button type="button" id="alertRefused" class="btn btn-danger">REFUSER</button></a></div>
+		  				<div class="panel-body"><a id="alertRefused"><button type="button" class="btn btn-danger">REFUSER</button></a></div>
 		        </div>
 		    </div>
     	</div>
-
+	
     </div>
 
 </body>

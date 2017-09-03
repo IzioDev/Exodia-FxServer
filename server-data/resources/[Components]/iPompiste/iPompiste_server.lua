@@ -93,7 +93,7 @@ AddEventHandler("iPompiste:syncServiceWithServer", function(isInService)
 end)
 
 function SelectForMission()
-	SetTimeout(5000, function()
+	SetTimeout(1800000, function()
 		Wait(1000)
 		TriggerEvent("es:getPlayers", function(Users)
 			local selectedPlayer = {}

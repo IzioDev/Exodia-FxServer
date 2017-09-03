@@ -179,7 +179,7 @@ $(document).ready(function(){
 
     $("#resetSelector").click(function(){
         selector = null
-    })
+    });
 
     $('#boutonCitoyens').click(function() {
         $('#logo').show()
