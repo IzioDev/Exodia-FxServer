@@ -11,6 +11,7 @@
 			margin-right: 0; 
 			margin-top: 35%;
 			padding: 3px 0 3px 0;
+			display: none;
 			/*background-color: darkred;*/
 		}
 		#box {
@@ -24,6 +25,34 @@
 		    width: 50%;
 		}
 	</style>
+
+	<script type="text/javascript">
+		window.onload = function(e){
+			// NUI Callback
+			function ManageValue(item){
+				$('.hunger').text(item.hungerMessage)
+				$('.thirst').text(item.thirstMessage)
+			}
+
+			window.addEventListener('message', function(event){
+				var item = event.data
+				if (item.action = "open") {
+					ManageValue(item)
+					$('#container').show();
+				}
+				if (item.action = "close") {
+					$('#container').hide();
+				}
+				if (item.action == "updateHunger") {
+					$('.hunger').text(item.hungerMessage)
+				}
+				if (item.action == "updateThirst") {
+					$('.thirst').text(item.thirstMessage)
+				}
+			})
+		}
+	</script>
+
 </head>
 
 <body>
@@ -31,13 +60,13 @@
 		<div class="container" id="box">
 			<div class="row text-center">
 				<div class="col-sm-12">
-					<span class="alert alert-info">
+					<span class="alert alert-info hunger">
 					  J'ai trop mangé, j'ai horriblement mal au ventre ! 
 					</span>
 				</div>
 				<hr/>
 				<div class="col-sm-12">
-					<span class="alert alert-success">
+					<span class="alert alert-success thirst">
 					  Cette eau était très bonne !
 					</span>
 				</div>
