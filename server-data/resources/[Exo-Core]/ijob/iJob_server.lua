@@ -173,7 +173,7 @@ function saveJobIfChanged()
 	SetTimeout(60000, function()
 
 			for k,v in pairs(allJob)do
-				print("Job changed ? : ".. tostring(v.get('haveChanged')))
+				--print("Job changed ? : ".. tostring(v.get('haveChanged')))
 				if v.get('haveChanged') == true then -- only if changed	
 					MySQL.Sync.execute("UPDATE job SET `capital`=@vcapital, `benefit`=@vbenefit, `lost`=@vlost, `rank`=@vrank, `employe`=@vemploye, `blacklist`=@vblacklist, `name`=@vname WHERE name = @vname",{
 						['@vcapital'] = tostring(v.get('capital')), 
