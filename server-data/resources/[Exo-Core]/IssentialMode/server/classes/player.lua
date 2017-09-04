@@ -425,6 +425,43 @@ function CreateUser(source, Issential)
 		Users[self.source] = rTable
 	end
 
+	-- iFood Stuff
+	rTable.addHunger = function(m)
+		local old = self.hunger 
+		local newHunger = self.hunger + tonumber(m)
+
+		ManageHunger(self.source, old, newHunger, function(hunger)
+			self.hunger = hunger
+		end)
+	end
+
+	rTable.reduceHunger = function(m)
+		local old = self.hunger
+		local newHunger = self.hunger - tonumber(m)
+
+		ManageHunger(self.source, old, newHunger, function(hunger)
+			self.hunger = hunger
+		end)
+	end
+
+	rTable.addThirst = function(m)
+		local old = self.thirst 
+		local newThirst = self.thirst + tonumber(m)
+
+		ManageThirst(self.source, old, newThirst, function(thirst)
+			self.thirst = thirst
+		end)
+	end
+
+	rTable.reduceThirst = function(m)
+		local old = self.thirst
+		local newThirst = self.thirst - tonumber(m)
+
+		ManageThirst(self.source, old, newThirst, function(thirst)
+			self.thirst = thirst
+		end)
+	end
+
 	return rTable
 end
 -- End rTable
@@ -455,22 +492,7 @@ function GetTotalWeightForArray(myUser, itemA, quantityA) -- autant d'elements p
 	return total
 end
 
-
-rTable.addHunger = function(m)
-	local old = self.hunger 
-	local newHunger = self.hunger + tonumber(m)
-
-	ManageFood(self.source, old, newHunger, function(hunger)
-		self.hunger = hunger
-	end)
-end
-
-rTable.reduceHunger = function(m)
-	local old = self.hunger
-	local newHunger = self.hunger
-end
-
-function ManageFood(source, old, hunger, callback)
+function ManageHunger(source, old, hunger, cb)
 	if(hunger < 0 and old <= 0)then
 		hunger = 0
 		TriggerClientEvent('iFood:die', source)
@@ -489,11 +511,39 @@ function ManageFood(source, old, hunger, callback)
 	elseif(hunger <= 35 and hunger > 20)then
 		msg = "J'ai faim."
 	elseif(hunger <= 20 and hunger > 10)then
-		msg = "J'ai horriblement faim ! J'ai la tête qui tourne."
+		msg = "J'ai la tête qui tourne à cause de la faim ..."
 	elseif(hunger <= 10 and hunger > 0)then
-		msg = "Je meurs de faim ... Si je ne mange pas maintenant, je vais y passer !"
+		msg = "Je me sens faible, il faut absolument que je trouve de quoi manger."
 	end
 
-	callback(hunger)
+	cb(hunger)
 	TriggerClientEvent('iFood:updateUI', source, 'hunger', msg)
+end
+
+function ManageThirst(source, old, thirst, cb)
+	if(thirst < 0 and old <= 0)then
+		thirst = 0
+		TriggerClientEvent('iFood:die', source)
+	elseif(thirst > 0 and old <= 0)then
+		TriggerClientEvent('iFood:cancelDeath', source)
+	end
+
+	if(thirst <= 100 and thirst > 90)then
+		msg = "Eheh, mon ventre fait glouglou !"
+	elseif(thirst <= 90 and thirst > 70)then
+		msg = "Je n'ai plus soif !"
+	elseif(thirst <= 70 and thirst > 50)then
+		msg = "S'hydrater, c'est la santé !"
+	elseif(thirst <= 50 and thirst > 35)then
+		msg = "Je commence à avoir soif ..."
+	elseif(thirst <= 35 and thirst > 20)then
+		msg = "J'ai soif."
+	elseif(thirst <= 20 and thirst > 10)then
+		msg = "Il faut que je trouve quelque chose à boire ..."
+	elseif(thirst <= 10 and thirst > 0)then
+		msg = "Je suis déshydraté, il faut absolument que je trouve à boire."
+	end
+
+	cb(thirst)
+	TriggerClientEvent('iFood:updateUI', source, 'thirst', msg)
 end
