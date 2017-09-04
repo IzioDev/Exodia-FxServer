@@ -516,8 +516,8 @@ function ManageHunger(source, old, hunger, cb)
 		msg = "Je me sens faible, il faut absolument que je trouve de quoi manger."
 	end
 
-	cb(hunger)
 	TriggerClientEvent('iFood:updateUI', source, 'hunger', msg)
+	cb(hunger)
 end
 
 function ManageThirst(source, old, thirst, cb)
@@ -544,6 +544,6 @@ function ManageThirst(source, old, thirst, cb)
 		msg = "Je suis déshydraté, il faut absolument que je trouve à boire."
 	end
 
-	cb(thirst)
 	TriggerClientEvent('iFood:updateUI', source, 'thirst', msg)
+	cb(thirst)
 end

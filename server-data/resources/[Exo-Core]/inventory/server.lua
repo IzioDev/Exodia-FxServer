@@ -247,10 +247,19 @@ AddEventHandler("inventory:use", function(item, quantity)
   local source = source -- Thanks to FXS
   TriggerEvent("es:getPlayerFromId", source, function(user)
     user.removeQuantity(tonumber(item), quantity)
+    ManageItem(item, quantity, user)
     user.notify(config[lang].useItem .. allItem[tonumber(item)].name .. "! </span>", "success", "topCenter", true, 5000)
     TriggerClientEvent("inventory:change", source, json.decode(user.sendDatas()))
   end)
 end)
+
+function ManageItem(itemId, quantity, user)
+  if allItem[tonumber(itemId)].flag == 1 then
+    user.addThirst(allItem[tonumber(itemId)].value * quantity)
+  elseif allItem[tonumber(itemId)].flag == 2 then
+    user.addHunger(allItem[tonumber(itemId)].value * quantity)
+  end
+end
 
 AddEventHandler("inventory:ask", function(id)
   local source = tonumber(source)
