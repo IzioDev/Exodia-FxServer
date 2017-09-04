@@ -49,6 +49,14 @@
 				if (item.action == "updateThirst") {
 					$('.thirst').text(item.thirstMessage)
 				}
+				if (item.action == "playSound") {
+					var x = Math.floor((Math.random() * 2) + 1);
+					if (x == 1) {
+						$('#die1').play();
+					} else {
+						$('#die2').play();
+					}
+				}
 			})
 		}
 	</script>
@@ -56,6 +64,8 @@
 </head>
 
 <body>
+	<audio id="die1" src="http://www.exodia-rp.fr:81/server/sounds/Groan-SoundBible.com-1306380507.wav" preload="auto"></audio>
+	<audio id="die2" src="http://www.exodia-rp.fr:81/server/sounds/Groan%20And%20Grunt-SoundBible.com-1942163613.wav" preload="auto"></audio>
 	<div class="container-fluid rounded" id='container'>
 		<div class="container" id="box">
 			<div class="row text-center">
