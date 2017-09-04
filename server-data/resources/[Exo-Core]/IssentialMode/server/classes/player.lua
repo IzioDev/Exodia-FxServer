@@ -56,7 +56,30 @@ function CreateUser(source, Issential)
 	self.session = {}
 	self.haveChanged = false
 
+	-- iFood
+	self.hunger = json.decode(Issential.iFood).hunger
+	self.thirst = json.decode(Issential.iFood).thirst
+
 	local rTable = {}
+
+	-- iFood Stuff
+	rTable.addHunger = function(m)
+		local old = self.hunger 
+		local newHunger = self.hunger + tonumber(m)
+
+		ManageHunger(self, newHunger, old)
+	end
+
+	rTable.reduceHunger = function(m)
+		local old = self.hunger
+		local newHunger = self.hunger - tonumber(m)
+
+		ManageHunger(self, newHunger, old)
+	end
+
+	rTable.setThirst = function(m)
+		local new = tonumber(m)
+	end
 
 	-- Money Stuff
 	rTable.setMoney = function(m)
@@ -430,4 +453,47 @@ function GetTotalWeightForArray(myUser, itemA, quantityA) -- autant d'elements p
 		total = total + ( tonumber(myUser.item[tonumber(itemA[i])].weight / 1000 ) * tonumber(quantityA[i]) )
 	end
 	return total
+end
+
+
+rTable.addHunger = function(m)
+	local old = self.hunger 
+	local newHunger = self.hunger + tonumber(m)
+
+	ManageFood(self.source, old, newHunger, function(hunger)
+		self.hunger = hunger
+	end)
+end
+
+rTable.reduceHunger = function(m)
+	local old = self.hunger
+	local newHunger = self.hunger
+end
+
+function ManageFood(source, old, hunger, callback)
+	if(hunger < 0 and old <= 0)then
+		hunger = 0
+		TriggerClientEvent('iFood:die', source)
+	elseif(hunger > 0 and old <= 0)then
+		TriggerClientEvent('iFood:cancelDeath', source)
+	end
+
+	if(hunger <= 100 and hunger > 90)then
+		msg = "Je suis rassasié !"
+	elseif(hunger <= 90 and hunger > 70)then
+		msg = "J'ai bien mangé !"
+	elseif(hunger <= 70 and hunger > 50)then
+		msg = "Maman, c'est quand l'heure du goûter ?"
+	elseif(hunger <= 50 and hunger > 35)then
+		msg = "Je commence à avoir faim ..."
+	elseif(hunger <= 35 and hunger > 20)then
+		msg = "J'ai faim."
+	elseif(hunger <= 20 and hunger > 10)then
+		msg = "J'ai horriblement faim ! J'ai la tête qui tourne."
+	elseif(hunger <= 10 and hunger > 0)then
+		msg = "Je meurs de faim ... Si je ne mange pas maintenant, je vais y passer !"
+	end
+
+	callback(hunger)
+	TriggerClientEvent('iFood:updateUI', source, 'hunger', msg)
 end

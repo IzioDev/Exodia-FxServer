@@ -12,6 +12,7 @@ server_scripts {
 	'server/classes/player.lua',
 	'server/classes/groups.lua',
 	'server/player/login.lua',
+	'server/iFood.lua',
 	'@mysql-async/lib/MySQL.lua',
 }
 
