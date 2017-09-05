@@ -48,6 +48,7 @@ end)
 
 RegisterNetEvent('iFood:updateNUI')
 AddEventHandler('iFood:updateNUI', function(what, msg)
+	print("Food Event received")
 	if(what == 'hunger')then
 		SendNUIMessage({
 		    action = "updateHunger",

@@ -432,17 +432,22 @@ function CreateUser(source, Issential)
 		local old = self.hunger 
 		local newHunger = self.hunger + tonumber(m)
 
-		ManageHunger(self.source, old, newHunger, function(hunger)
+		ManageHunger(self.source, old, newHunger, function(hunger, msg)
 			self.hunger = hunger
+			TriggerClientEvent('iFood:updateNUI', self.source, 'hunger', msg)
 		end)
 	end
 
 	rTable.reduceHunger = function(m)
 		local old = self.hunger
 		local newHunger = self.hunger - tonumber(m)
+		if old == 0 or old <= 0 then
+			newHunger = 0
+		end
 
-		ManageHunger(self.source, old, newHunger, function(hunger)
+		ManageHunger(self.source, old, newHunger, function(hunger, msg)
 			self.hunger = hunger
+			TriggerClientEvent('iFood:updateNUI', self.source, 'hunger', msg)
 		end)
 	end
 
@@ -450,18 +455,38 @@ function CreateUser(source, Issential)
 		local old = self.thirst 
 		local newThirst = self.thirst + tonumber(m)
 
-		ManageThirst(self.source, old, newThirst, function(thirst)
+		ManageThirst(self.source, old, newThirst, function(thirst, msg)
 			self.thirst = thirst
+			TriggerClientEvent('iFood:updateNUI', self.source, 'thirst', msg)
 		end)
 	end
 
 	rTable.reduceThirst = function(m)
 		local old = self.thirst
 		local newThirst = self.thirst - tonumber(m)
-
-		ManageThirst(self.source, old, newThirst, function(thirst)
+		if old == 0 or old <= 0 then
+			newThirst = 0
+		end
+		ManageThirst(self.source, old, newThirst, function(thirst, msg)
 			self.thirst = thirst
+			TriggerClientEvent('iFood:updateNUI', self.source, 'thirst', msg)
 		end)
+	end
+
+	rTable.getThirstMessage = function()
+		local message = 'TEXT BUG 2'
+		ManageThirst(self.source, self.thirst, self.thirst, function(thirst, msg)
+			message = msg
+		end)
+		return message
+	end
+
+	rTable.getHungerMessage = function()
+		local message = 'TEXT BUG 2'
+		ManageHunger(self.source, self.hunger, self.hunger, function(hunger, msg)
+			message = msg
+		end)
+		return message
 	end
 
 	return rTable
@@ -495,6 +520,7 @@ function GetTotalWeightForArray(myUser, itemA, quantityA) -- autant d'elements p
 end
 
 function ManageHunger(source, old, hunger, cb)
+	local msg = "TEXT BUG"
 	if(hunger < 0 and old <= 0)then
 		hunger = 0
 		TriggerClientEvent('iFood:die', source)
@@ -514,15 +540,14 @@ function ManageHunger(source, old, hunger, cb)
 		msg = "J'ai faim."
 	elseif(hunger <= 20 and hunger > 10)then
 		msg = "J'ai la tête qui tourne à cause de la faim ..."
-	elseif(hunger <= 10 and hunger > 0)then
+	elseif(hunger <= 10 and hunger >= 0)then
 		msg = "Je me sens faible, il faut absolument que je trouve de quoi manger."
 	end
-
-	TriggerClientEvent('iFood:updateUI', source, 'hunger', msg)
-	cb(hunger)
+	cb(hunger, msg)
 end
 
 function ManageThirst(source, old, thirst, cb)
+	local msg = "TEXT BUG"
 	if(thirst < 0 and old <= 0)then
 		thirst = 0
 		TriggerClientEvent('iFood:die', source)
@@ -542,10 +567,8 @@ function ManageThirst(source, old, thirst, cb)
 		msg = "J'ai soif."
 	elseif(thirst <= 20 and thirst > 10)then
 		msg = "Il faut que je trouve quelque chose à boire ..."
-	elseif(thirst <= 10 and thirst > 0)then
+	elseif(thirst <= 10 and thirst >= 0)then
 		msg = "Je suis déshydraté, il faut absolument que je trouve à boire."
 	end
-
-	TriggerClientEvent('iFood:updateUI', source, 'thirst', msg)
-	cb(thirst)
+	cb(thirst, msg)
 end
