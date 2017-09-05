@@ -48,7 +48,7 @@ AddEventHandler('playerDropped', function()
 		end
 		local userIdentity = Users[src].get('identity')
 		userIdentity.lastSeen = tostring(temp.hour) .. "h" .. tostring(temp.min) .. " | " .. tostring(temp.month) .. " / " .. tostring(temp.day) .. " / " .. tostring(temp.year)
-		MySQL.Sync.execute("UPDATE users SET `otherInGameInfos`=@otherInGameInfos, `money`=@value, `dirty_money`=@v2, `inventory`=@inventory, `identity`=@identity, `bank` = @bank, `lastpos`=@lastpos WHERE identifier = @identifier AND id = @id", {
+		MySQL.Sync.execute("UPDATE users SET `iFood`=@iFood, `otherInGameInfos`=@otherInGameInfos, `money`=@value, `dirty_money`=@v2, `inventory`=@inventory, `identity`=@identity, `bank` = @bank, `lastpos`=@lastpos WHERE identifier = @identifier AND id = @id", {
 			['@value'] = Users[src].get('money'),
 			['@v2'] = Users[src].get('dirtyMoney'),
 			['@inventory'] = json.encode(Users[src].get('inventory')),
@@ -57,7 +57,8 @@ AddEventHandler('playerDropped', function()
 			['@id'] = Users[src].get('id'),
 			['@bank'] = Users[src].get('bank'),
 			['@lastpos'] = json.encode(Users[src].get('coords')),
-			['@otherInGameInfos'] = json.encode(Users[src].get('otherInGameInfos'))
+			['@otherInGameInfos'] = json.encode(Users[src].get('otherInGameInfos')),
+			['@iFood'] = json.encode({hunger = Users[src].get('hunger'), thirst = Users[src].get('thirst')})
 		})
 		print('\nLe joueur : ' .. Users[src].get('identifier') .." ".. Users[src].get('displayName') .. ' vient de se déconnecter\n')
 		Users[src] = nil

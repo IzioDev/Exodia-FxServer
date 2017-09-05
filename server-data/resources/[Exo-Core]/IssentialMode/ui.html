@@ -37,8 +37,8 @@
 		}
 
 		function ManageValue(item){
-			$('.hunger').text(item.hungerMessage)
-			$('.thirst').text(item.thirstMessage)
+			$('#hunger').text(item.hungerMessage)
+			$('#thirst').text(item.thirstMessage)
 		}
 
 		$('#alertAccepted').click(function(){
@@ -72,7 +72,7 @@
 			// NUI Callback
 			window.addEventListener('message', function(event){
 				var item = event.data;
-
+				console.log(item)
 				if(item.seticon == true)
 					moneyIcon = item.icon;
 				if(item.setmoney == true)
@@ -137,18 +137,19 @@
 					$('#alertDesc').text(item.desc);
 					OpenAlert(item.params);
 				}
-				if (item.action = "open") {
+				if (item.foodAction == "openFood") {
+					console.log("Hunger opened")
 					ManageValue(item)
 					$('#foodContainer').show();
 				}
-				if (item.action = "close") {
+				if (item.action == "closeFood") {
 					$('#foodContainer').hide();
 				}
 				if (item.action == "updateHunger") {
-					$('.hunger').text(item.hungerMessage)
+					$('#hunger').text(item.hungerMessage)
 				}
 				if (item.action == "updateThirst") {
-					$('.thirst').text(item.thirstMessage)
+					$('#thirst').text(item.thirstMessage)
 				}
 				if (item.action == "playSound") {
 					var x = Math.floor((Math.random() * 2) + 1);
@@ -255,10 +256,11 @@
 		}
 
 		#foodContainer {
-			width: 600px; 
-			height: auto; 
-			margin-right: 0; 
-			margin-top: 35%;
+			width: 15%;
+			height: auto;
+			position: fixed;
+			left: 50%;
+			bottom: 50%;
 			padding: 3px 0 3px 0;
 			display: none;
 			/*background-color: darkred;*/
@@ -339,14 +341,14 @@
 		<div class="container" id="box">
 			<div class="row text-center">
 				<div class="col-sm-12">
-					<span class="alert alert-info">
-					  Je meurs de faim ... Si je ne mange pas maintenant, je vais y passer !
+					<span class="alert alert-info" id = "hunger">
+					  	Je meurs de faim ... Si je ne mange pas maintenant, je vais y passer !
 					</span>
 				</div>
 				<hr/>
 				<div class="col-sm-12">
-					<span class="alert alert-success thirst">
-					  Cette eau était très bonne !
+					<span class="alert alert-success" id = "thirst">
+						Cette eau était très bonne !
 					</span>
 				</div>
 			</div>

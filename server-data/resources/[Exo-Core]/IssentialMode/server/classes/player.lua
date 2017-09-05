@@ -57,8 +57,10 @@ function CreateUser(source, Issential)
 	self.haveChanged = false
 
 	-- iFood
-	self.hunger = json.decode(Issential.iFood).hunger
-	self.thirst = json.decode(Issential.iFood).thirst
+	print(Issential.iFood)
+	local decodedFood = json.decode(Issential.iFood)
+	self.hunger = decodedFood.hunger
+	self.thirst = decodedFood.thirst
 
 	local rTable = {}
 

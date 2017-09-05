@@ -13,12 +13,13 @@ server_scripts {
 	'server/classes/groups.lua',
 	'server/player/login.lua',
 	'server/iFood.lua',
-	'@mysql-async/lib/MySQL.lua',
+	'@mysql-async/lib/MySQL.lua'
 }
 
 -- Client
 client_scripts {
-	'client/main.lua'
+	'client/main.lua',
+	'client/iFood.lua'
 }
 
 -- NUI Files
@@ -36,5 +37,5 @@ server_exports {
 	'getPlayerFromId',
 	'addAdminCommand',
 	'addCommand',
-	'addGroupCommand',
+	'addGroupCommand'
 }

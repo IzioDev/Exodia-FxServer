@@ -31,9 +31,14 @@ end)
 
 RegisterNetEvent('iFood:openNUI')
 AddEventHandler('iFood:openNUI', function(hungerMsg, thirstMsg)
-	if(not opened)then
-		SendNuiMessage({
-		    action = "open",
+	local hungerMsg = tostring(hungerMsg)
+	local thirstMsg = tostring(thirstMsg)
+	print(hungerMsg)
+	print(thirstMsg)
+	if not(opened) then
+		print("UI OPENED")
+		SendNUIMessage({
+		    foodAction = "openFood",
 		    hungerMessage = hungerMsg,
 		    thirstMessage = thirstMsg
 		})
@@ -44,12 +49,12 @@ end)
 RegisterNetEvent('iFood:updateNUI')
 AddEventHandler('iFood:updateNUI', function(what, msg)
 	if(what == 'hunger')then
-		SendNuiMessage({
+		SendNUIMessage({
 		    action = "updateHunger",
 		    hungerMessage = msg
 		})
 	else
-		SendNuiMessage({
+		SendNUIMessage({
 		    action = "updateThirst",
 		    thirstMessage = msg
 		})
@@ -58,22 +63,24 @@ end)
 
 Citizen.CreateThread(function()
 	while true do
-		local nowTime = GetGameTimer()
-		local nowNeeds = 0
 		Wait(0)
-		while GetGameTimer() < nowTime + 10000
-			Wait(0)
-			if IsPedSprinting(GetPlayerPed(-1)) then
- 				nowNeeds = nowNeeds + 4
-			elseif IsPedRunning(GetPlayerPed(-1)) then
-				nowNeeds = nowNeeds + 3
-			elseif IsPedWalking(GetPlayerPed(-1)) then
-				nowNeeds = nowNeeds + 2
-			elseif IsPedStopped(GetPlayerPed(-1)) then
-				nowNeeds = nowNeeds + 1
+		if opened then
+			local nowTime = GetGameTimer()
+			local nowNeeds = 0
+			while GetGameTimer() < nowTime + 10000 do
+				Wait(0)
+				if IsPedSprinting(GetPlayerPed(-1)) then
+ 					nowNeeds = nowNeeds + 4
+				elseif IsPedRunning(GetPlayerPed(-1)) then
+					nowNeeds = nowNeeds + 3
+				elseif IsPedWalking(GetPlayerPed(-1)) then
+					nowNeeds = nowNeeds + 2
+				elseif IsPedStopped(GetPlayerPed(-1)) then
+					nowNeeds = nowNeeds + 1
+				end
 			end
+			nowNeeds = nowNeeds / 1800
+			TriggerServerEvent("iFood:looseNeeds", nowNeeds)
 		end
-		nowNeeds = nowNeeds / 1800
-		TriggerServerEvent("iFood:looseNeeds", nowNeeds)
 	end
 end)

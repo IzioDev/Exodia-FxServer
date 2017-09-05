@@ -112,7 +112,7 @@ function RegisterANewChar(identifier, source, firstname, lastname, age, ok)
 		temp.min = "0" .. temp.min
 	end
 	local lastSeen = tostring(temp.hour) .. "h" .. tostring(temp.min) .. " | " .. tostring(temp.month) .. " / " .. tostring(temp.day) .. " / " .. tostring(temp.year)
-	MySQL.Sync.execute("INSERT INTO users (`identifier`, `permission_level`, `money`, `group`, `rank`, `job`, `inventory`, `identity`, `skin`, `bank`, `lastpos`, `otherInGameInfos`) VALUES (@username, @permission_level, @money, 'user', @rank, @job, @inventory, @identity, @skin, @bank, @lastpos, @otherInGameInfos)", {
+	MySQL.Sync.execute("INSERT INTO users (`identifier`, `permission_level`, `money`, `group`, `rank`, `job`, `inventory`, `identity`, `skin`, `bank`, `lastpos`, `otherInGameInfos`,`iFood`) VALUES (@username, @permission_level, @money, 'user', @rank, @job, @inventory, @identity, @skin, @bank, @lastpos, @otherInGameInfos, @iFood)", {
 	    ['@username'] = identifier,
 	    ['@permission_level'] = 0,
 	    ['@money'] = 500,
@@ -123,9 +123,11 @@ function RegisterANewChar(identifier, source, firstname, lastname, age, ok)
 	    ['@skin'] = json.encode(defaultSkin),
 	    ['@lastpos'] = json.encode({x = -1038.99, y = -2740.23, z = 13.86}),
 	    ['@bank'] = 250,
-	    ['@otherInGameInfos'] = json.encode({
+	    ['@otherInGameInfos'] = json.encode
+	    	({
 	    		garage = false
-	    	})
+	    	}),
+	    ['@iFood'] = json.encode({hunger = 100, thirst = 100})
 	})
  	LoadUserFromPicking(firstname, lastname, age, false, source, ok)
 end
@@ -176,7 +178,7 @@ function registerUser(identifier, source)
  	if not hasAccount(identifier) then
  		local temp = os.date("*t", os.time())
 		local lastSeen = tostring(temp.min) .. " : " .. tostring(temp.hour) .. " | " .. tostring(temp.month) .. " / " .. tostring(temp.day) .. " / " .. tostring(temp.year)
-		MySQL.Sync.execute("INSERT INTO users (`otherInGameInfos`, `identifier`, `permission_level`, `money`, `group`, `rank`, `job`, `inventory`, `identity`, `skin`, `bank`, `lastpos`) VALUES (@otherInGameInfos, @username, @permission_level, @money, 'user', @rank, @job, @inventory, @identity, @skin, @bank, @lastpos)", {
+		MySQL.Sync.execute("INSERT INTO users (`iFood`, `otherInGameInfos`, `identifier`, `permission_level`, `money`, `group`, `rank`, `job`, `inventory`, `identity`, `skin`, `bank`, `lastpos`) VALUES (@iFood, @otherInGameInfos, @username, @permission_level, @money, 'user', @rank, @job, @inventory, @identity, @skin, @bank, @lastpos)", {
 		    ['@username'] = identifier,
 		    ['@permission_level'] = 0,
 		    ['@money'] = 500,
@@ -189,7 +191,8 @@ function registerUser(identifier, source)
 		    ['@bank'] = 250,
 		    ['@otherInGameInfos'] = json.encode({
 	    		garage = false
-	    	})
+	    	}),
+	    	['@iFood'] = json.encode({hunger = 100, thirst = 100})
 		}, function (rowsUpdate)
 		    print('\nUn nouveau joeur vient de s enregistrer\n')
 		end)
@@ -342,7 +345,7 @@ function savePlayerDatas()
 						v.incrementPlayTime()
 						if v.get('haveChanged') == true then
 							v.set('haveChanged', false)
-							MySQL.Sync.execute("UPDATE users SET `otherInGameInfos`=@otherInGameInfos, `money`=@value, `dirty_money`=@v2, `job`=@v3, `rank`=@v4, `identity`=@v5, `inventory`=@v6, `lastpos`=@v7 WHERE identifier = @identifier AND id = @id",{
+							MySQL.Sync.execute("UPDATE users SET `iFood`=@iFood, `otherInGameInfos`=@otherInGameInfos, `money`=@value, `dirty_money`=@v2, `job`=@v3, `rank`=@v4, `identity`=@v5, `inventory`=@v6, `lastpos`=@v7 WHERE identifier = @identifier AND id = @id",{
 								['@value'] = v.get('money'),
 								['@v2'] = v.get('dirtyMoney'),
 								['@v3'] = v.get('job'),
@@ -352,7 +355,8 @@ function savePlayerDatas()
 								['@v7'] = json.encode(v.get('coords')),
 								['@identifier'] = v.get('identifier'),
 								['@id'] = v.get('id'),
-								['otherInGameInfos'] = json.encode(v.get('otherInGameInfos'))
+								['@otherInGameInfos'] = json.encode(v.get('otherInGameInfos')),
+								['@iFood'] = json.encode({hunger = v.get('hunger'), thirst = v.get('thirst')})
 							})
 						end
 					end
