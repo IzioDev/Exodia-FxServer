@@ -258,7 +258,7 @@ function IsNearATM()
   local plyCoords = GetEntityCoords(ply, 0)
   for _, item in pairs(atms) do
     local distance = GetDistanceBetweenCoords(item.x, item.y, item.z,  plyCoords["x"], plyCoords["y"], plyCoords["z"], true)
-    if(distance <= 8) then
+    if(distance <= 1.5) then
       return true
     end
   end
@@ -280,7 +280,7 @@ function IsNearBank()
   local plyCoords = GetEntityCoords(ply, 0)
   for _, item in pairs(banks) do
     local distance = GetDistanceBetweenCoords(item.x, item.y, item.z,  plyCoords["x"], plyCoords["y"], plyCoords["z"], true)
-    if(distance <= 10) then
+    if(distance <= 5.0) then
       return true
     end
   end
