@@ -630,7 +630,7 @@ function IsGottingItems(items)
 end
 
 function GetResultItemInfos(itemIdArray)
-	TriggerServerEvent("ijob:getItemInfosFromIdArray", itemIdArray)
+	TriggerServerEvent("ijob:getItemInfosFromIdArray", itemIdArray, "ijob:getItemInfosFromIdArray")
 end
 
 RegisterNetEvent("ijob:getItemInfosFromIdArray")

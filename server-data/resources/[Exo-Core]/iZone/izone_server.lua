@@ -7,7 +7,7 @@ allZone = {}
 ceiledAllTables = {}
 
 AddEventHandler("onRestartZone", function()
-	SetTimeout(500, function()
+	SetTimeout(3000, function()
 	local results = MySQL.Sync.fetchAll("SELECT * FROM zone")
 		if results[1] ~= nil then
 			for i = 1, #results do
@@ -132,12 +132,11 @@ AddEventHandler("izone:savedb", function(name, categorie)
 		--------------------------------------------------------------------
 		---------------- RECHERCHE DE LA PLUS LONGUE DISTANCE --------------
 		local maxDist = CalculLongest(resultArray, userPoints)
-		local maxDistCeiled = math.ceil((maxDist*100)/100) + 0.01
 		--------------------------------------------------------------------
 		local namet = name
 		local categoriet = categorie
 		---------------- ADOUCISSEMENT DES VALEURS -------------------------
-		local ceiledMaxDist = (math.ceil(maxDist*100)/100) + 0.01 -- +0.01 to prevent the almost InZone
+		local ceiledMaxDist = (math.ceil( (maxDist + 0.01) *100)/100) -- +0.01 to prevent the almost InZone
 		local ceiledUserPoints = TableCut(userPoints, 100)
 		--------------------------------------------------------------------
 
@@ -148,7 +147,7 @@ AddEventHandler("izone:savedb", function(name, categorie)
             ['@nom'] = namet, 
             ['@coords'] = encodedCeiledUserPoints, 
             ['@gravityCenter'] = resultArrayEncoded, 
-            ['@longestDistance'] = maxDistCeiled, 
+            ['@longestDistance'] = ceiledMaxDist, 
             ['categorie'] = categoriet})
 	end)			
 end)

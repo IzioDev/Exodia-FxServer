@@ -5,7 +5,7 @@ local config =
   ['fr'] = {
     noSpace = "<span style='color: red' > Tu n'as plus de place dans votre inventaire!</span>",
     giveItem = "<span style='color: green' > Tu as recu ", -- infos à variable
-    useItem = "<span style='color: blue' > Tu as utilisé 1 ", -- infos à variable
+    useItem = "<span style='color: blue' > Tu as utilisé ", -- infos à variable
     notEnoughItem = "<span style='color: red' > Tu n'as pas assez d'items pour faire ça!</span>",
     dropItem = "<span style='color: blue' > Tu viens de jetter ", -- infos à variable
     giveItemG = "<span style='color: blue' > Tu as donné ",
@@ -248,7 +248,7 @@ AddEventHandler("inventory:use", function(item, quantity)
   TriggerEvent("es:getPlayerFromId", source, function(user)
     user.removeQuantity(tonumber(item), quantity)
     ManageItem(item, quantity, user)
-    user.notify(config[lang].useItem .. allItem[tonumber(item)].name .. "! </span>", "success", "topCenter", true, 5000)
+    user.notify(config[lang].useItem .. quantity .. " " .. allItem[tonumber(item)].name .. "! </span>", "success", "topCenter", true, 5000)
     TriggerClientEvent("inventory:change", source, json.decode(user.sendDatas()))
   end)
 end)
@@ -384,13 +384,13 @@ end)
 ---- iJob : 
 
 RegisterServerEvent("ijob:getItemInfosFromIdArray")
-AddEventHandler("ijob:getItemInfosFromIdArray", function(itemIdArray)
+AddEventHandler("ijob:getItemInfosFromIdArray", function(itemIdArray, event)
   local source = source
   local processResult = {}
   for i = 1, #itemIdArray do
     table.insert(processResult, allItem[itemIdArray[i]])
   end
-  TriggerClientEvent("ijob:getItemInfosFromIdArray", source, processResult)
+  TriggerClientEvent(event, source, processResult)
 end)
 
 RegisterServerEvent("iLivreur:getItemInfosFromIdArray")

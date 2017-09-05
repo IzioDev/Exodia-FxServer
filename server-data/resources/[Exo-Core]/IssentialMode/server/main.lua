@@ -150,6 +150,9 @@ AddEventHandler('chatMessage', function(source, n, message)
 		if(command)then
 			CancelEvent()
 			if(command.perm > 0)then -- si la perm de la commande est plus grande que 0
+				print(Users[source].getPermissions())
+				print(command.perm)
+				print(groups[Users[source].getGroup()]:canTarget(command.group))
 				if(Users[source].getPermissions() >= command.perm or groups[Users[source].getGroup()]:canTarget(command.group))then
 					command.cmd(source, command_args, Users[source])
 					TriggerEvent("es:adminCommandRan", source, command_args, Users[source])

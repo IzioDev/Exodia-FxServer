@@ -129,7 +129,7 @@ end
 
 function use(args)
   prompt(function(quantity)
-    TriggerServerEvent("inventory:use", tonumber(args.itemId), 1)
+    TriggerServerEvent("inventory:use", tonumber(args.itemId), quantity)
   end)
 end
 
