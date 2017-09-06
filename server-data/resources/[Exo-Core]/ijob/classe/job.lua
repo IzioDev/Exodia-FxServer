@@ -60,8 +60,6 @@ function CreateJob(capital, benefit, lost, name, default, rank, employe, zone, b
 			table.insert(self.employe, {pl = user.get('identifier'), fullname = user.get('dislayName'), rank = defaultRank})
 			user.set('job', self.name)
 			user.set('rank', self.default.rank)
-			print("okaytch")
-			print(self.name .. user.get('rank'))
 			TriggerClientEvent("ijob:updateJob", user.get('source'), self.name, user.get('rank'))
 			TriggerClientEvent("is:updateJob", user.get('source'), self.name, user.get('rank'))
 			return "Employe ajoute"
@@ -81,6 +79,7 @@ function CreateJob(capital, benefit, lost, name, default, rank, employe, zone, b
 	-- 	self.haveChanged = true
 	-- 	return "Employe ajoute"
 	-- end
+	
 	rTable.isEmploye = function(user)
 		for i = 1, #self.employe do
 			if self.employe[i].pl == user.get('identifier') then
