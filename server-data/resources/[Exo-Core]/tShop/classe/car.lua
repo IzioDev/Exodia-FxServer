@@ -36,6 +36,9 @@ function CreateCar(carInfos, vehJob) -- Create Car Object
     	self.haveChanged = false
     	self.item = allItem
     	self.vehJob = false
+    	if carInfos.etatVeh then
+    		self.etatVeh = json.decode(carInfos.etatVeh)
+    	end
     else
     	self.plate = carInfos.vehicle_plate
 		self.state = carInfos.vehicle_state
@@ -47,6 +50,7 @@ function CreateCar(carInfos, vehJob) -- Create Car Object
 		self.session = {}
 		self.item = allItem
 		self.vehJob = true
+		self.etatVeh = json.decode(carInfos.etatVeh)
     end
 
     local rTable = {}
@@ -214,6 +218,17 @@ function CreateCar(carInfos, vehJob) -- Create Car Object
 
 	rTable.get = function(k)
 		return self[k]
+	end
+
+	rTable.getEtatVeh = function(k)
+		return self.etatVeh[k]
+	end
+
+	rTable.setEtatVeh = function(k, v)
+		if self.etatVeh[k] then
+			self.etatVeh[k] = v
+			SetChange(self)
+		end
 	end
 
     return rTable

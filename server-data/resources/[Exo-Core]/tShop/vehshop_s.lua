@@ -201,7 +201,7 @@ AddEventHandler('BuyForVeh', function(name, vehicle, price, plate, primarycolor,
     local player = user.get('identifier')
     print("Its ok")
 
-    MySQL.Sync.execute("INSERT INTO user_vehicle (`identifier`, `vehicle_name`, `vehicle_model`, `vehicle_price`, `vehicle_plate`, `vehicle_state`, `vehicle_colorprimary`, `vehicle_colorsecondary`, `vehicle_pearlescentcolor`, `vehicle_wheelcolor`, `lastpos`,`inventory`, `inventoryWeight`) VALUES (@username, @name, @vehicle, @price, @plate, @state, @primarycolor, @secondarycolor, @pearlescentcolor, @wheelcolor, @lastpos, @inventory, @inventoryWeight)",{
+    MySQL.Sync.execute("INSERT INTO user_vehicle (`etatVeh`, `identifier`, `vehicle_name`, `vehicle_model`, `vehicle_price`, `vehicle_plate`, `vehicle_state`, `vehicle_colorprimary`, `vehicle_colorsecondary`, `vehicle_pearlescentcolor`, `vehicle_wheelcolor`, `lastpos`,`inventory`, `inventoryWeight`) VALUES (@etatVeh, @username, @name, @vehicle, @price, @plate, @state, @primarycolor, @secondarycolor, @pearlescentcolor, @wheelcolor, @lastpos, @inventory, @inventoryWeight)",{
       ['@username'] = player,
       ['@name'] = name,
       ['@vehicle'] = vehicle,
@@ -214,7 +214,8 @@ AddEventHandler('BuyForVeh', function(name, vehicle, price, plate, primarycolor,
       ['@wheelcolor'] = wheelcolor,
       ['@lastpos'] = json.encode({0,0,0,0}),
       ['@inventory'] = json.encode({}),
-      ['@inventoryWeight'] = "300.0"
+      ['@inventoryWeight'] = "300.0",
+      ['@etatVeh'] = json.encode({plaquettes = 100, oil = 100, fuel = 100})
     }) -- Vous noterez qu'on est pas obligé d'avoir une fonction après ça, on peut en avoir un (un callback) mais osef ici
 
     local carInfos = {
@@ -227,7 +228,8 @@ AddEventHandler('BuyForVeh', function(name, vehicle, price, plate, primarycolor,
       vehicle_wheelcolor = wheelcolor,
       lastpos = json.encode({0,0,0,0}),
       inventory = json.encode({}),
-      inventoryWeight = "300.0"
+      inventoryWeight = "300.0",
+      etatVeh = json.encode({plaquettes = 100, oil = 100, fuel = 100})
     }
 
     allVeh[plate] = CreateCar(carInfos, false)
@@ -242,7 +244,8 @@ AddEventHandler("tShop:registerNewVeh", function(carPlate, owner, inventoryWeigh
       lastpos = json.encode({0,0,0,0}),
       inventory = json.encode({}),
       identifier = owner,
-      inventoryWeight = inventoryWeight
+      inventoryWeight = inventoryWeight,
+      etatVeh = json.encode({plaquettes = 100, oil = 100, fuel = 100})
     }
     print("vehicle job created")
     allVeh[carPlate] = CreateCar(carInfos, true)
@@ -263,7 +266,7 @@ function SaveCarDatas()
       if v.get('haveChanged') then
         if not(v.get('vehJob')) then
           print("query launched")
-          MySQL.Sync.execute("UPDATE user_vehicle SET `identifier`=@identifier, `vehicle_wheelcolor`=@vehicle_wheelcolor, `vehicle_pearlescentcolor` = @vehicle_pearlescentcolor, `vehicle_colorsecondary`=@vehicle_colorsecondary, `vehicle_colorprimary`=@vehicle_colorprimary, `vehicle_state`=@vehicle_state,`lastpos`=@lastpos, `inventory`=@inventory WHERE vehicle_plate = @vehicle_plate",{
+          MySQL.Sync.execute("UPDATE user_vehicle SET `etatVeh`=@etatVeh, `identifier`=@identifier, `vehicle_wheelcolor`=@vehicle_wheelcolor, `vehicle_pearlescentcolor` = @vehicle_pearlescentcolor, `vehicle_colorsecondary`=@vehicle_colorsecondary, `vehicle_colorprimary`=@vehicle_colorprimary, `vehicle_state`=@vehicle_state,`lastpos`=@lastpos, `inventory`=@inventory WHERE vehicle_plate = @vehicle_plate",{
             ['@identifier'] = v.get('owner'),
             ['@vehicle_wheelcolor'] = v.get('wheelscolor'),
             ['@vehicle_pearlescentcolor'] = v.get('plctColor'),
@@ -272,7 +275,8 @@ function SaveCarDatas()
             ['@vehicle_state'] = v.get('state'),
             ['@lastpos'] = json.encode(v.get('lastpos')),
             ['@inventory'] = json.encode(v.get('inventory')),
-            ['@vehicle_plate'] = v.get('plate')
+            ['@vehicle_plate'] = v.get('plate'),
+            ['@etatVeh'] = json.encode(v.get('etatVeh'))
             })
           v.set("haveChanged", false)
         end
