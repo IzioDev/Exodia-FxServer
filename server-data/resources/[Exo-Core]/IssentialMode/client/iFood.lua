@@ -33,10 +33,7 @@ RegisterNetEvent('iFood:openNUI')
 AddEventHandler('iFood:openNUI', function(hungerMsg, thirstMsg)
 	local hungerMsg = tostring(hungerMsg)
 	local thirstMsg = tostring(thirstMsg)
-	print(hungerMsg)
-	print(thirstMsg)
 	if not(opened) then
-		print("UI OPENED")
 		SendNUIMessage({
 		    foodAction = "openFood",
 		    hungerMessage = hungerMsg,
@@ -48,7 +45,6 @@ end)
 
 RegisterNetEvent('iFood:updateNUI')
 AddEventHandler('iFood:updateNUI', function(what, msg)
-	print("Food Event received")
 	if(what == 'hunger')then
 		SendNUIMessage({
 		    action = "updateHunger",

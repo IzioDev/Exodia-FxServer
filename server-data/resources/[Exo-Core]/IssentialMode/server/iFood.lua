@@ -3,7 +3,6 @@ local thirstMult = 0.5
 
 AddEventHandler('es:playerLoaded', function(source)
 	TriggerEvent('es:getPlayerFromId', source, function(user)
-		print(tostring(user.get('hunger')) .. tostring(user.get('thirst')) )
 		TriggerClientEvent('iFood:openNUI', source, user.getHungerMessage(), user.getThirstMessage())
 	end)
 end)
