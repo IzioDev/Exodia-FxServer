@@ -27,6 +27,11 @@ Citizen.CreateThread(function()
         if isInVeh and not(IsPedInAnyVehicle(GetPlayerPed(-1), true)) then
             local plate = GetVehicleNumberPlateText(GetVehiclePedIsIn(GetPlayerPed(-1), 1))
             TriggerServerEvent("iFuel:refreshFuel", plate, lastVehiculeFuelLevel)
+
+            SendNUIMessage({
+                action = "close"
+            })
+
             isInVeh = false
             lastVehiculeFuelLevel = nil
         end
@@ -41,6 +46,14 @@ Citizen.CreateThread(function()
                     lastVehiculeFuelLevel = lastVehiculeFuelLevel - ( 0.001667 * (speed/80) * multiplicateur )
                 end
             end
+
+            if GetGameTimer() - 1000 > lastTime then
+                SendNUIMessage({
+                    action = "update",
+                    level = lastVehiculeFuelLevel
+                })
+                lastTime = 0
+            end
         end
 
     end
@@ -50,4 +63,8 @@ RegisterNetEvent("iFuel:returnLevel")
 AddEventHandler("iFuel:returnLevel", function(plate, level)
     print(plate ..  " : " .. level)
     lastVehiculeFuelLevel = level
+    SendNUIMessage({
+        action = "open",
+        level = level
+    })
 end)
