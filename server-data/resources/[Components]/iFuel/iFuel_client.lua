@@ -54,6 +54,12 @@ Citizen.CreateThread(function()
                 })
                 lastTime = 0
             end
+
+            if lastVehiculeFuelLevel <= 0 then
+                lastVehiculeFuelLevel = 0
+                SetVehicleUndriveable(veh, true)
+                SetVehicleEngineOn(veh, 0, 0, 1)
+            end
         end
 
     end
