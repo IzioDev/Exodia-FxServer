@@ -3,6 +3,12 @@ local lastVehiculeFuelLevel = nil
 local multiplicateur = 1
 local lastTime = 0
 
+local proked = false
+
+local GasStation = {
+    {x = 0, y = 0, z = 0, id = 1}
+}
+
 Citizen.CreateThread(function()
     while true do
         Wait(0)
@@ -65,6 +71,46 @@ Citizen.CreateThread(function()
     end
 end)
 
+Citizen.CreateThread(function()
+    while true do
+        Wait(0)
+
+        local isNearGasStation, id = IsNearGasStation()
+
+        if isNearGasStation and not(proked) then
+            DisplayHelpText("Garez votre voiture et venez près d'un réservoir.")
+
+            local isNearPumpStation = IsNearPumpStation(id)
+
+            if isNearPumpStation and not(proked) then
+                while IsNearPumpStation(id) do
+                    Wait(0)
+                    DisplayHelpText("Appuyez sur ~INPUT_CONTEXT~ pour ouvrir le selecteur.")
+
+                    if IsControlJustPressed(1, 38) then
+
+                        SendNUIMessage({
+                            action = "openSelector"
+                        })
+                        proked = true
+
+                    end
+
+                end
+            end
+
+        end
+    end
+end)
+
+RegisterNUICallback("choose", function(data)
+    LaunchFilling(data.level)
+end)
+
+RegisterNUICallback("close", function(data)
+    proked = false
+end)
+
 RegisterNetEvent("iFuel:returnLevel")
 AddEventHandler("iFuel:returnLevel", function(plate, level)
     print(plate ..  " : " .. level)
@@ -74,3 +120,106 @@ AddEventHandler("iFuel:returnLevel", function(plate, level)
         level = level
     })
 end)
+
+function LaunchFilling(level)
+    local sticked = false
+    local embout = "prop_cs_fuel_nozle"
+
+    RequestModel(embout)
+
+    while not HasModelLoaded(embout) do
+        Citizen.Wait(100)
+    end
+
+    local emboutEntity = CreateObject(embout, 1.0, 1.0, 1.0, 1, 1, 0)
+
+    local bone = GetPedBoneIndex(GetPlayerPed(-1), 28422)
+
+    AttachEntityToEntity(emboutEntity, GetPlayerPed(-1), bone, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1, 1, 0, 0, 2, 1)
+
+    while not(sticked) do
+        Wait(0)
+        -- nozzles_r
+        DisplayHelpText("Placez vous devant votre réservoir de voiture et appuyez sur ~INPUT_CONTEXT~.")
+
+        if IsControlJustPressed(1, 38) then
+
+            local inFrontOfPlayer = GetOffsetFromEntityInWorldCoords( GetPlayerPed(-1), 0.0, 1.5 , 0.0 )
+            local entity = GetEntityInDirection( playerPos, inFrontOfPlayer )
+
+            if IsEntityAVehicle(entity) then
+                local bone = GetEntityBoneIndexByName(entity, "nozzles_r")
+                local bonePos = GetWorldPositionOfEntityBone(entity, bone)
+                local playerPos = GetEntityCoords(GetPlayerPed(-1), 1)
+
+                if GetDistanceBetweenCoords(playerPos, bonePos, true) <= 0.7 then
+                    AttachEntityToEntity(emboutEntity, entity, bone, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1, 1, 0, 0, 2, 1)
+                    sticked = true
+                else
+                    TriggerEvent("pNotify:notifyFromServer", "Rapproche toi du réservoire!", "error", "topCenter", true, 5000)
+                end
+
+            end
+        end
+
+        if not(IsNearGasStation) then
+            DeleteObject(emboutEntity)
+            break
+        end
+    end
+
+    if sticked then
+        TriggerEvent("pNotify:notifyFromServer", "Remplissage en cours...", "success", "topCenter", true, 9000)
+        FreezeEntityPosition(GetPlayerPed(-1), true)
+        SendNUIMessage({
+            action = "PlaySound"
+        })
+        -- while level > nowLevel do
+
+        -- end
+        -- demander au serveur le niveau, le recevoir en CB, attendre que ça se remplisse, puis on arrete de jouer le son et on le reset
+        -- actualiser le GUI en temps réel puis le close
+        -- faire payer le joueur
+    end
+
+end
+
+function GetEntityInDirection( coordFrom, coordTo )
+    local rayHandle = CastRayPointToPoint( coordFrom.x, coordFrom.y, coordFrom.z, coordTo.x, coordTo.y, coordTo.z, 10, GetPlayerPed( -1 ), 0 )
+    local _, _, _, _, vehicle = GetRaycastResult( rayHandle )
+    return vehicle
+end
+
+function IsNearGasStation()
+
+    if IsPedInAnyVehicle(GetPlayerPed(-1), false) then
+        return false
+    end
+
+    local plyCoords = GetEntityCoords(GetPlayerPed(-1), true)
+    for i=1, #GasStation do
+        if GetDistanceBetweenCoords(plyCoords, GasStation[i].x, GasStation[i].y, GasStation[i].z, true) <= 15.0 then
+            return true, GasStation[i].id
+        end
+    end
+    return false, 0
+end
+
+function IsNearPumpStation(id)
+    local plyCoords = GetEntityCoords(GetPlayerPed(-1), true)
+    for i = 1, #PumpStation[id] do
+        local this = PumpStation[id][i]
+        if GetDistanceBetweenCoords(plyCoords, this.x, this.y, this.z, true) <= 1.5 then
+            return true
+        end
+    end
+    return false
+end
+
+-- Utils functions:
+
+function DisplayHelpText(str)
+    SetTextComponentFormat("STRING")
+    AddTextComponentString(str)
+    DisplayHelpTextFromStringLabel(0, 0, 1, -1)
+end
