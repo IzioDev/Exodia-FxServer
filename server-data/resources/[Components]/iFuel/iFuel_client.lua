@@ -17,14 +17,14 @@ Citizen.CreateThread(function()
         --     TriggerServerEvent("iFuel:refreshFuel", plate, lastVehiculeFuelLevel)
         -- end
 
-        if IsPedInAnyVehicle(GetPlayerPed(-1), true) and not(isInVeh) then
+        if IsPedInAnyVehicle(GetPlayerPed(-1), false) and not(isInVeh) then
             isInVeh = true
-            local veh = GetVehiclePedIsTryingToEnter(GetPlayerPed(-1))
+            local veh = GetVehiclePedIsIn(GetPlayerPed(-1), false)
             print('asked plate ' .. GetVehicleNumberPlateText(veh))
             TriggerServerEvent("iFuel:askForQuantity", GetVehicleNumberPlateText(veh))
         end
 
-        if isInVeh and not(IsPedInAnyVehicle(GetPlayerPed(-1), true)) then
+        if isInVeh and not(IsPedInAnyVehicle(GetPlayerPed(-1), false)) then
             local plate = GetVehicleNumberPlateText(GetVehiclePedIsIn(GetPlayerPed(-1), 1))
             TriggerServerEvent("iFuel:refreshFuel", plate, lastVehiculeFuelLevel)
 
@@ -55,7 +55,7 @@ Citizen.CreateThread(function()
                 lastTime = 0
             end
 
-            if lastVehiculeFuelLevel <= 0 then
+            if isInVeh and lastVehiculeFuelLevel ~= nil and lastVehiculeFuelLevel <= 0 then
                 lastVehiculeFuelLevel = 0
                 SetVehicleUndriveable(veh, true)
                 SetVehicleEngineOn(veh, 0, 0, 1)
