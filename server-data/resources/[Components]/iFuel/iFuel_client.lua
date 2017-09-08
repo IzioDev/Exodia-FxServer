@@ -124,6 +124,7 @@ end)
 function LaunchFilling(level)
     local sticked = false
     local embout = "prop_cs_fuel_nozle"
+    local entity = nil
 
     RequestModel(embout)
 
@@ -145,7 +146,7 @@ function LaunchFilling(level)
         if IsControlJustPressed(1, 38) then
 
             local inFrontOfPlayer = GetOffsetFromEntityInWorldCoords( GetPlayerPed(-1), 0.0, 1.5 , 0.0 )
-            local entity = GetEntityInDirection( playerPos, inFrontOfPlayer )
+            entity = GetEntityInDirection( playerPos, inFrontOfPlayer )
 
             if IsEntityAVehicle(entity) then
                 local bone = GetEntityBoneIndexByName(entity, "nozzles_r")
@@ -175,7 +176,7 @@ function LaunchFilling(level)
             action = "PlaySound"
         })
         -- while level > nowLevel do
-
+        TriggerServerEvent("iFuel:askFuelLevelForParkedCar", GetVehicleNumberPlateText(entity))
         -- end
         -- demander au serveur le niveau, le recevoir en CB, attendre que ça se remplisse, puis on arrete de jouer le son et on le reset
         -- actualiser le GUI en temps réel puis le close

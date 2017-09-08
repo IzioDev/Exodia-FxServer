@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
 <script src="nui://game/ui/jquery.js" type="text/javascript"></script>
 	<style>
-.container {
+.fuelContainer {
 	display: none;
 	position : fixed;
 	left: 15%;
@@ -34,26 +34,84 @@
 #fuelIcon {
 	display: none;
 }
+
+.selectorContainer {
+	display: none;
+	position: fixed;
+	left:50%;
+	bottom: 50%;
+	width: 20%;
+	height: 20%;
+	background-color: grey;
+	border-radius: 10px;
+}
 body{
 	background-color: rgba(0,0,0,0);
 }
 </style>
 
 <script>
-		function OpenContainer(item){
-			console.log(item.level)
-			$(".container").show();
-			$(".fuel").css("width", item.level.toString() + "%")
-		}
-
-		function UpdateLevel(item){
-			$(".fuel").css("width", item.level.toString() + "%")
-		}
-
-		function CloseContainer(item){
-			$(".container").hide();
-		}
+	function OpenContainer(item){
+		console.log(item.level)
+		$(".fuelContainer").show();
+		$(".fuel").css("width", item.level.toString() + "%")
+	}
+	
+	function UpdateLevel(item){
+		$(".fuel").css("width", item.level.toString() + "%")
+	}
+	
+	function CloseContainer(item){
+		$(".fuelContainer").hide();
+	}
+	
 	window.onload = function(e){
+
+		function CheckVal(){
+
+			if ( $('#litre').val().charAt( 0 ) != "0" ){
+				return true
+			}
+
+			for (i=0 ; i<$('#litre').val().length; i++){
+				console.log( $('#litre').val().charAt( 0 ) )
+				if ( $('#litre').val().charAt( i ) == "0" ){
+					return false
+				}
+			}
+			return true
+		}
+
+		$('.btn').click(function(){
+			if( $( this ).is('#number') ){
+				var value = $('#litre').val()
+				if (value.length <= 1 || value.length == null ) {
+					$('#litre').val(value + $(this).text() )
+				}
+			}else if ( $( this ).is('#return') ) {
+				var length = $('#litre').val().length
+				var value = $('#litre').val().substr( -20, length - 1 )
+				$('#litre').val(value)
+			}else if ( $( this ).is('#send') ) {
+				if ( $('#litre').val().length != undefined && $('#litre').val().length >= 1 && CheckVal() ) {
+					$.post('http://ifood/choose', JSON.stringify({
+            		    level: $('#litre').val()
+            		}));
+					$('#selectorContainer').hide()
+				}else{
+					alert("Merci d'entrer une valeur correcte")
+				}
+			}else if ( $( this ).is('#remove') ) {
+				$('#litre').val(null)
+			}
+		})
+
+		document.onkeydown = function (data) {
+	        if (data.which == 27 ) {
+	            $.post('http://ifuel/close', JSON.stringify({}));
+	            $('#selectorContainer').hide()
+	        }
+    	};
 
     	window.addEventListener('message', function(event){
     		console.log(item)
@@ -65,6 +123,10 @@ body{
     			UpdateLevel(item)
     		}else if (item.action == "close"){
     			CloseContainer(item)
+    		}else if (item.action == "openSelector") {
+    			$('#selectorContainer').show()
+    		}else if (item.action == "playSound") {
+    			$("#pump").trigger("play");
     		}
 
     	});
@@ -73,10 +135,48 @@ body{
 
 </head>
 <body>
-	<div class="container">
+	<div class="fuelContainer">
 		<div class="progress vertical">
 			<div class="progress-bar progress-bar-warning fuel" role="progressbar" aria-valuenow="90" aria-valuemin="0" aria-valuemax="100">
 			</div>
 		</div>
 		<img src="icon.png" id = "fuelIcon">
+	</div>
+
+	<audio controls preload="auto" id="pump" style="display:none">
+	  <source src="http://www.exodia-rp.fr:81/server/test/pump.wav" type="audio/wav">
+	</audio>
+	<div class="selectorContainer">
+		<div class="group1">
+			<button type="button" class="btn btn-primary" id='number'>7</button>
+			<button type="button" class="btn btn-primary" id='number'>8</button>
+			<button type="button" class="btn btn-primary" id='number'>9</button>
+		</div>
+
+		<div class="group2">
+			<button type="button" class="btn btn-primary" id='number'>4</button>
+			<button type="button" class="btn btn-primary" id='number'>5</button>
+			<button type="button" class="btn btn-primary" id='number'>6</button>
+		</div>
+
+		<div class="group3">
+			<button type="button" class="btn btn-primary" id='number'>1</button>
+			<button type="button" class="btn btn-primary" id='number'>2</button>
+			<button type="button" class="btn btn-primary" id='number'>3</button>
+		</div>
+
+		<div class="group4">
+			<button type="button" class="btn btn-primary" id='number'>0</button>
+		</div>
+
+		<div class="form-group">
+		  <label for="usr">Litres:</label>
+		  <input type="text" class="form-control" id="litre" disabled>
+		</div>
+
+		<div class="group5">
+			<button type="button" class="btn btn-success" id='send'>Envoyer</button>
+			<button type="button" class="btn btn-warning" id='return'>Retour</button>
+			<button type="button" class="btn btn-danger" id='remove'>Supprimer</button>
+		</div>
 </body>
