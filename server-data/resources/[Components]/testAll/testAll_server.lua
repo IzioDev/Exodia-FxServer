@@ -1,5 +1,5 @@
 TriggerEvent('es:addGroupCommand', 'addPumpStation', 'owner', function(source, args, user)
-	if #args ~= 1 then
+	if #args ~= 2 then
 		user.notify("Utilisez la commande de cette manière : /addPumpStation [ID], utilisez le meme ID pour une même station", "error", "topCenter", true, 5000)
 		CancelEvent()
 	else
