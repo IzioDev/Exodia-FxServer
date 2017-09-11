@@ -67,6 +67,9 @@ body{
 	
 	window.onload = function(e){
 
+		var actualFuelLevel = null
+		var actualStationId = null
+
 		function CheckVal(){
 
 			if ( $('#litre').val().charAt( 0 ) != "0" ){
@@ -94,9 +97,14 @@ body{
 				$('#litre').val(value)
 			}else if ( $( this ).is('#send') ) {
 				if ( $('#litre').val().length != undefined && $('#litre').val().length >= 1 && CheckVal() ) {
-					$.post('http://ifood/choose', JSON.stringify({
-            		    level: $('#litre').val()
-            		}));
+					if ( actualFuelLevel + Number( $('#litre').val() ) >= 100 ){
+						alert("Vous ne pouvez pas contenir plus de 100 litres dans le réservoir.")
+					} else {
+						$.post('http://ifood/choose', JSON.stringify({
+            		    	level: $('#litre').val(),
+            		    	id : actualStationId
+            			}));
+					}
 					$('#selectorContainer').hide()
 				}else{
 					alert("Merci d'entrer une valeur correcte")
@@ -125,8 +133,12 @@ body{
     			CloseContainer(item)
     		}else if (item.action == "openSelector") {
     			$('#selectorContainer').show()
+    			actualFuelLevel = item.level
+    			actualStationId = item.stationid
     		}else if (item.action == "playSound") {
     			$("#pump").trigger("play");
+    		}else if (item.action == "stopAndResetSound") {
+    			$("#pump").trigger("pause");
     		}
 
     	});

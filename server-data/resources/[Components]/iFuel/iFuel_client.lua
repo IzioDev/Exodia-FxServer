@@ -5,8 +5,33 @@ local lastTime = 0
 
 local proked = false
 
+local AllMissions = {}
+
+local nowModel = nil
+local nowPlate = nil
+local nowColor1= nil
+local nowColor2= nil
+
 local GasStation = {
     {x = 0, y = 0, z = 0, id = 1}
+}
+
+local PumpStation = {
+    {
+        {}
+    },
+    
+    {
+
+    },
+    
+    {
+
+    }
+}
+
+local PayStation = {
+    {}
 }
 
 Citizen.CreateThread(function()
@@ -90,7 +115,9 @@ Citizen.CreateThread(function()
                     if IsControlJustPressed(1, 38) then
 
                         SendNUIMessage({
-                            action = "openSelector"
+                            action = "openSelector",
+                            level = lastVehiculeFuelLevel,
+                            stationId = id
                         })
                         proked = true
 
@@ -104,7 +131,8 @@ Citizen.CreateThread(function()
 end)
 
 RegisterNUICallback("choose", function(data)
-    LaunchFilling(data.level)
+    print("callback du choix")
+    LaunchFilling(data.level, data.id)
 end)
 
 RegisterNUICallback("close", function(data)
@@ -121,7 +149,7 @@ AddEventHandler("iFuel:returnLevel", function(plate, level)
     })
 end)
 
-function LaunchFilling(level)
+function LaunchFilling(level, id)
     local sticked = false
     local embout = "prop_cs_fuel_nozle"
     local entity = nil
@@ -133,10 +161,12 @@ function LaunchFilling(level)
     end
 
     local emboutEntity = CreateObject(embout, 1.0, 1.0, 1.0, 1, 1, 0)
+    print("embout créer")
 
     local bone = GetPedBoneIndex(GetPlayerPed(-1), 28422)
 
     AttachEntityToEntity(emboutEntity, GetPlayerPed(-1), bone, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1, 1, 0, 0, 2, 1)
+    print("embout attaché")
 
     while not(sticked) do
         Wait(0)
@@ -144,16 +174,18 @@ function LaunchFilling(level)
         DisplayHelpText("Placez vous devant votre réservoir de voiture et appuyez sur ~INPUT_CONTEXT~.")
 
         if IsControlJustPressed(1, 38) then
-
+            print("appuyez")
             local inFrontOfPlayer = GetOffsetFromEntityInWorldCoords( GetPlayerPed(-1), 0.0, 1.5 , 0.0 )
             entity = GetEntityInDirection( playerPos, inFrontOfPlayer )
 
             if IsEntityAVehicle(entity) then
+                print("l'entité est un véhicule")
                 local bone = GetEntityBoneIndexByName(entity, "nozzles_r")
                 local bonePos = GetWorldPositionOfEntityBone(entity, bone)
                 local playerPos = GetEntityCoords(GetPlayerPed(-1), 1)
 
                 if GetDistanceBetweenCoords(playerPos, bonePos, true) <= 0.7 then
+                    print("accrohé")
                     AttachEntityToEntity(emboutEntity, entity, bone, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1, 1, 0, 0, 2, 1)
                     sticked = true
                 else
@@ -163,7 +195,8 @@ function LaunchFilling(level)
             end
         end
 
-        if not(IsNearGasStation) then
+        if not(IsNearGasStation(id)) then
+            print("on delete l'objet")
             DeleteObject(emboutEntity)
             break
         end
@@ -175,14 +208,152 @@ function LaunchFilling(level)
         SendNUIMessage({
             action = "PlaySound"
         })
-        -- while level > nowLevel do
-        TriggerServerEvent("iFuel:askFuelLevelForParkedCar", GetVehicleNumberPlateText(entity))
-        -- end
-        -- demander au serveur le niveau, le recevoir en CB, attendre que ça se remplisse, puis on arrete de jouer le son et on le reset
-        -- actualiser le GUI en temps réel puis le close
-        -- faire payer le joueur
+        print("on joue le son est on freeze le joueur et on demande au serveur le level veh")
+        local c1, c2 = GetVehicleColours(entity, 1, 1)
+        print("veh color : " .. tostring(c1).. "  " .. tostring(c2))
+        TriggerServerEvent("iFuel:askFuelLevelForParkedCar", GetVehicleNumberPlateText(entity), GetEntityModel(entity), c1, c2, level, entity, id)
+    end
+end
+
+RegisterNetEvent("iFuel:returnLevelForMission")
+AddEventHandler("iFuel:returnLevelForMission", function(plate, model, c1, c2, thisLevel, askedLevel, entityId, stationId)
+
+    SendNUIMessage({
+        action = "open",
+        level = level
+    })
+    print("on ouvre l'ui avec le niveau que le veh a")
+    while askedLevel + thisLevel > thisLevel do
+        Wait(100)
+        thisLevel = thisLevel + 0.1
+        if thisLevel > askedLevel then
+            thisLevel = askedLevel
+        end
+        SendNUIMessage({
+            action = "update",
+            level = thisLevel
+        })
     end
 
+    print("fin du remplissage, on ferme l'ui")
+
+    SendNUIMessage({
+        action = "close"
+    })
+
+    SendNUIMessage({
+        action = "stopAndResetSound"
+    })
+
+    TriggerServerEvent("iFuel:refreshFuel", plate, thisLevel)
+
+    FreezeEntityPosition(GetPlayerPed(-1), false)
+    print("on défreeze")
+    nowPlate = plate
+    nowModel = model
+    nowColor1 = c1
+    nowColor2 = c2
+
+    TriggerServerEvent("iFuel:goToPay", plate, askedLevel, entityId, stationId)
+end)
+
+RegisterNetEvent("iFuel:launchPayMission")
+AddEventHandler("iFuel:launchPayMission", function(fuelMoney, entityId, stationId)
+    print(' on lance la mission de pauyer ')
+    local paid = false
+    local proked = false
+    while not(paid) do
+        if not(IsCarNearGasStation(entityId, stationId)) then
+            TriggerServerEvent("iFuel:heHavntPay", fuelMoney, nowPlate, nowModel, nowColor1, nowColor2)
+            TriggerEvent("pNotify:notifyFromServer", "Ta voiture vient de quitter la station, tu vas avoir des ennuis...", "error", "topCenter", true, 5000)
+            paid = true
+            break
+        end
+
+        if not(IsNearGasStation(stationId)) then
+            TriggerServerEvent("iFuel:heHavntPay", fuelMoney, nowPlate, nowModel, nowColor1, nowColor2)
+            TriggerEvent("pNotify:notifyFromServer", "Tu viens de quitter la station, tu vas avoir des ennuis...", "error", "topCenter", true, 5000)
+            paid = true
+            break
+        end
+
+        if IsNearPayStation(stationId) then
+            if not(proked) then
+                DisplayHelpText("Appuies sur ~INPUT_CONTEXT~ pour payer l'essence " .. fuelMoney .. "$")
+                if IsControlJustPressed(1, 38) then
+                    print("on demande au serveur de payer")
+                    TriggerServerEvent("iFuel:peyTheFuel", fuelMoney)
+                    paid = true
+                end
+            end
+        end
+    end
+end)
+
+RegisterNetEvent("iFuel:copsMission")
+AddEventHandler("iFuel:copsMission", function(missionType, coords, nameOrUnused)
+    print("on insert la table dans la liste des missions courantes")
+    table.insert(AllMissions, {
+        missionType == missionType,
+        coords == coords,
+        nameOrUnused = nameOrUnused
+    })
+end)
+
+Citizen.CreateThread(function()
+    while true do
+        Wait(100)
+        for i, v in ipairs(AllMissions) do
+            if not(v.inTreatment) then
+                CreateBlip(v, k)
+                v.inTreatment = true
+                print("on créer le blip")
+            end
+
+            if GetDistanceBetweenCoords(v.coords.x, v.coords.y, v.coords.z, x, y, z, true) <= 5.0 then
+                SetBlipAsMissionCreatorBlip(v.blipId, false)
+                Citizen.InvokeNative(0x86A652570E5F25DD, Citizen.PointerValueIntInitialized(v.blipId))
+                table.remove(AllMissions, i) 
+                -- si ça fonctionne pas, il faudra créer un tableau auquel on ajoute les elements à remove (les index)
+            end
+
+        end
+    end
+end)
+
+function CreateBlip(info, index)
+    local blip = AddBlipForCoord(tonumber(info.coords.x), tonumber(info.coords.y), tonumber(info.coords.z))
+    SetBlipSprite(blip, 1)
+    SetBlipColour(blip, 3)
+
+    BeginTextCommandSetBlipName("STRING")
+    AddTextComponentString(info.missionType)
+    EndTextCommandSetBlipName(blip)
+
+    SetBlipAsShortRange(blip,true)
+    SetBlipAsMissionCreatorBlip(blip,true)
+
+    SetBlipRoute(blip, true)
+    SetBlipRouteColour(blip, 38)
+
+    local nowTime = GetGameTimer()
+
+    AllMissions[index].nowTime = nowTime
+    AllMissions[index].blipId = blip
+end
+
+function IsNearPayStation(id)
+    local plyPos = GetEntityCoords(GetPlayerPed(-1), true)
+    if GetDistanceBetweenCoords(plyPos, PayStation[id].x, PayStation[id].y, PayStation[id].z, 1)
+end
+
+function IsCarNearGasStation(id, stationId)
+    local carPos = GetEntityCoords(id, false)
+    if GetDistanceBetweenCoords(carPos, GasStation[stationId].x, GasStation[stationId].y, GasStation[stationId].z, true) <= 20.0 then
+        return true
+    else
+        return false
+    end
 end
 
 function GetEntityInDirection( coordFrom, coordTo )
@@ -199,7 +370,7 @@ function IsNearGasStation()
 
     local plyCoords = GetEntityCoords(GetPlayerPed(-1), true)
     for i=1, #GasStation do
-        if GetDistanceBetweenCoords(plyCoords, GasStation[i].x, GasStation[i].y, GasStation[i].z, true) <= 15.0 then
+        if GetDistanceBetweenCoords(plyCoords, GasStation[i].x, GasStation[i].y, GasStation[i].z, true) <= 20.0 then
             return true, GasStation[i].id
         end
     end
